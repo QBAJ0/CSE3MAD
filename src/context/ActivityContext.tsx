@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState } from "react";
 import { GAMIFICATION, SCORING } from "../config/constants";
-import { pushResultToCloud } from "../services/leaderboard";
+import { pushActivityToCloud, pushResultToCloud } from "../services/leaderboard";
 import { ActivityResult, DifficultyMode, Prototype } from "../types";
 import { storage } from "../utils/storage";
 
@@ -182,7 +182,8 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
     const result: ActivityResult = { ...baseResult, points, completedInTime };
 
     await storage.saveCompletedActivity(result);
-    pushResultToCloud(result); // fire-and-forget; falls back gracefully if offline
+    pushResultToCloud(result);   // updates team aggregate on leaderboard
+    pushActivityToCloud(result); // saves full result + GPS to activities collection
     return result;
   };
 

@@ -259,7 +259,12 @@ export default function RecordScreen() {
           />
         );
       case "gps":
-        return <GPSTagger onLocationCapture={handleGPSCapture} />;
+        return (
+          <GPSTagger
+            onLocationCapture={handleGPSCapture}
+            initialLocation={draft.location ?? undefined}
+          />
+        );
       case "video":
         return (
           <VideoRecorder

@@ -101,6 +101,28 @@ export async function pushResultToCloud(result: ActivityResult): Promise<void> {
   }
 }
 
+// Saves the full activity result (including GPS location) to the
+// "activities" collection so teachers can query per-submission data.
+export async function pushActivityToCloud(result: ActivityResult): Promise<void> {
+  if (!db) return;
+  try {
+    await setDoc(doc(db, "activities", result.id), {
+      id: result.id,
+      challengeId: result.challengeId,
+      teamId: result.teamId,
+      teamName: result.teamName,
+      difficulty: result.difficulty,
+      points: result.points ?? 0,
+      rating: result.rating,
+      completedInTime: result.completedInTime ?? true,
+      location: result.location ?? null,
+      createdAt: result.createdAt,
+    });
+  } catch (e) {
+    console.warn("Activity cloud sync failed (offline?):", e);
+  }
+}
+
 export async function fetchCloudLeaderboard(): Promise<LeaderboardEntry[]> {
   if (!db) return [];
   try {

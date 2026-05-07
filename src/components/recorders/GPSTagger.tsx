@@ -5,12 +5,13 @@ import { useHaptic } from "../../hooks/useHaptic";
 
 interface Props {
   onLocationCapture: (lat: number, lng: number) => void;
+  initialLocation?: { lat: number; lng: number };
 }
 
-export function GPSTagger({ onLocationCapture }: Props) {
+export function GPSTagger({ onLocationCapture, initialLocation }: Props) {
   const [capturing, setCapturing] = useState(false);
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(
-    null,
+    initialLocation ?? null,
   );
   const { haptic } = useHaptic();
 
@@ -22,7 +23,7 @@ export function GPSTagger({ onLocationCapture }: Props) {
       if (status !== "granted") {
         Alert.alert(
           "Permission Denied",
-          "Location permission is required for GPS tagging.",
+          "Location permission is required for GPS tagging. Please enable it in your device settings.",
         );
         return;
       }
@@ -36,28 +37,30 @@ export function GPSTagger({ onLocationCapture }: Props) {
       setLocation(newLocation);
       onLocationCapture(newLocation.lat, newLocation.lng);
       haptic("success");
+    } catch {
       Alert.alert(
-        "📍 Location Tagged",
-        `Lat: ${newLocation.lat.toFixed(4)}, Lng: ${newLocation.lng.toFixed(4)}`,
+        "GPS Error",
+        "Could not get your location. Make sure GPS is enabled and try again.",
+        [{ text: "OK" }],
       );
-    } catch (error) {
-      Alert.alert("Error", "Could not get location.");
     } finally {
       setCapturing(false);
     }
   };
 
+  const isCaptured = !!location;
+
   return (
     <TouchableOpacity
-      style={styles.button}
+      style={[styles.button, isCaptured && styles.buttonCaptured]}
       onPress={captureLocation}
       disabled={capturing}
     >
-      <Text style={styles.buttonText}>
+      <Text style={[styles.buttonText, isCaptured && styles.buttonTextCaptured]}>
         {capturing
           ? "📍 Getting location..."
-          : location
-            ? "📍 Location captured"
+          : isCaptured
+            ? `✓ Tagged: ${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`
             : "📍 Tag GPS Location"}
       </Text>
     </TouchableOpacity>
@@ -73,5 +76,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#334155",
   },
+  buttonCaptured: {
+    backgroundColor: "#F0FDF4",
+    borderColor: "#22C55E",
+  },
   buttonText: { color: "#F8FAFC", fontSize: 15, fontWeight: "600" },
+  buttonTextCaptured: { color: "#166534" },
 });
