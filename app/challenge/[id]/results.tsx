@@ -15,6 +15,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import MapView, { Marker } from "react-native-maps";
 import { ChallengeTabBar } from "../../../src/components/challenge/ChallengeTabBar";
 import { GAMIFICATION, SCORING } from "../../../src/config/constants";
 import { useActivity } from "../../../src/context/ActivityContext";
@@ -304,12 +305,40 @@ export default function ResultsScreen() {
         </View>
       )}
 
-      {/* ── GPS location tag ── */}
+      {/* ── GPS map preview ── */}
       {draft.location && (
-        <View style={styles.gpsTag}>
-          <Ionicons name="location-outline" size={14} color="#166534" />
-          <Text style={styles.gpsText}>
-            {draft.location.lat.toFixed(4)}, {draft.location.lng.toFixed(4)}
+        <View style={styles.mapCard}>
+          <View style={styles.mapCardHeader}>
+            <Ionicons name="location" size={15} color="#166534" />
+            <Text style={styles.mapCardTitle}>Experiment Location</Text>
+            <View style={styles.gpsBonusBadge}>
+              <Text style={styles.gpsBonusText}>+{SCORING.GPS_TAGGED} XP</Text>
+            </View>
+          </View>
+          <MapView
+            style={styles.map}
+            initialRegion={{
+              latitude: draft.location.lat,
+              longitude: draft.location.lng,
+              latitudeDelta: 0.005,
+              longitudeDelta: 0.005,
+            }}
+            scrollEnabled={false}
+            zoomEnabled={false}
+            pitchEnabled={false}
+            rotateEnabled={false}
+          >
+            <Marker
+              coordinate={{
+                latitude: draft.location.lat,
+                longitude: draft.location.lng,
+              }}
+              title="Experiment site"
+              description={challenge.title}
+            />
+          </MapView>
+          <Text style={styles.mapCoords}>
+            {draft.location.lat.toFixed(5)}, {draft.location.lng.toFixed(5)}
           </Text>
         </View>
       )}
@@ -598,22 +627,53 @@ const styles = StyleSheet.create({
   physicsRow: { fontSize: 13, color: "#334155", marginBottom: 2 },
   physicsRisk: { fontWeight: "700", color: "#DC2626" },
 
-  // GPS tag
-  gpsTag: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
+  // GPS map card
+  mapCard: {
     marginHorizontal: 20,
     marginBottom: 14,
-    backgroundColor: "#F0FDF4",
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    alignSelf: "flex-start",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    overflow: "hidden",
     borderWidth: 1,
     borderColor: "#BBF7D0",
   },
-  gpsText: { fontSize: 13, color: "#166534", fontWeight: "600" },
+  mapCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: "#F0FDF4",
+  },
+  mapCardTitle: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#166534",
+  },
+  gpsBonusBadge: {
+    backgroundColor: "#22C55E",
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 999,
+  },
+  gpsBonusText: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: "#FFFFFF",
+  },
+  map: {
+    width: "100%",
+    height: 180,
+  },
+  mapCoords: {
+    fontSize: 11,
+    color: "#94A3B8",
+    fontWeight: "600",
+    textAlign: "center",
+    paddingVertical: 8,
+    backgroundColor: "#F8FAFC",
+  },
 
   // Observations
   observationsSubtitle: {
