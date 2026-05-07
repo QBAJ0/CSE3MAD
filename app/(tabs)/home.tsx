@@ -178,17 +178,17 @@ export default function HomeScreen() {
         <QuickBtn
           iconName="flash-outline"
           label="Challenges"
-          onPress={() => router.push("/(tabs)/activity")}
+          onPress={() => router.navigate("/(tabs)/activity")}
         />
         <QuickBtn
           iconName="trophy-outline"
           label="Leaderboard"
-          onPress={() => router.push("/(tabs)/leaderboard")}
+          onPress={() => router.navigate("/(tabs)/leaderboard")}
         />
         <QuickBtn
           iconName="person-outline"
           label="Profile"
-          onPress={() => router.push("/(tabs)/profile")}
+          onPress={() => router.navigate("/(tabs)/profile")}
         />
       </View>
     </ScrollView>
