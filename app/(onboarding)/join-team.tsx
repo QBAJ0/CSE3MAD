@@ -48,13 +48,13 @@ export default function JoinTeamScreen() {
       savedTeam.teamName === name &&
       savedTeam.discriminator === id
     ) {
-      // Team found — load it into context and go to the home tab
+      // Team found — load it into context and show confirmation
       await setTeamData({
         teamName: savedTeam.teamName,
         discriminator: savedTeam.discriminator,
         members: savedTeam.members,
       });
-      router.replace("/(tabs)/home");
+      router.push("/(onboarding)/team-confirmation");
     } else {
       // No match found
       setIsJoining(false);
