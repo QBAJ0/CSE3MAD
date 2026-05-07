@@ -4,8 +4,9 @@
 
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router, useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Pressable,
   ScrollView,
@@ -32,11 +33,14 @@ export default function ProfileScreen() {
   const [earnedBadgeIds, setEarnedBadgeIds] = useState<Set<string>>(new Set());
   const [recentActivities, setRecentActivities] = useState<ActivityResult[]>([]);
   const [totalXP, setTotalXP] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const isFirstLoad = useRef(true);
 
   // Reload data whenever this screen comes into focus
   useFocusEffect(
     useCallback(() => {
       const load = async () => {
+        if (isFirstLoad.current) setLoading(true);
         const [badges, activities] = await Promise.all([
           storage.getEarnedBadges(),
           storage.getCompletedActivities(),
@@ -52,6 +56,8 @@ export default function ProfileScreen() {
 
         // Sum up all XP from completed activities
         setTotalXP(activities.reduce((sum, a) => sum + (a.points ?? 0), 0));
+        setLoading(false);
+        isFirstLoad.current = false;
       };
       load();
     }, [])
@@ -75,6 +81,14 @@ export default function ProfileScreen() {
       ]
     );
   };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#22C55E" />
+      </View>
+    );
+  }
 
   return (
     <ScrollView
@@ -203,13 +217,21 @@ export default function ProfileScreen() {
       </View>
 
       {/* ── Recent activity history ── */}
-      {recentActivities.length > 0 && (
-        <View style={styles.card}>
-          <View style={styles.cardTitleRow}>
-            <Ionicons name="list-outline" size={16} color="#0F172A" />
-            <Text style={styles.cardTitle}>Recent Activity</Text>
+      <View style={styles.card}>
+        <View style={styles.cardTitleRow}>
+          <Ionicons name="list-outline" size={16} color="#0F172A" />
+          <Text style={styles.cardTitle}>Recent Activity</Text>
+        </View>
+        {recentActivities.length === 0 ? (
+          <View style={styles.emptyActivity}>
+            <Ionicons name="flask-outline" size={32} color="#CBD5E1" />
+            <Text style={styles.emptyActivityText}>No activity yet</Text>
+            <Text style={styles.emptyActivitySub}>
+              Complete a challenge to see your history here
+            </Text>
           </View>
-          {recentActivities.map((activity) => {
+        ) : (
+          recentActivities.map((activity) => {
             const challenge = getChallengeById(activity.challengeId);
             if (!challenge) return null;
 
@@ -248,9 +270,9 @@ export default function ProfileScreen() {
                 </View>
               </TouchableOpacity>
             );
-          })}
-        </View>
-      )}
+          })
+        )}
+      </View>
 
       {/* ── Reset button ── */}
       <Pressable
@@ -445,4 +467,26 @@ const styles = StyleSheet.create({
   },
   resetBtnText: { color: "#DC2626", fontWeight: "700", fontSize: 15 },
   pressed: { opacity: 0.8 },
+
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#F8FAFC",
+  },
+  emptyActivity: {
+    alignItems: "center",
+    paddingVertical: 24,
+    gap: 8,
+  },
+  emptyActivityText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#94A3B8",
+  },
+  emptyActivitySub: {
+    fontSize: 13,
+    color: "#CBD5E1",
+    textAlign: "center",
+  },
 });

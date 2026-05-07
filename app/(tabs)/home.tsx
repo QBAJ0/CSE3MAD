@@ -26,8 +26,9 @@ type IoniconName = React.ComponentProps<typeof Ionicons>["name"];
 
 export default function HomeScreen() {
   const { team } = useTeam();
-  const { totalPoints, completedCount, streak } = useHomeStats();
-  const { completedIds } = useActivityCompletion();
+  const { totalPoints, completedCount, streak, loading: statsLoading } = useHomeStats();
+  const { completedIds, loading: activityLoading } = useActivityCompletion();
+  const dataLoading = statsLoading || activityLoading;
 
   const nextChallenge = CHALLENGES.find((c) => !completedIds.has(c.id));
   const allDone = completedCount >= CHALLENGES.length;
@@ -90,6 +91,7 @@ export default function HomeScreen() {
           value={`${completedCount}/${CHALLENGES.length}`}
           label="Challenges"
           valueColor="#22C55E"
+          loading={dataLoading}
         />
         <StatCard
           iconName="flash"
@@ -97,6 +99,7 @@ export default function HomeScreen() {
           value={String(totalPoints)}
           label="Total XP"
           valueColor="#F59E0B"
+          loading={dataLoading}
         />
         <StatCard
           iconName="people"
@@ -104,6 +107,7 @@ export default function HomeScreen() {
           value={String(team?.members.length ?? 0)}
           label="Members"
           valueColor="#3B82F6"
+          loading={dataLoading}
         />
       </View>
 
@@ -202,17 +206,21 @@ function StatCard({
   value,
   label,
   valueColor,
+  loading,
 }: {
   iconName: IoniconName;
   iconColor: string;
   value: string;
   label: string;
   valueColor: string;
+  loading?: boolean;
 }) {
   return (
     <View style={statStyles.card}>
       <Ionicons name={iconName} size={22} color={iconColor} />
-      <Text style={[statStyles.value, { color: valueColor }]}>{value}</Text>
+      <Text style={[statStyles.value, { color: loading ? "#CBD5E1" : valueColor }]}>
+        {loading ? "—" : value}
+      </Text>
       <Text style={statStyles.label}>{label}</Text>
     </View>
   );

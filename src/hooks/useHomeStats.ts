@@ -7,6 +7,7 @@ type HomeStats = {
   totalPoints: number;
   completedCount: number;
   streak: number;
+  loading: boolean;
 };
 
 export function useHomeStats(): HomeStats {
@@ -15,6 +16,7 @@ export function useHomeStats(): HomeStats {
     totalPoints: 0,
     completedCount: 0,
     streak: 0,
+    loading: true,
   });
 
   useFocusEffect(
@@ -33,6 +35,7 @@ export function useHomeStats(): HomeStats {
           totalPoints: mine.reduce((sum, a) => sum + (a.points ?? 0), 0),
           completedCount: mine.length,
           streak,
+          loading: false,
         });
       };
       load();

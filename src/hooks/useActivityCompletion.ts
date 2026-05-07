@@ -3,9 +3,10 @@ import { useCallback, useState } from "react";
 import { useTeam } from "../context/TeamContext";
 import { storage } from "../utils/storage";
 
-export function useActivityCompletion(): { completedIds: Set<number> } {
+export function useActivityCompletion(): { completedIds: Set<number>; loading: boolean } {
   const { team } = useTeam();
   const [completedIds, setCompletedIds] = useState<Set<number>>(new Set());
+  const [loading, setLoading] = useState(true);
 
   useFocusEffect(
     useCallback(() => {
@@ -20,6 +21,7 @@ export function useActivityCompletion(): { completedIds: Set<number> } {
               .map((a) => a.challengeId),
           ),
         );
+        setLoading(false);
       };
       load();
       return () => {
@@ -28,5 +30,5 @@ export function useActivityCompletion(): { completedIds: Set<number> } {
     }, [team]),
   );
 
-  return { completedIds };
+  return { completedIds, loading };
 }

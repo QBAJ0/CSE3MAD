@@ -6,6 +6,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
+  ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
@@ -28,7 +29,7 @@ function baseXP(maxPrototypes: number): number {
 }
 
 export default function ActivityScreen() {
-  const { completedIds } = useActivityCompletion();
+  const { completedIds, loading } = useActivityCompletion();
   const [activeFilter, setActiveFilter] = useState("All");
 
   const filtered =
@@ -58,18 +59,22 @@ export default function ActivityScreen() {
         </View>
         <View style={styles.progressPill}>
           <Text style={styles.progressPillText}>
-            {completedIds.size}/{CHALLENGES.length} done
+            {loading ? "—" : `${completedIds.size}/${CHALLENGES.length} done`}
           </Text>
         </View>
       </View>
 
       {/* ── Overall progress bar ── */}
-      <View style={styles.progressTrack}>
-        <View
-          style={[styles.progressFill, { width: `${completionPercent}%` }]}
-        />
-      </View>
-      <Text style={styles.progressLabel}>{completionPercent}% complete</Text>
+      {loading ? (
+        <ActivityIndicator size="small" color="#22C55E" style={styles.progressLoading} />
+      ) : (
+        <>
+          <View style={styles.progressTrack}>
+            <View style={[styles.progressFill, { width: `${completionPercent}%` }]} />
+          </View>
+          <Text style={styles.progressLabel}>{completionPercent}% complete</Text>
+        </>
+      )}
 
       {/* ── Category filter chips ── */}
       <ScrollView
@@ -249,6 +254,10 @@ const styles = StyleSheet.create({
     color: "#94A3B8",
     fontWeight: "600",
     marginBottom: 16,
+  },
+  progressLoading: {
+    marginBottom: 16,
+    alignSelf: "flex-start",
   },
 
   filterScroll: {
