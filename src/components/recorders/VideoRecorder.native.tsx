@@ -1,5 +1,6 @@
 import { ResizeMode, Video } from "expo-av";
 import { CameraType, CameraView, useCameraPermissions } from "expo-camera";
+import * as ImagePicker from "expo-image-picker";
 import { useRef, useState } from "react";
 import {
   Alert,
@@ -30,6 +31,38 @@ export function VideoRecorder({
   const cameraRef = useRef<CameraView>(null);
   const { haptic } = useHaptic();
 
+  const saveVideo = (uri: string) => {
+    setVideoUri(uri);
+    onCapture(uri);
+  };
+
+  const pickVideoFromGallery = async () => {
+    haptic("medium");
+
+    const galleryPermission =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!galleryPermission.granted) {
+      Alert.alert(
+        "Permission needed",
+        "Please allow gallery access so you can upload a video.",
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+      allowsEditing: false,
+      quality: 1,
+    });
+
+    if (!result.canceled && result.assets.length > 0) {
+      saveVideo(result.assets[0].uri);
+      haptic("success");
+      Alert.alert("✅ Video Uploaded", "Your video has been attached.");
+    }
+  };
+
   const handleOpenCamera = () => {
     haptic("medium");
     setCameraOpen(true);
@@ -47,20 +80,20 @@ export function VideoRecorder({
 
   const startRecording = async () => {
     if (!cameraRef.current) return;
+
     haptic("medium");
     setRecording(true);
+
     try {
-      const video = await cameraRef.current.recordAsync({
-        maxDuration,
-      });
-      if (video) {
-        setVideoUri(video.uri);
-        onCapture(video.uri);
+      const video = await cameraRef.current.recordAsync({ maxDuration });
+
+      if (video?.uri) {
+        saveVideo(video.uri);
         haptic("success");
         Alert.alert("✅ Video Captured!", "Your video has been saved.");
         setCameraOpen(false);
       }
-    } catch (error) {
+    } catch {
       Alert.alert("Error", "Failed to record video. Please try again.");
       haptic("error");
     } finally {
@@ -78,6 +111,7 @@ export function VideoRecorder({
 
   const deleteVideo = () => {
     haptic("warning");
+
     Alert.alert("Delete Video", "Are you sure you want to delete this video?", [
       { text: "Cancel", style: "cancel" },
       {
@@ -98,12 +132,13 @@ export function VideoRecorder({
     haptic("light");
   };
 
-  if (!permission)
+  if (!permission) {
     return (
       <View style={styles.container}>
         <Text style={styles.loadingText}>Requesting camera permission...</Text>
       </View>
     );
+  }
 
   if (!permission.granted) {
     return (
@@ -111,11 +146,19 @@ export function VideoRecorder({
         <Text style={styles.permissionText}>
           📹 Camera permission is required to record videos.
         </Text>
+
         <TouchableOpacity
           style={styles.permissionButton}
           onPress={requestPermission}
         >
           <Text style={styles.permissionButtonText}>Grant Permission</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.secondaryButton, { marginTop: 10 }]}
+          onPress={pickVideoFromGallery}
+        >
+          <Text style={styles.secondaryButtonText}>📁 Upload from Gallery</Text>
         </TouchableOpacity>
       </View>
     );
@@ -124,7 +167,8 @@ export function VideoRecorder({
   if (videoUri && !cameraOpen) {
     return (
       <View style={styles.container}>
-        <Text style={styles.label}>📹 Recorded Video</Text>
+        <Text style={styles.label}>📹 Attached Video</Text>
+
         <Video
           source={{ uri: videoUri }}
           style={styles.videoPreview}
@@ -132,10 +176,19 @@ export function VideoRecorder({
           resizeMode={ResizeMode.CONTAIN}
           isLooping
         />
+
         <View style={styles.videoActions}>
           <TouchableOpacity style={styles.retakeButton} onPress={retakeVideo}>
             <Text style={styles.retakeButtonText}>🔄 Retake</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.secondaryActionButton}
+            onPress={pickVideoFromGallery}
+          >
+            <Text style={styles.secondaryActionButtonText}>📁 Replace</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity style={styles.deleteButton} onPress={deleteVideo}>
             <Text style={styles.deleteButtonText}>🗑️ Delete</Text>
           </TouchableOpacity>
@@ -147,15 +200,26 @@ export function VideoRecorder({
   return (
     <>
       {!cameraOpen && !videoUri && (
-        <TouchableOpacity
-          style={styles.captureButton}
-          onPress={handleOpenCamera}
-        >
-          <Text style={styles.captureButtonText}>📹 Record Video</Text>
-          <Text style={styles.captureHint}>
-            Show your experiment in action!
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.container}>
+          <TouchableOpacity
+            style={styles.captureButton}
+            onPress={handleOpenCamera}
+          >
+            <Text style={styles.captureButtonText}>📹 Record Video</Text>
+            <Text style={styles.captureHint}>
+              Show your experiment in action!
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.secondaryButton}
+            onPress={pickVideoFromGallery}
+          >
+            <Text style={styles.secondaryButtonText}>
+              📁 Upload from Gallery
+            </Text>
+          </TouchableOpacity>
+        </View>
       )}
 
       <Modal
@@ -171,6 +235,7 @@ export function VideoRecorder({
             mode="video"
             autofocus="on"
           />
+
           <View style={styles.cameraOverlay}>
             <View style={styles.cameraHeader}>
               <TouchableOpacity
@@ -179,7 +244,9 @@ export function VideoRecorder({
               >
                 <Text style={styles.closeButtonText}>✕</Text>
               </TouchableOpacity>
+
               <Text style={styles.cameraTitle}>Record Your Experiment</Text>
+
               <TouchableOpacity
                 onPress={toggleCameraFacing}
                 style={styles.flipButton}
@@ -187,6 +254,7 @@ export function VideoRecorder({
                 <Text style={styles.flipButtonText}>🔄</Text>
               </TouchableOpacity>
             </View>
+
             <View style={styles.cameraFooter}>
               {!recording ? (
                 <TouchableOpacity
@@ -203,6 +271,7 @@ export function VideoRecorder({
                   <View style={styles.stopButtonInner} />
                 </TouchableOpacity>
               )}
+
               <Text style={styles.recordHint}>
                 {recording ? "Tap to stop recording" : "Tap to start recording"}
               </Text>
@@ -222,7 +291,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E2E8F0",
   },
-  label: { fontSize: 14, fontWeight: "600", color: "#334155", marginBottom: 8 },
+  label: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#334155",
+    marginBottom: 8,
+  },
   captureButton: {
     backgroundColor: "#1E293B",
     padding: 16,
@@ -232,15 +306,39 @@ const styles = StyleSheet.create({
     borderColor: "#22C55E",
     borderStyle: "dashed",
   },
-  captureButtonText: { color: "#22C55E", fontSize: 16, fontWeight: "700" },
-  captureHint: { color: "#64748B", fontSize: 12, marginTop: 4 },
+  captureButtonText: {
+    color: "#22C55E",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  captureHint: {
+    color: "#CBD5E1",
+    fontSize: 12,
+    marginTop: 4,
+  },
+  secondaryButton: {
+    marginTop: 10,
+    backgroundColor: "#E0F2FE",
+    padding: 13,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  secondaryButtonText: {
+    color: "#0369A1",
+    fontSize: 14,
+    fontWeight: "700",
+  },
   videoPreview: {
     width: "100%",
     height: 200,
     borderRadius: 12,
     backgroundColor: "#000",
   },
-  videoActions: { flexDirection: "row", gap: 12, marginTop: 12 },
+  videoActions: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 12,
+  },
   retakeButton: {
     flex: 1,
     backgroundColor: "#3B82F6",
@@ -248,7 +346,21 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
   },
-  retakeButtonText: { color: "#FFF", fontWeight: "600" },
+  retakeButtonText: {
+    color: "#FFF",
+    fontWeight: "600",
+  },
+  secondaryActionButton: {
+    flex: 1,
+    backgroundColor: "#0EA5E9",
+    padding: 10,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  secondaryActionButtonText: {
+    color: "#FFF",
+    fontWeight: "600",
+  },
   deleteButton: {
     flex: 1,
     backgroundColor: "#EF4444",
@@ -256,19 +368,43 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
   },
-  deleteButtonText: { color: "#FFF", fontWeight: "600" },
-  loadingText: { color: "#64748B", textAlign: "center" },
-  permissionText: { color: "#64748B", textAlign: "center", marginBottom: 12 },
+  deleteButtonText: {
+    color: "#FFF",
+    fontWeight: "600",
+  },
+  loadingText: {
+    color: "#64748B",
+    textAlign: "center",
+  },
+  permissionText: {
+    color: "#64748B",
+    textAlign: "center",
+    marginBottom: 12,
+  },
   permissionButton: {
     backgroundColor: "#22C55E",
     padding: 12,
     borderRadius: 10,
     alignItems: "center",
   },
-  permissionButtonText: { color: "#FFF", fontWeight: "700" },
-  cameraContainer: { flex: 1, backgroundColor: "#000" },
-  camera: { flex: 1 },
-  cameraOverlay: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0 },
+  permissionButtonText: {
+    color: "#FFF",
+    fontWeight: "700",
+  },
+  cameraContainer: {
+    flex: 1,
+    backgroundColor: "#000",
+  },
+  camera: {
+    flex: 1,
+  },
+  cameraOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
   cameraHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -284,8 +420,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  closeButtonText: { color: "#FFF", fontSize: 24 },
-  cameraTitle: { color: "#FFF", fontSize: 16, fontWeight: "600" },
+  closeButtonText: {
+    color: "#FFF",
+    fontSize: 24,
+  },
+  cameraTitle: {
+    color: "#FFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
   flipButton: {
     width: 44,
     height: 44,
@@ -294,7 +437,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  flipButtonText: { color: "#FFF", fontSize: 24 },
+  flipButtonText: {
+    color: "#FFF",
+    fontSize: 24,
+  },
   cameraFooter: {
     position: "absolute",
     bottom: 40,
@@ -335,5 +481,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: "#FFF",
   },
-  recordHint: { color: "#FFF", fontSize: 14, fontWeight: "600" },
+  recordHint: {
+    color: "#FFF",
+    fontSize: 14,
+    fontWeight: "600",
+  },
 });

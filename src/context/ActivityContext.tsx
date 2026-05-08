@@ -163,6 +163,7 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
       return null;
     }
 
+    // ✅ All prototypes with their measurements (including video, photo, GPS) are preserved
     const baseResult = {
       id: draft.id,
       challengeId: draft.challengeId,
@@ -170,7 +171,7 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
       teamName: draft.teamName,
       difficulty: draft.difficulty,
       prediction: draft.prediction ?? "",
-      prototypes: draft.prototypes,
+      prototypes: draft.prototypes, // Includes all measurements.video, measurements.photo, etc.
       derivedByPrototype: draft.derivedByPrototype ?? {},
       rating,
       reflection,
@@ -181,7 +182,7 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
     const points = calculatePoints(baseResult, completedInTime);
     const result: ActivityResult = { ...baseResult, points, completedInTime };
 
-    await storage.saveCompletedActivity(result);
+    await storage.saveCompletedActivity(result); // Videos persisted to local storage
     pushResultToCloud(result);   // updates team aggregate on leaderboard
     pushActivityToCloud(result); // saves full result + GPS to activities collection
     return result;

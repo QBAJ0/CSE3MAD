@@ -1,8 +1,7 @@
 // app/challenge/[id]/results.tsx
-// The "Reflect" screen — students review their results, answer observation
-// questions, rate the activity, then claim their XP reward.
 
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { ResizeMode, Video } from "expo-av";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import {
@@ -33,23 +32,17 @@ export default function ResultsScreen() {
     id: string;
     timeExpired?: string;
   }>();
+
   const challenge = getChallengeById(Number(id));
   const { draft, finalize, clearDraft } = useActivity();
   const { team, updateTeamPoints } = useTeam();
 
-  // Observation answers — one per question (keyed by question index)
   const [observations, setObservations] = useState<Record<number, string>>({});
-
-  // Star rating selected by the team (1–5)
   const [rating, setRating] = useState(0);
-
-  // Tracks whether the form is being submitted
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // True if the challenge timer ran out before they finished
   const hasTimeExpired = timeExpired === "true";
 
-  // Safety check
   if (!challenge || !team) {
     return (
       <View style={styles.screen}>
@@ -58,22 +51,18 @@ export default function ResultsScreen() {
     );
   }
 
-  // Use the challenge's own questions, or fall back to generic ones
   const observationQuestions = challenge.observationQuestions ?? [
     "What did you observe during the experiment?",
     "Were your predictions correct? What was different?",
     "What would you change if you ran the experiment again?",
   ];
 
-  // Total characters written across all observation answers
   const totalReflectionChars = Object.values(observations).join(" ").length;
 
-  // Combine all answers into one block for saving
   const combinedReflection = observationQuestions
     .map((q, i) => `${q}\n${observations[i] ?? ""}`)
     .join("\n\n");
 
-  // Work out how many XP points this attempt is worth
   const calculatePoints = () => {
     let pts = SCORING.BASE_XP;
 
@@ -81,33 +70,41 @@ export default function ResultsScreen() {
     if (draft.prototypes.length >= 3) pts += SCORING.MULTI_DESIGN_3;
     if (rating >= 4) pts += SCORING.HIGH_RATING_4;
     if (rating === 5) pts += SCORING.HIGH_RATING_5;
-    if (totalReflectionChars > GAMIFICATION.REFLECTION_THRESHOLD_1)
+
+    if (totalReflectionChars > GAMIFICATION.REFLECTION_THRESHOLD_1) {
       pts += SCORING.REFLECTION_BONUS;
-    if (totalReflectionChars > GAMIFICATION.REFLECTION_THRESHOLD_2)
+    }
+
+    if (totalReflectionChars > GAMIFICATION.REFLECTION_THRESHOLD_2) {
       pts += SCORING.REFLECTION_BONUS;
+    }
+
     if (draft.location) pts += SCORING.GPS_TAGGED;
-    if (draft.difficulty === "highSchool")
+
+    if (draft.difficulty === "highSchool") {
       pts = Math.floor(pts * SCORING.HIGH_SCHOOL_MULTIPLIER);
-    if (hasTimeExpired)
+    }
+
+    if (hasTimeExpired) {
       pts = Math.floor(pts * SCORING.TIME_PENALTY_MULTIPLIER);
+    }
 
     return pts;
   };
 
-  // Check the form is complete enough to submit
   const isReadyToSubmit = () =>
     rating > 0 &&
     observationQuestions.every(
       (_, i) =>
         (observations[i] ?? "").trim().length >=
-        GAMIFICATION.OBSERVATION_MIN_CHARS
+        GAMIFICATION.OBSERVATION_MIN_CHARS,
     );
 
   const handleSubmit = async () => {
     if (!isReadyToSubmit()) {
       Alert.alert(
         "Not quite done",
-        "Please answer all observation questions (5+ characters each) and rate the activity."
+        "Please answer all observation questions and rate the activity.",
       );
       return;
     }
@@ -116,7 +113,6 @@ export default function ResultsScreen() {
 
     const points = calculatePoints();
 
-    // Save the completed activity and update team points
     const result = await finalize({
       rating: rating as 1 | 2 | 3 | 4 | 5,
       reflection: combinedReflection,
@@ -138,26 +134,24 @@ export default function ResultsScreen() {
               router.replace("/(tabs)/activity");
             },
           },
-        ]
+        ],
       );
     }
 
     setIsSubmitting(false);
   };
 
-  // Points preview shown before submitting
   const predictedPoints = calculatePoints();
 
-  // Physics calculations for the Parachute challenge (high school mode only)
   const parachutePhysics: ParachuteDerived[] | null =
     challenge.id === 1 && draft.difficulty === "highSchool"
       ? draft.prototypes.map((p) =>
           deriveParachute({
             dropHeightMeters: parseFloat(
-              String(p.measurements.dropHeightMeters ?? "")
+              String(p.measurements.dropHeightMeters ?? ""),
             ),
             fallTimeSeconds: parseFloat(
-              String(p.measurements.fallTimeSeconds ?? "")
+              String(p.measurements.fallTimeSeconds ?? ""),
             ),
             toyMassKg:
               parseFloat(String(p.measurements.toyMassKg ?? "")) || undefined,
@@ -165,23 +159,28 @@ export default function ResultsScreen() {
               parseFloat(String(p.measurements.contactTimeSeconds ?? "")) ||
               undefined,
             bounced: String(p.measurements.bounced) === "Yes",
-          })
+          }),
         )
       : null;
 
-  // Columns to show in the results table (skip GPS, video, photo etc.)
   const tableKeys = challenge.measurements
     .filter(
       (m) =>
-        !["gps", "video", "photo", "videoAnalyzer", "slowMotion", "teamReaction"].includes(
-          m.recorder
-        )
+        ![
+          "gps",
+          "video",
+          "photo",
+          "videoAnalyzer",
+          "slowMotion",
+          "teamReaction",
+        ].includes(m.recorder),
     )
     .slice(0, 3);
 
+  const hasVideoEvidence = draft.prototypes.some((p) => p.measurements.video);
+
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      {/* ── Tab bar ── */}
       <ChallengeTabBar
         active="reflect"
         onBrief={() => router.push(`/challenge/${challenge.id}`)}
@@ -191,7 +190,6 @@ export default function ResultsScreen() {
         reflectEnabled={true}
       />
 
-      {/* ── Header ── */}
       <View style={styles.header}>
         <View style={styles.headerIconCircle}>
           <Ionicons name={challenge.icon as any} size={36} color="#22C55E" />
@@ -200,7 +198,6 @@ export default function ResultsScreen() {
         <Text style={styles.headerSubtitle}>{challenge.title}</Text>
       </View>
 
-      {/* ── Time penalty banner ── */}
       {hasTimeExpired && (
         <View style={styles.penaltyBanner}>
           <Ionicons name="alarm-outline" size={22} color="#DC2626" />
@@ -211,7 +208,6 @@ export default function ResultsScreen() {
         </View>
       )}
 
-      {/* ── Prediction recap ── */}
       <View style={styles.card}>
         <View style={styles.cardTitleRow}>
           <Ionicons name="help-circle-outline" size={16} color="#0F172A" />
@@ -224,7 +220,6 @@ export default function ResultsScreen() {
         </View>
       </View>
 
-      {/* ── Results table ── */}
       {draft.prototypes.length > 0 && tableKeys.length > 0 && (
         <View style={styles.card}>
           <View style={styles.cardTitleRow}>
@@ -232,27 +227,43 @@ export default function ResultsScreen() {
             <Text style={styles.cardTitle}>Results</Text>
           </View>
 
-          {/* Header row */}
           <View style={[styles.tableRow, styles.tableHeaderRow]}>
-            <Text style={[styles.tableCell, styles.tableHeaderCell, styles.designCell]}>
+            <Text
+              style={[
+                styles.tableCell,
+                styles.tableHeaderCell,
+                styles.designCell,
+              ]}
+            >
               Design
             </Text>
+
             {tableKeys.map((k) => (
-              <Text key={k.key} style={[styles.tableCell, styles.tableHeaderCell]}>
-                {k.label}{k.unit ? ` (${k.unit})` : ""}
+              <Text
+                key={k.key}
+                style={[styles.tableCell, styles.tableHeaderCell]}
+              >
+                {k.label}
+                {k.unit ? ` (${k.unit})` : ""}
               </Text>
             ))}
           </View>
 
-          {/* Data rows */}
           {draft.prototypes.map((p, idx) => (
             <View
               key={p.index}
               style={[styles.tableRow, idx % 2 === 0 && styles.tableRowAlt]}
             >
-              <Text style={[styles.tableCell, styles.designCell, styles.tableCellBold]}>
+              <Text
+                style={[
+                  styles.tableCell,
+                  styles.designCell,
+                  styles.tableCellBold,
+                ]}
+              >
                 Design {idx + 1}
               </Text>
+
               {tableKeys.map((k) => (
                 <Text key={k.key} style={styles.tableCell}>
                   {String(p.measurements[k.key] ?? "—")}
@@ -263,40 +274,82 @@ export default function ResultsScreen() {
         </View>
       )}
 
-      {/* ── Physics calculations (Parachute + high school only) ── */}
+      {hasVideoEvidence && (
+        <View style={styles.card}>
+          <View style={styles.cardTitleRow}>
+            <Ionicons name="videocam-outline" size={16} color="#0F172A" />
+            <Text style={styles.cardTitle}>Media Evidence</Text>
+          </View>
+
+          <Text style={styles.mediaSubtitle}>
+            Review the experiment videos attached by your team.
+          </Text>
+
+          {draft.prototypes.map((p, index) => {
+            const videoUri = p.measurements.video;
+
+            if (!videoUri) return null;
+
+            return (
+              <View key={p.index} style={styles.mediaBlock}>
+                <Text style={styles.mediaLabel}>Design {index + 1} Video</Text>
+
+                <Video
+                  source={{ uri: String(videoUri) }}
+                  style={styles.mediaVideo}
+                  useNativeControls
+                  resizeMode={ResizeMode.CONTAIN}
+                  isLooping={false}
+                />
+              </View>
+            );
+          })}
+        </View>
+      )}
+
       {parachutePhysics && (
         <View style={styles.card}>
           <View style={styles.cardTitleRow}>
             <Ionicons name="flask-outline" size={16} color="#0F172A" />
             <Text style={styles.cardTitle}>Physics Calculations</Text>
           </View>
+
           {parachutePhysics.map((calc, i) => (
             <View key={i} style={styles.physicsBlock}>
               <Text style={styles.physicsBlockLabel}>Design #{i + 1}</Text>
+
               {calc.finalVelocity != null && (
                 <Text style={styles.physicsRow}>
                   Final velocity: {calc.finalVelocity.toFixed(2)} m/s
                 </Text>
               )}
+
               {calc.acceleration != null && (
                 <Text style={styles.physicsRow}>
                   Acceleration: {calc.acceleration.toFixed(2)} m/s²
                 </Text>
               )}
+
               {calc.netForce != null && (
                 <Text style={styles.physicsRow}>
                   Net force: {calc.netForce.toFixed(3)} N
                 </Text>
               )}
+
               {calc.gForce != null && (
                 <Text style={styles.physicsRow}>
                   G-force on impact: {calc.gForce.toFixed(1)} g —{" "}
                   <Text style={styles.physicsRisk}>
-                    {gForceRiskCategory(calc.gForce) === "none" && "No injury risk"}
-                    {gForceRiskCategory(calc.gForce) === "minor" && "Minor injury risk"}
-                    {gForceRiskCategory(calc.gForce) === "serious" && "Serious injury possible"}
-                    {gForceRiskCategory(calc.gForce) === "severe" && "High injury risk"}
-                    {gForceRiskCategory(calc.gForce) === "lifeThreatening" && "Life-threatening"}
+                    {gForceRiskCategory(calc.gForce) === "none" &&
+                      "No injury risk"}
+                    {gForceRiskCategory(calc.gForce) === "minor" &&
+                      "Minor injury risk"}
+                    {gForceRiskCategory(calc.gForce) === "serious" &&
+                      "Serious injury possible"}
+                    {gForceRiskCategory(calc.gForce) === "severe" &&
+                      "High injury risk"}
+                    {gForceRiskCategory(calc.gForce) === "lifeThreatening" &&
+                      "Life-threatening"}
                   </Text>
                 </Text>
               )}
@@ -305,7 +358,6 @@ export default function ResultsScreen() {
         </View>
       )}
 
-      {/* ── GPS map preview ── */}
       {draft.location && (
         <View style={styles.mapCard}>
           <View style={styles.mapCardHeader}>
@@ -315,6 +367,7 @@ export default function ResultsScreen() {
               <Text style={styles.gpsBonusText}>+{SCORING.GPS_TAGGED} XP</Text>
             </View>
           </View>
+
           <MapView
             style={styles.map}
             initialRegion={{
@@ -337,24 +390,27 @@ export default function ResultsScreen() {
               description={challenge.title}
             />
           </MapView>
+
           <Text style={styles.mapCoords}>
             {draft.location.lat.toFixed(5)}, {draft.location.lng.toFixed(5)}
           </Text>
         </View>
       )}
 
-      {/* ── Observation questions ── */}
       <View style={styles.card}>
         <View style={styles.cardTitleRow}>
           <Ionicons name="document-text-outline" size={16} color="#0F172A" />
           <Text style={styles.cardTitle}>Your Observations</Text>
         </View>
+
         <Text style={styles.observationsSubtitle}>
           Answer each question as a team
         </Text>
+
         {observationQuestions.map((question, i) => (
           <View key={i} style={styles.observationField}>
             <Text style={styles.observationQuestion}>{question}</Text>
+
             <TextInput
               style={[
                 styles.observationInput,
@@ -375,12 +431,12 @@ export default function ResultsScreen() {
         ))}
       </View>
 
-      {/* ── Star rating ── */}
       <View style={styles.card}>
         <View style={styles.cardTitleRow}>
           <Ionicons name="star-outline" size={16} color="#0F172A" />
           <Text style={styles.cardTitle}>Rate this activity</Text>
         </View>
+
         <View style={styles.starsRow}>
           {[1, 2, 3, 4, 5].map((s) => (
             <TouchableOpacity
@@ -396,44 +452,63 @@ export default function ResultsScreen() {
             </TouchableOpacity>
           ))}
         </View>
+
         {rating >= 4 && (
           <View style={styles.ratingBonus}>
             <Text style={styles.ratingBonusText}>
-              +{SCORING.HIGH_RATING_4 + (rating === 5 ? SCORING.HIGH_RATING_5 : 0)} XP bonus!
+              +
+              {SCORING.HIGH_RATING_4 +
+                (rating === 5 ? SCORING.HIGH_RATING_5 : 0)}{" "}
+              XP bonus!
             </Text>
           </View>
         )}
       </View>
 
-      {/* ── Points breakdown ── */}
       <View style={styles.pointsCard}>
         <Text style={styles.pointsTitle}>Points Breakdown</Text>
 
         <PointsRow label="Base completion" value={`+${SCORING.BASE_XP}`} />
+
         {draft.prototypes.length >= 2 && (
           <PointsRow
             label={`Multiple designs (×${draft.prototypes.length})`}
-            value={`+${SCORING.MULTI_DESIGN_2 + (draft.prototypes.length >= 3 ? SCORING.MULTI_DESIGN_3 : 0)}`}
+            value={`+${
+              SCORING.MULTI_DESIGN_2 +
+              (draft.prototypes.length >= 3 ? SCORING.MULTI_DESIGN_3 : 0)
+            }`}
           />
         )}
+
         {rating >= 4 && (
           <PointsRow
             label={`High rating (${rating}★)`}
-            value={`+${SCORING.HIGH_RATING_4 + (rating === 5 ? SCORING.HIGH_RATING_5 : 0)}`}
+            value={`+${
+              SCORING.HIGH_RATING_4 + (rating === 5 ? SCORING.HIGH_RATING_5 : 0)
+            }`}
           />
         )}
+
         {totalReflectionChars > GAMIFICATION.REFLECTION_THRESHOLD_1 && (
           <PointsRow
             label="Detailed observations"
-            value={`+${SCORING.REFLECTION_BONUS + (totalReflectionChars > GAMIFICATION.REFLECTION_THRESHOLD_2 ? SCORING.REFLECTION_BONUS : 0)}`}
+            value={`+${
+              SCORING.REFLECTION_BONUS +
+              (totalReflectionChars > GAMIFICATION.REFLECTION_THRESHOLD_2
+                ? SCORING.REFLECTION_BONUS
+                : 0)
+            }`}
           />
         )}
+
         {draft.location && (
           <PointsRow label="GPS tagged" value={`+${SCORING.GPS_TAGGED}`} />
         )}
+
         {draft.difficulty === "highSchool" && (
           <PointsRow label="High school multiplier" value="×1.5" />
         )}
+
         {hasTimeExpired && (
           <PointsRow label="⏰ Time penalty" value="-20%" isPenalty />
         )}
@@ -446,7 +521,6 @@ export default function ResultsScreen() {
         </View>
       </View>
 
-      {/* ── Claim reward button ── */}
       <Pressable
         style={[
           styles.claimBtn,
@@ -462,7 +536,6 @@ export default function ResultsScreen() {
         </Text>
       </Pressable>
 
-      {/* ── Redo link ── */}
       <TouchableOpacity
         style={styles.redoLink}
         onPress={() => {
@@ -479,7 +552,7 @@ export default function ResultsScreen() {
                   router.replace(`/challenge/${challenge.id}`);
                 },
               },
-            ]
+            ],
           );
         }}
       >
@@ -491,7 +564,6 @@ export default function ResultsScreen() {
   );
 }
 
-// ── Small helper: one row in the points breakdown table ─────────────────────
 function PointsRow({
   label,
   value,
@@ -513,7 +585,6 @@ function PointsRow({
   );
 }
 
-// --- Styles ---
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "#F8FAFC" },
   content: { paddingTop: 16, paddingBottom: 40 },
@@ -525,7 +596,6 @@ const styles = StyleSheet.create({
     color: "#64748B",
   },
 
-  // Header
   header: {
     alignItems: "center",
     paddingVertical: 20,
@@ -545,7 +615,6 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 28, fontWeight: "800", color: "#0F172A" },
   headerSubtitle: { fontSize: 14, color: "#64748B", marginTop: 2 },
 
-  // Time penalty banner
   penaltyBanner: {
     flexDirection: "row",
     alignItems: "center",
@@ -561,7 +630,6 @@ const styles = StyleSheet.create({
   penaltyText: { color: "#DC2626", fontWeight: "700", fontSize: 14 },
   penaltySubtext: { color: "#991B1B", fontSize: 12, marginTop: 2 },
 
-  // Generic white card
   card: {
     backgroundColor: "#FFFFFF",
     borderRadius: 20,
@@ -583,7 +651,6 @@ const styles = StyleSheet.create({
     color: "#0F172A",
   },
 
-  // Prediction
   predictionBubble: {
     backgroundColor: "#F1F5F9",
     borderRadius: 14,
@@ -596,7 +663,6 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 
-  // Results table
   tableRow: {
     flexDirection: "row",
     paddingVertical: 10,
@@ -611,7 +677,33 @@ const styles = StyleSheet.create({
   tableCellBold: { fontWeight: "700", color: "#0F172A" },
   tableHeaderCell: { fontWeight: "700", color: "#64748B", fontSize: 11 },
 
-  // Physics
+  mediaSubtitle: {
+    fontSize: 13,
+    color: "#64748B",
+    marginTop: -6,
+    marginBottom: 12,
+  },
+  mediaBlock: {
+    marginTop: 10,
+    padding: 10,
+    backgroundColor: "#F8FAFC",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+  mediaLabel: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#0F172A",
+    marginBottom: 8,
+  },
+  mediaVideo: {
+    width: "100%",
+    height: 220,
+    borderRadius: 12,
+    backgroundColor: "#000",
+  },
+
   physicsBlock: {
     borderLeftWidth: 3,
     borderLeftColor: "#22C55E",
@@ -627,7 +719,6 @@ const styles = StyleSheet.create({
   physicsRow: { fontSize: 13, color: "#334155", marginBottom: 2 },
   physicsRisk: { fontWeight: "700", color: "#DC2626" },
 
-  // GPS map card
   mapCard: {
     marginHorizontal: 20,
     marginBottom: 14,
@@ -675,7 +766,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#F8FAFC",
   },
 
-  // Observations
   observationsSubtitle: {
     fontSize: 13,
     color: "#64748B",
@@ -705,7 +795,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0FDF4",
   },
 
-  // Stars
   starsRow: {
     flexDirection: "row",
     justifyContent: "center",
@@ -722,7 +811,6 @@ const styles = StyleSheet.create({
   },
   ratingBonusText: { fontSize: 13, color: "#166534", fontWeight: "700" },
 
-  // Points card (dark)
   pointsCard: {
     backgroundColor: "#0F172A",
     borderRadius: 20,
@@ -758,7 +846,6 @@ const styles = StyleSheet.create({
   pointsTotalLabel: { fontSize: 15, fontWeight: "700", color: "#F8FAFC" },
   pointsTotalValue: { fontSize: 32, fontWeight: "800", color: "#22C55E" },
 
-  // Claim button
   claimBtn: {
     backgroundColor: "#22C55E",
     marginHorizontal: 20,
@@ -774,7 +861,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
 
-  // Redo link
   redoLink: { alignItems: "center", paddingVertical: 16 },
   redoLinkText: { fontSize: 14, color: "#64748B", fontWeight: "600" },
 });

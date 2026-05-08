@@ -1,6 +1,4 @@
 // app/(tabs)/profile.tsx
-// Shows the team's profile: total XP, badges, members, and recent activity history.
-// Also has a Reset button to clear all data and go back to onboarding.
 
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router, useFocusEffect } from "expo-router";
@@ -15,72 +13,82 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { BADGES, RARITY_BG, RARITY_BORDER, RARITY_COLOR } from "../../src/config/badges";
+import {
+  BADGES,
+  RARITY_BG,
+  RARITY_BORDER,
+  RARITY_COLOR,
+} from "../../src/config/badges";
 import { useTeam } from "../../src/context/TeamContext";
 import { getChallengeById } from "../../src/data/challenges";
 import { ActivityResult } from "../../src/types";
 import { storage } from "../../src/utils/storage";
 
-// A different colour for each member's avatar circle
 const AVATAR_COLORS = [
-  "#22C55E", "#3B82F6", "#F59E0B", "#EF4444", "#8B5CF6", "#06B6D4",
+  "#22C55E",
+  "#3B82F6",
+  "#F59E0B",
+  "#EF4444",
+  "#8B5CF6",
+  "#06B6D4",
 ];
 
 export default function ProfileScreen() {
   const { team, clearTeamData } = useTeam();
 
-  // Data loaded from storage
   const [earnedBadgeIds, setEarnedBadgeIds] = useState<Set<string>>(new Set());
-  const [recentActivities, setRecentActivities] = useState<ActivityResult[]>([]);
+  const [recentActivities, setRecentActivities] = useState<ActivityResult[]>(
+    [],
+  );
   const [totalXP, setTotalXP] = useState(0);
   const [loading, setLoading] = useState(true);
+
   const isFirstLoad = useRef(true);
 
-  // Reload data whenever this screen comes into focus
   useFocusEffect(
     useCallback(() => {
       const load = async () => {
         if (isFirstLoad.current) setLoading(true);
+
         const [badges, activities] = await Promise.all([
           storage.getEarnedBadges(),
           storage.getCompletedActivities(),
         ]);
 
-        setEarnedBadgeIds(new Set(badges));
-
-        // Sort by newest first and show the last 5
         const sorted = [...activities].sort(
-          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
         );
-        setRecentActivities(sorted.slice(0, 5));
 
-        // Sum up all XP from completed activities
+        setEarnedBadgeIds(new Set(badges));
+        setRecentActivities(sorted);
         setTotalXP(activities.reduce((sum, a) => sum + (a.points ?? 0), 0));
+
         setLoading(false);
         isFirstLoad.current = false;
       };
+
       load();
-    }, [])
+    }, []),
   );
 
   const handleReset = () => {
-    Alert.alert(
-      "Reset App",
-      "This will erase all data and return to setup.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Reset",
-          style: "destructive",
-          onPress: async () => {
-            await storage.clearAll();
-            await clearTeamData();
-            router.replace("/(onboarding)/welcome");
-          },
+    Alert.alert("Reset App", "This will erase all data and return to setup.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Reset",
+        style: "destructive",
+        onPress: async () => {
+          await storage.clearAll();
+          await clearTeamData();
+          router.replace("/(onboarding)/welcome");
         },
-      ]
-    );
+      },
+    ]);
   };
+
+  const hasVideoEvidence = (activity: ActivityResult) =>
+    activity.prototypes.some((p) => Boolean(p.measurements.video));
 
   if (loading) {
     return (
@@ -96,9 +104,7 @@ export default function ProfileScreen() {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      {/* ── Header ── */}
       <View style={styles.header}>
-        {/* Team avatar circle */}
         <View style={styles.avatarCircle}>
           <Ionicons name="flask" size={40} color="#22C55E" />
         </View>
@@ -106,32 +112,35 @@ export default function ProfileScreen() {
         <Text style={styles.teamName}>{team?.teamName ?? "My Team"}</Text>
         <Text style={styles.teamId}>{team?.discriminator ?? "—"}</Text>
 
-        {/* Quick stats: XP, Badges, Members */}
         <View style={styles.statsRow}>
           <View style={styles.stat}>
             <Text style={styles.statValue}>{totalXP}</Text>
             <Text style={styles.statLabel}>Total XP</Text>
           </View>
+
           <View style={styles.statDivider} />
+
+          <View style={styles.stat}>
+            <Text style={styles.statValue}>{recentActivities.length}</Text>
+            <Text style={styles.statLabel}>Experiments</Text>
+          </View>
+
+          <View style={styles.statDivider} />
+
           <View style={styles.stat}>
             <Text style={styles.statValue}>{earnedBadgeIds.size}</Text>
             <Text style={styles.statLabel}>Badges</Text>
           </View>
-          <View style={styles.statDivider} />
-          <View style={styles.stat}>
-            <Text style={styles.statValue}>{team?.members.length ?? 0}</Text>
-            <Text style={styles.statLabel}>Members</Text>
-          </View>
         </View>
       </View>
 
-      {/* ── Badge collection ── */}
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <View style={styles.cardTitleRow}>
             <Ionicons name="ribbon-outline" size={16} color="#0F172A" />
             <Text style={styles.cardTitle}>Badge Collection</Text>
           </View>
+
           <Text style={styles.cardSubtitle}>
             {earnedBadgeIds.size}/{BADGES.length} earned
           </Text>
@@ -140,6 +149,7 @@ export default function ProfileScreen() {
         <View style={styles.badgeGrid}>
           {BADGES.map((badge) => {
             const isEarned = earnedBadgeIds.has(badge.id);
+
             return (
               <View
                 key={badge.id}
@@ -161,19 +171,19 @@ export default function ProfileScreen() {
                   size={24}
                   color={isEarned ? RARITY_COLOR[badge.rarity] : "#94A3B8"}
                 />
+
                 <Text
                   style={[
                     styles.badgeName,
                     {
-                      color: isEarned
-                        ? RARITY_COLOR[badge.rarity]
-                        : "#94A3B8",
+                      color: isEarned ? RARITY_COLOR[badge.rarity] : "#94A3B8",
                     },
                   ]}
                   numberOfLines={2}
                 >
                   {badge.name}
                 </Text>
+
                 {isEarned && (
                   <View
                     style={[
@@ -188,46 +198,49 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      {/* ── Team members ── */}
       <View style={styles.card}>
         <View style={styles.cardTitleRow}>
           <Ionicons name="people-outline" size={16} color="#0F172A" />
           <Text style={styles.cardTitle}>Team Members</Text>
         </View>
+
         {team?.members.map((member, index) => (
           <View key={index} style={styles.memberRow}>
             <View
               style={[
                 styles.memberAvatar,
-                { backgroundColor: AVATAR_COLORS[index % AVATAR_COLORS.length] },
+                {
+                  backgroundColor: AVATAR_COLORS[index % AVATAR_COLORS.length],
+                },
               ]}
             >
               <Text style={styles.memberInitial}>
                 {member.name.charAt(0).toUpperCase()}
               </Text>
             </View>
+
             <View style={styles.memberInfo}>
               <Text style={styles.memberName}>{member.name}</Text>
-              {member.grade ? (
-                <Text style={styles.memberGrade}>{member.grade}</Text>
-              ) : null}
+              <Text style={styles.memberGrade}>
+                {member.grade || member.year || "Student"}
+              </Text>
             </View>
           </View>
         ))}
       </View>
 
-      {/* ── Recent activity history ── */}
       <View style={styles.card}>
         <View style={styles.cardTitleRow}>
-          <Ionicons name="list-outline" size={16} color="#0F172A" />
-          <Text style={styles.cardTitle}>Recent Activity</Text>
+          <Ionicons name="time-outline" size={16} color="#0F172A" />
+          <Text style={styles.cardTitle}>Results History</Text>
         </View>
+
         {recentActivities.length === 0 ? (
           <View style={styles.emptyActivity}>
             <Ionicons name="flask-outline" size={32} color="#CBD5E1" />
-            <Text style={styles.emptyActivityText}>No activity yet</Text>
+            <Text style={styles.emptyActivityText}>No experiments yet</Text>
             <Text style={styles.emptyActivitySub}>
-              Complete a challenge to see your history here
+              Complete a challenge to see saved results here.
             </Text>
           </View>
         ) : (
@@ -237,44 +250,98 @@ export default function ProfileScreen() {
 
             const date = new Date(activity.createdAt).toLocaleDateString(
               "en-AU",
-              { day: "numeric", month: "short" }
+              {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              },
             );
+
+            const videoAttached = hasVideoEvidence(activity);
+            const gpsAttached = Boolean(activity.location);
 
             return (
               <TouchableOpacity
                 key={activity.id}
-                style={styles.historyRow}
-                onPress={() => router.push(`/challenge/${activity.challengeId}`)}
-                activeOpacity={0.8}
+                style={styles.historyCard}
+                onPress={() =>
+                  router.push(`/challenge/${activity.challengeId}/details?resultId=${activity.id}`)
+                }
+                activeOpacity={0.85}
               >
-                {/* Challenge icon */}
-                <View style={styles.historyIcon}>
-                  <Ionicons name={challenge.icon as any} size={22} color="#64748B" />
+                <View style={styles.historyTopRow}>
+                  <View style={styles.historyIcon}>
+                    <Ionicons
+                      name={challenge.icon as any}
+                      size={22}
+                      color="#22C55E"
+                    />
+                  </View>
+
+                  <View style={styles.historyInfo}>
+                    <Text style={styles.historyName}>{challenge.title}</Text>
+                    <Text style={styles.historyMeta}>
+                      {date} ·{" "}
+                      {activity.difficulty === "highSchool"
+                        ? "High School"
+                        : "Primary"}
+                    </Text>
+                  </View>
+
+                  <View style={styles.historyXP}>
+                    <Text style={styles.historyXPValue}>
+                      +{activity.points ?? 0}
+                    </Text>
+                    <Text style={styles.historyXPLabel}>XP</Text>
+                  </View>
                 </View>
 
-                {/* Challenge name and meta */}
-                <View style={styles.historyInfo}>
-                  <Text style={styles.historyName}>{challenge.title}</Text>
-                  <Text style={styles.historyMeta}>
-                    {date}  ·  {"⭐".repeat(activity.rating)}  ·{" "}
-                    {activity.difficulty === "highSchool"
-                      ? "High School"
-                      : "Primary"}
+                <View style={styles.historyDetailsRow}>
+                  <View style={styles.historyBadge}>
+                    <Ionicons name="star" size={13} color="#F59E0B" />
+                    <Text style={styles.historyBadgeText}>
+                      {activity.rating}/5
+                    </Text>
+                  </View>
+
+                  <View style={styles.historyBadge}>
+                    <Ionicons
+                      name="construct-outline"
+                      size={13}
+                      color="#64748B"
+                    />
+                    <Text style={styles.historyBadgeText}>
+                      {activity.prototypes.length} design
+                      {activity.prototypes.length === 1 ? "" : "s"}
+                    </Text>
+                  </View>
+
+                  {videoAttached && (
+                    <View style={styles.videoBadge}>
+                      <Ionicons name="videocam" size={13} color="#0369A1" />
+                      <Text style={styles.videoBadgeText}>Video saved</Text>
+                    </View>
+                  )}
+
+                  {gpsAttached && (
+                    <View style={styles.gpsBadge}>
+                      <Ionicons name="location" size={13} color="#166534" />
+                      <Text style={styles.gpsBadgeText}>GPS</Text>
+                    </View>
+                  )}
+                </View>
+
+                {activity.reflection ? (
+                  <Text style={styles.historyReflection} numberOfLines={2}>
+                    {activity.reflection}
                   </Text>
-                </View>
-
-                {/* XP earned */}
-                <View style={styles.historyXP}>
-                  <Text style={styles.historyXPValue}>+{activity.points ?? 0}</Text>
-                  <Text style={styles.historyXPLabel}>XP</Text>
-                </View>
+                ) : null}
               </TouchableOpacity>
             );
           })
         )}
       </View>
 
-      {/* ── Reset button ── */}
       <Pressable
         style={({ pressed }) => [styles.resetBtn, pressed && styles.pressed]}
         onPress={handleReset}
@@ -288,15 +355,23 @@ export default function ProfileScreen() {
   );
 }
 
-// --- Styles ---
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: "#F8FAFC",
   },
-  content: { paddingBottom: 40 },
 
-  // Header (dark navy)
+  content: {
+    paddingBottom: 40,
+  },
+
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#F8FAFC",
+  },
+
   header: {
     backgroundColor: "#0F172A",
     paddingTop: 58,
@@ -308,6 +383,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     gap: 6,
   },
+
   avatarCircle: {
     width: 84,
     height: 84,
@@ -319,7 +395,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 10,
   },
-  teamName: { fontSize: 24, fontWeight: "800", color: "#FFFFFF" },
+
+  teamName: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#FFFFFF",
+  },
+
   teamId: {
     fontSize: 13,
     fontWeight: "700",
@@ -327,7 +409,6 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
 
-  // Quick stats bar
   statsRow: {
     flexDirection: "row",
     backgroundColor: "rgba(255,255,255,0.08)",
@@ -338,12 +419,30 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.12)",
   },
-  stat: { alignItems: "center", flex: 1 },
-  statValue: { fontSize: 22, fontWeight: "800", color: "#FFFFFF" },
-  statLabel: { fontSize: 10, color: "#94A3B8", marginTop: 2, fontWeight: "600" },
-  statDivider: { width: 1, backgroundColor: "rgba(255,255,255,0.15)" },
 
-  // Cards
+  stat: {
+    alignItems: "center",
+    flex: 1,
+  },
+
+  statValue: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: "#FFFFFF",
+  },
+
+  statLabel: {
+    fontSize: 10,
+    color: "#94A3B8",
+    marginTop: 2,
+    fontWeight: "600",
+  },
+
+  statDivider: {
+    width: 1,
+    backgroundColor: "rgba(255,255,255,0.15)",
+  },
+
   card: {
     backgroundColor: "#FFFFFF",
     borderRadius: 20,
@@ -353,34 +452,39 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#F1F5F9",
   },
+
   cardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 16,
   },
+
   cardTitleRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+    marginBottom: 12,
   },
+
   cardTitle: {
     fontSize: 16,
     fontWeight: "800",
     color: "#0F172A",
   },
+
   cardSubtitle: {
     fontSize: 12,
     color: "#94A3B8",
     fontWeight: "600",
   },
 
-  // Badge grid (4 per row)
   badgeGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 10,
   },
+
   badgeTile: {
     width: "22%",
     borderRadius: 12,
@@ -391,12 +495,14 @@ const styles = StyleSheet.create({
     minHeight: 80,
     justifyContent: "center",
   },
+
   badgeName: {
     fontSize: 9,
     fontWeight: "700",
     textAlign: "center",
     lineHeight: 12,
   },
+
   rarityDot: {
     width: 6,
     height: 6,
@@ -404,7 +510,6 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 
-  // Team members
   memberRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -413,6 +518,7 @@ const styles = StyleSheet.create({
     borderBottomColor: "#F1F5F9",
     gap: 12,
   },
+
   memberAvatar: {
     width: 42,
     height: 42,
@@ -420,36 +526,171 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  memberInitial: { fontSize: 18, fontWeight: "800", color: "#FFFFFF" },
-  memberInfo: { flex: 1 },
-  memberName: { fontSize: 15, fontWeight: "700", color: "#0F172A" },
-  memberGrade: { fontSize: 12, color: "#94A3B8", marginTop: 1 },
 
-  // Activity history
-  historyRow: {
+  memberInitial: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#FFFFFF",
+  },
+
+  memberInfo: {
+    flex: 1,
+  },
+
+  memberName: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#0F172A",
+  },
+
+  memberGrade: {
+    fontSize: 12,
+    color: "#94A3B8",
+    marginTop: 1,
+  },
+
+  historyCard: {
+    backgroundColor: "#F8FAFC",
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+
+  historyTopRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
     gap: 12,
   },
+
   historyIcon: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: "#F0FDF4",
     alignItems: "center",
     justifyContent: "center",
   },
-  historyInfo: { flex: 1 },
-  historyName: { fontSize: 14, fontWeight: "700", color: "#0F172A" },
-  historyMeta: { fontSize: 11, color: "#94A3B8", marginTop: 2 },
-  historyXP: { alignItems: "flex-end" },
-  historyXPValue: { fontSize: 16, fontWeight: "800", color: "#22C55E" },
-  historyXPLabel: { fontSize: 10, color: "#94A3B8" },
 
-  // Reset button
+  historyInfo: {
+    flex: 1,
+  },
+
+  historyName: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: "#0F172A",
+  },
+
+  historyMeta: {
+    fontSize: 11,
+    color: "#94A3B8",
+    marginTop: 3,
+  },
+
+  historyXP: {
+    alignItems: "flex-end",
+  },
+
+  historyXPValue: {
+    fontSize: 17,
+    fontWeight: "800",
+    color: "#22C55E",
+  },
+
+  historyXPLabel: {
+    fontSize: 10,
+    color: "#94A3B8",
+    fontWeight: "600",
+  },
+
+  historyDetailsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 12,
+  },
+
+  historyBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 999,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+
+  historyBadgeText: {
+    fontSize: 11,
+    color: "#475569",
+    fontWeight: "700",
+  },
+
+  videoBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#E0F2FE",
+    borderRadius: 999,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderWidth: 1,
+    borderColor: "#BAE6FD",
+  },
+
+  videoBadgeText: {
+    fontSize: 11,
+    color: "#0369A1",
+    fontWeight: "800",
+  },
+
+  gpsBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#DCFCE7",
+    borderRadius: 999,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderWidth: 1,
+    borderColor: "#BBF7D0",
+  },
+
+  gpsBadgeText: {
+    fontSize: 11,
+    color: "#166534",
+    fontWeight: "800",
+  },
+
+  historyReflection: {
+    marginTop: 10,
+    fontSize: 12,
+    color: "#64748B",
+    lineHeight: 17,
+  },
+
+  emptyActivity: {
+    alignItems: "center",
+    paddingVertical: 24,
+    gap: 8,
+  },
+
+  emptyActivityText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#94A3B8",
+  },
+
+  emptyActivitySub: {
+    fontSize: 13,
+    color: "#CBD5E1",
+    textAlign: "center",
+  },
+
   resetBtn: {
     marginHorizontal: 16,
     marginTop: 6,
@@ -460,33 +701,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#FCA5A5",
   },
+
   resetBtnRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
   },
-  resetBtnText: { color: "#DC2626", fontWeight: "700", fontSize: 15 },
-  pressed: { opacity: 0.8 },
 
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#F8FAFC",
-  },
-  emptyActivity: {
-    alignItems: "center",
-    paddingVertical: 24,
-    gap: 8,
-  },
-  emptyActivityText: {
-    fontSize: 15,
+  resetBtnText: {
+    color: "#DC2626",
     fontWeight: "700",
-    color: "#94A3B8",
+    fontSize: 15,
   },
-  emptyActivitySub: {
-    fontSize: 13,
-    color: "#CBD5E1",
-    textAlign: "center",
+
+  pressed: {
+    opacity: 0.8,
   },
 });
