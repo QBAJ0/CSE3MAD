@@ -64,7 +64,7 @@ export default function ResultsScreen() {
     .join("\n\n");
 
   const calculatePoints = () => {
-    let pts = SCORING.BASE_XP;
+    let pts: number = SCORING.BASE_XP;
 
     if (draft.prototypes.length >= 2) pts += SCORING.MULTI_DESIGN_2;
     if (draft.prototypes.length >= 3) pts += SCORING.MULTI_DESIGN_3;
@@ -124,8 +124,8 @@ export default function ResultsScreen() {
       await storage.updateStreak();
 
       Alert.alert(
-        "🎉 CHALLENGE COMPLETE!",
-        `✨ +${points} XP earned!\n\nGreat science, team!`,
+        "Challenge Complete!",
+        `+${points} XP earned!\n\nGreat science, team!`,
         [
           {
             text: "Awesome!",

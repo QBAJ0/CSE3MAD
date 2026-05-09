@@ -1,4 +1,5 @@
 import React from "react";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 type Props = { children: React.ReactNode };
@@ -22,7 +23,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
     if (this.state.hasError) {
       return (
         <View style={styles.container}>
-          <Text style={styles.emoji}>⚠️</Text>
+          <Ionicons name="alert-circle" size={48} color="#DC2626" />
           <Text style={styles.title}>Something went wrong</Text>
           <Text style={styles.message}>{this.state.error?.message}</Text>
           <Pressable
@@ -46,13 +47,13 @@ const styles = StyleSheet.create({
     padding: 32,
     backgroundColor: "#F8FAFC",
   },
-  emoji: { fontSize: 48, marginBottom: 16 },
   title: {
     fontSize: 22,
     fontWeight: "800",
     color: "#0F172A",
     marginBottom: 10,
     textAlign: "center",
+    marginTop: 16,
   },
   message: {
     fontSize: 14,

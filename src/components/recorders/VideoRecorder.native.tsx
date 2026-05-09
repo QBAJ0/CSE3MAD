@@ -59,7 +59,7 @@ export function VideoRecorder({
     if (!result.canceled && result.assets.length > 0) {
       saveVideo(result.assets[0].uri);
       haptic("success");
-      Alert.alert("✅ Video Uploaded", "Your video has been attached.");
+      Alert.alert("Video Uploaded", "Your video has been attached.");
     }
   };
 
@@ -90,7 +90,7 @@ export function VideoRecorder({
       if (video?.uri) {
         saveVideo(video.uri);
         haptic("success");
-        Alert.alert("✅ Video Captured!", "Your video has been saved.");
+        Alert.alert("Video Captured!", "Your video has been saved.");
         setCameraOpen(false);
       }
     } catch {
@@ -144,7 +144,7 @@ export function VideoRecorder({
     return (
       <View style={styles.container}>
         <Text style={styles.permissionText}>
-          📹 Camera permission is required to record videos.
+          Camera permission is required to record videos.
         </Text>
 
         <TouchableOpacity
@@ -158,7 +158,7 @@ export function VideoRecorder({
           style={[styles.secondaryButton, { marginTop: 10 }]}
           onPress={pickVideoFromGallery}
         >
-          <Text style={styles.secondaryButtonText}>📁 Upload from Gallery</Text>
+          <Text style={styles.secondaryButtonText}>Upload from Gallery</Text>
         </TouchableOpacity>
       </View>
     );
@@ -167,7 +167,7 @@ export function VideoRecorder({
   if (videoUri && !cameraOpen) {
     return (
       <View style={styles.container}>
-        <Text style={styles.label}>📹 Attached Video</Text>
+        <Text style={styles.label}>Attached Video</Text>
 
         <Video
           source={{ uri: videoUri }}
@@ -205,7 +205,7 @@ export function VideoRecorder({
             style={styles.captureButton}
             onPress={handleOpenCamera}
           >
-            <Text style={styles.captureButtonText}>📹 Record Video</Text>
+            <Text style={styles.captureButtonText}>Record Video</Text>
             <Text style={styles.captureHint}>
               Show your experiment in action!
             </Text>
@@ -216,7 +216,7 @@ export function VideoRecorder({
             onPress={pickVideoFromGallery}
           >
             <Text style={styles.secondaryButtonText}>
-              📁 Upload from Gallery
+              Upload from Gallery
             </Text>
           </TouchableOpacity>
         </View>

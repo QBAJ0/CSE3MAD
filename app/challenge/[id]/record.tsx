@@ -186,7 +186,7 @@ export default function RecordScreen() {
           <PhotoRecorder
             onCapture={(uri) => saveMeasurement(measurement.key, uri)}
             existingUri={value}
-            label="📸 Photograph Fan"
+            label="Photo"
           />
         );
       case "videoAnalyzer": {
@@ -302,7 +302,7 @@ export default function RecordScreen() {
 
       <View style={styles.badge}>
         <Text style={styles.badgeText}>
-          📊 Prototype {currentNum} of {max}
+          Prototype {currentNum} of {max}
         </Text>
       </View>
       <Text style={styles.title}>Record Your Results</Text>
@@ -357,7 +357,7 @@ export default function RecordScreen() {
       {timeExpired && (
         <View style={styles.penaltyWarning}>
           <Text style={styles.penaltyWarningText}>
-            ⚠️ Time expired! 20% point penalty applied. ⚠️
+            Time expired! 20% point penalty applied.
           </Text>
         </View>
       )}

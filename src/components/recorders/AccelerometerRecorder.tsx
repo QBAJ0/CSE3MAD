@@ -14,7 +14,7 @@ export function AccelerometerRecorder({
     return (
       <View style={styles.container}>
         <Text style={styles.saved}>
-          📊 Peak: {existingValue.peak.toFixed(3)}g — Avg:{" "}
+          Peak: {existingValue.peak.toFixed(3)}g — Avg:{" "}
           {existingValue.average.toFixed(3)}g
         </Text>
         <TouchableOpacity
@@ -29,10 +29,9 @@ export function AccelerometerRecorder({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.icon}>📳</Text>
+      <Text style={styles.icon}>Motion sensor unavailable on web.</Text>
       <Text style={styles.message}>
-        Motion sensor not available on web.{"\n"}Use the mobile app to measure
-        vibration.
+        Use the mobile app to measure vibration.
       </Text>
       <TouchableOpacity
         style={styles.button}

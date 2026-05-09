@@ -15,6 +15,7 @@ import { useTeam } from "../../src/context/TeamContext";
 import { CHALLENGES } from "../../src/data/challenges";
 import { useActivityCompletion } from "../../src/hooks/useActivityCompletion";
 import { useHomeStats } from "../../src/hooks/useHomeStats";
+import { useStreakReminder } from "../../src/hooks/useStreakReminder";
 
 const XP_PER_LEVEL = 500;
 
@@ -28,6 +29,7 @@ export default function HomeScreen() {
   const { team } = useTeam();
   const { totalPoints, completedCount, streak, loading: statsLoading } = useHomeStats();
   const { completedIds, loading: activityLoading } = useActivityCompletion();
+  const { showReminder, streak: reminderStreak } = useStreakReminder();
   const dataLoading = statsLoading || activityLoading;
 
   const nextChallenge = CHALLENGES.find((c) => !completedIds.has(c.id));
@@ -110,6 +112,37 @@ export default function HomeScreen() {
           loading={dataLoading}
         />
       </View>
+
+      {/* ── Streak reminder ── */}
+      {showReminder && (
+        <View style={styles.streakReminderCard}>
+          <View style={styles.reminderContent}>
+            <View style={styles.reminderLeft}>
+              <Ionicons name="alert-circle" size={24} color="#DC2626" />
+            </View>
+            <View style={styles.reminderMiddle}>
+              <View style={styles.reminderTitleRow}>
+                <Text style={styles.reminderTitle}>Streak at Risk!</Text>
+                <Ionicons name="flame" size={16} color="#F59E0B" />
+              </View>
+              <Text style={styles.reminderText}>
+                Complete a challenge today to keep your {reminderStreak}-day streak alive.
+              </Text>
+            </View>
+          </View>
+          {nextChallenge && (
+            <TouchableOpacity
+              style={styles.reminderButton}
+              onPress={() => router.push(`/challenge/${nextChallenge.id}`)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="flash" size={14} color="#FFFFFF" />
+              <Text style={styles.reminderButtonText}>Go Now</Text>
+              <Ionicons name="chevron-forward" size={14} color="#FFFFFF" />
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
 
       {/* ── Next challenge card ── */}
       {nextChallenge && !allDone && (
@@ -384,6 +417,61 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginLeft: 12,
+  },
+
+  streakReminderCard: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+    backgroundColor: "#FEE2E2",
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: "#FECACA",
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 12,
+  },
+  reminderContent: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+  },
+  reminderLeft: {
+    paddingTop: 2,
+  },
+  reminderMiddle: {
+    flex: 1,
+    gap: 2,
+  },
+  reminderTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  reminderTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#DC2626",
+  },
+  reminderText: {
+    fontSize: 12,
+    color: "#991B1B",
+    lineHeight: 18,
+  },
+  reminderButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#DC2626",
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    gap: 4,
+    alignSelf: "flex-start",
+  },
+  reminderButtonText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#FFFFFF",
   },
 
   allDoneCard: {

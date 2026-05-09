@@ -10,7 +10,7 @@ export function VideoRecorder({ onCapture, existingUri }: VideoRecorderProps) {
   if (existingUri) {
     return (
       <View style={styles.container}>
-        <Text style={styles.saved}>📹 Video recorded (mobile only)</Text>
+        <Text style={styles.saved}>Video recorded (mobile only)</Text>
         <TouchableOpacity style={styles.button} onPress={() => onCapture("")}>
           <Text style={styles.buttonText}>Remove</Text>
         </TouchableOpacity>
@@ -20,7 +20,6 @@ export function VideoRecorder({ onCapture, existingUri }: VideoRecorderProps) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.icon}>📹</Text>
       <Text style={styles.message}>
         Video recording not available on web.{"\n"}Use the mobile app to record
         videos.
@@ -42,7 +41,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#334155",
   },
-  icon: { fontSize: 32 },
   message: {
     color: "#94A3B8",
     fontSize: 14,

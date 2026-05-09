@@ -286,7 +286,7 @@ export default function ActivityDetailsScreen() {
                         <View style={styles.mediaContainer}>
                           {item.measurement.recorder === "photo" ? (
                             <Text style={styles.mediaPlaceholder}>
-                              📸 Photo attached
+                              Photo attached
                             </Text>
                           ) : (
                             <View style={styles.videoContainer}>
@@ -460,7 +460,7 @@ export default function ActivityDetailsScreen() {
             <View style={styles.summaryItem}>
               <Text style={styles.summaryLabel}>Time Limit</Text>
               <Text style={styles.summaryValue}>
-                {activity.completedInTime ? "✅ On Time" : "⏰ Late"}
+                {activity.completedInTime ? "On Time" : "Late"}
               </Text>
             </View>
           </View>

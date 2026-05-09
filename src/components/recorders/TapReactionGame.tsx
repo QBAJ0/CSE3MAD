@@ -1,5 +1,5 @@
 // components/recorders/TapReactionGame.tsx
-import { useEffect, useRef, useState } from "react";
+import { ComponentProps, useEffect, useRef, useState } from "react";
 import {
     Animated,
     Dimensions,
@@ -8,7 +8,10 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useHaptic } from "../../hooks/useHaptic";
+
+type IoniconName = ComponentProps<typeof Ionicons>["name"];
 
 const { width } = Dimensions.get("window");
 
@@ -162,12 +165,12 @@ export function TapReactionGame({
   };
 
   // Get reaction time classification
-  const getClassification = (ms: number) => {
+  const getClassification = (ms: number): { label: string; color: string; icon: IoniconName } => {
     if (ms < 200)
-      return { label: "Lightning Fast!", color: "#10B981", emoji: "⚡" };
-    if (ms < 300) return { label: "Fast!", color: "#84CC16", emoji: "🚀" };
-    if (ms < 450) return { label: "Good", color: "#EAB308", emoji: "👍" };
-    return { label: "Keep Practicing", color: "#F97316", emoji: "💪" };
+      return { label: "Lightning Fast!", color: "#10B981", icon: "flash" };
+    if (ms < 300) return { label: "Fast!", color: "#84CC16", icon: "rocket" };
+    if (ms < 450) return { label: "Good", color: "#EAB308", icon: "thumbs-up" };
+    return { label: "Keep Practicing", color: "#F97316", icon: "barbell" };
   };
 
   // If game is complete, show results
@@ -179,7 +182,10 @@ export function TapReactionGame({
 
     return (
       <View style={styles.resultsContainer}>
-        <Text style={styles.resultsTitle}>🎯 Results</Text>
+        <View style={styles.resultsHeader}>
+          <Text style={styles.resultsTitle}>Results</Text>
+          <Ionicons name="stats-chart" size={20} color="#22C55E" />
+        </View>
         <View style={styles.resultsStats}>
           <View style={styles.resultStat}>
             <Text style={styles.resultValue}>{avgTime.toFixed(0)}</Text>
@@ -190,16 +196,15 @@ export function TapReactionGame({
             <Text style={styles.resultLabel}>Best (ms)</Text>
           </View>
           <View style={styles.resultStat}>
-            <Text style={[styles.resultValue, { color: classification.color }]}>
-              {classification.emoji}
-            </Text>
-            <Text style={styles.resultLabel}>{classification.label}</Text>
+            <Ionicons name={classification.icon} size={24} color={classification.color} />
+            <Text style={[styles.resultLabel, { marginTop: 4 }]}>{classification.label}</Text>
           </View>
         </View>
         {tooEarlyCount > 0 && (
-          <Text style={styles.tooEarlyNote}>
-            ⚠️ {tooEarlyCount} premature taps
-          </Text>
+          <View style={styles.tooEarlyNoteContainer}>
+            <Ionicons name="warning" size={16} color="#F97316" />
+            <Text style={styles.tooEarlyNote}>{tooEarlyCount} premature taps</Text>
+          </View>
         )}
         <TouchableOpacity style={styles.retakeButton} onPress={startGame}>
           <Text style={styles.retakeButtonText}>Try Again</Text>
@@ -239,7 +244,11 @@ export function TapReactionGame({
               },
             ]}
           >
-            <Text style={styles.targetText}>⚡ TAP ⚡</Text>
+            <View style={styles.targetInner}>
+              <Ionicons name="flash" size={18} color="#FFF" />
+              <Text style={styles.targetText}>TAP</Text>
+              <Ionicons name="flash" size={18} color="#FFF" />
+            </View>
           </Animated.View>
         ) : (
           <View style={styles.waitingArea}>
@@ -250,10 +259,10 @@ export function TapReactionGame({
               ]}
             >
               {phase === "waiting"
-                ? "👀 Get Ready..."
+                ? "Get Ready..."
                 : phase === "too-early"
-                  ? "⚠️ Too Early! ⚠️"
-                  : "✨ Ready? ✨"}
+                  ? "Too Early!"
+                  : "Ready?"}
             </Animated.Text>
             {phase === "waiting" && (
               <View style={styles.progressBar}>
@@ -310,6 +319,7 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   targetText: { color: "#FFF", fontSize: 24, fontWeight: "800" },
+  targetInner: { flexDirection: "row", alignItems: "center", gap: 12 },
   waitingArea: { alignItems: "center" },
   waitingText: {
     color: "#F8FAFC",
@@ -342,7 +352,12 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "800",
     color: "#F8FAFC",
-    marginBottom: 20,
+  },
+  resultsHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 16,
   },
   resultsStats: { flexDirection: "row", gap: 24, marginBottom: 20 },
   resultStat: { alignItems: "center" },
@@ -353,7 +368,13 @@ const styles = StyleSheet.create({
     fontVariant: ["tabular-nums"],
   },
   resultLabel: { color: "#64748B", fontSize: 12, marginTop: 4 },
-  tooEarlyNote: { color: "#F97316", fontSize: 12, marginBottom: 16 },
+  tooEarlyNoteContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 16,
+  },
+  tooEarlyNote: { color: "#F97316", fontSize: 12 },
   retakeButton: {
     backgroundColor: "#3B82F6",
     paddingHorizontal: 24,

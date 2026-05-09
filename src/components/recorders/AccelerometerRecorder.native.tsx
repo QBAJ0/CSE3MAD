@@ -163,7 +163,7 @@ export function AccelerometerRecorder({
     return (
       <View style={styles.container}>
         <Text style={styles.permissionText}>
-          📳 Motion sensor access required
+          Motion sensor access required
         </Text>
         <TouchableOpacity
           style={styles.permissionButton}
@@ -179,7 +179,7 @@ export function AccelerometerRecorder({
     return (
       <View style={styles.container}>
         <View style={styles.savedContainer}>
-          <Text style={styles.savedTitle}>📊 Measured Data</Text>
+          <Text style={styles.savedTitle}>Measured Data</Text>
           <View style={styles.savedStats}>
             <View style={styles.savedStat}>
               <Text style={styles.savedStatValue}>

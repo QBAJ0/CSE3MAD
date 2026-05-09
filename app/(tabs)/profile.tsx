@@ -2,7 +2,7 @@
 
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router, useFocusEffect } from "expo-router";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -22,7 +22,8 @@ import {
 import { useTeam } from "../../src/context/TeamContext";
 import { getChallengeById } from "../../src/data/challenges";
 import { ActivityResult } from "../../src/types";
-import { storage } from "../../src/utils/storage";
+import { scheduleStreakReminder, cancelStreakReminder } from "../../src/utils/notifications";
+import { DEFAULT_REMINDER_HOUR, DEFAULT_REMINDER_MINUTE, storage } from "../../src/utils/storage";
 
 const AVATAR_COLORS = [
   "#22C55E",
@@ -37,11 +38,11 @@ export default function ProfileScreen() {
   const { team, clearTeamData } = useTeam();
 
   const [earnedBadgeIds, setEarnedBadgeIds] = useState<Set<string>>(new Set());
-  const [recentActivities, setRecentActivities] = useState<ActivityResult[]>(
-    [],
-  );
+  const [recentActivities, setRecentActivities] = useState<ActivityResult[]>([]);
   const [totalXP, setTotalXP] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [reminderHour, setReminderHour] = useState(DEFAULT_REMINDER_HOUR);
+  const [reminderMinute, setReminderMinute] = useState(DEFAULT_REMINDER_MINUTE);
 
   const isFirstLoad = useRef(true);
 
@@ -50,9 +51,11 @@ export default function ProfileScreen() {
       const load = async () => {
         if (isFirstLoad.current) setLoading(true);
 
-        const [badges, activities] = await Promise.all([
+        const [badges, activities, savedHour, savedMinute] = await Promise.all([
           storage.getEarnedBadges(),
           storage.getCompletedActivities(),
+          storage.getReminderHour(),
+          storage.getReminderMinute(),
         ]);
 
         const sorted = [...activities].sort(
@@ -63,6 +66,8 @@ export default function ProfileScreen() {
         setEarnedBadgeIds(new Set(badges));
         setRecentActivities(sorted);
         setTotalXP(activities.reduce((sum, a) => sum + (a.points ?? 0), 0));
+        setReminderHour(savedHour);
+        setReminderMinute(savedMinute);
 
         setLoading(false);
         isFirstLoad.current = false;
@@ -71,6 +76,21 @@ export default function ProfileScreen() {
       load();
     }, []),
   );
+
+  const handleSaveReminderTime = async (hour: number, minute: number) => {
+    setReminderHour(hour);
+    setReminderMinute(minute);
+    await Promise.all([
+      storage.saveReminderHour(hour),
+      storage.saveReminderMinute(minute),
+    ]);
+    const streak = await storage.getStreak();
+    if (streak > 0) {
+      scheduleStreakReminder(streak, hour, minute).catch(console.error);
+    } else {
+      cancelStreakReminder().catch(console.error);
+    }
+  };
 
   const handleReset = () => {
     Alert.alert("Reset App", "This will erase all data and return to setup.", [
@@ -342,6 +362,12 @@ export default function ProfileScreen() {
         )}
       </View>
 
+      <NotificationTimeCard
+        initialHour={reminderHour}
+        initialMinute={reminderMinute}
+        onSave={handleSaveReminderTime}
+      />
+
       <Pressable
         style={({ pressed }) => [styles.resetBtn, pressed && styles.pressed]}
         onPress={handleReset}
@@ -352,6 +378,149 @@ export default function ProfileScreen() {
         </View>
       </Pressable>
     </ScrollView>
+  );
+}
+
+function fmt12(hour: number, minute: number) {
+  const period = hour >= 12 ? "PM" : "AM";
+  const h = hour % 12 || 12;
+  const m = minute.toString().padStart(2, "0");
+  return `${h}:${m} ${period}`;
+}
+
+function NotificationTimeCard({
+  initialHour,
+  initialMinute,
+  onSave,
+}: {
+  initialHour: number;
+  initialMinute: number;
+  onSave: (hour: number, minute: number) => void;
+}) {
+  const [mode, setMode] = useState<"time" | "duration">("time");
+
+  // Time-picker state (12h)
+  const toH12 = (h: number) => h % 12 || 12;
+  const [hour12, setHour12] = useState(toH12(initialHour));
+  const [minute, setMinute] = useState(initialMinute);
+  const [isPM, setIsPM] = useState(initialHour >= 12);
+
+  // Sync spinners when parent reloads saved values from storage
+  useEffect(() => {
+    setHour12(toH12(initialHour));
+    setMinute(initialMinute);
+    setIsPM(initialHour >= 12);
+  }, [initialHour, initialMinute]);
+
+  // Duration state
+  const [durationHrs, setDurationHrs] = useState(2);
+
+  const durationHour = () => {
+    const now = new Date();
+    return (now.getHours() + durationHrs) % 24;
+  };
+
+  const handleSave = () => {
+    if (mode === "time") {
+      const h24 = isPM ? (hour12 === 12 ? 12 : hour12 + 12) : hour12 === 12 ? 0 : hour12;
+      onSave(h24, minute);
+    } else {
+      onSave(durationHour(), 0);
+    }
+  };
+
+  const stepMinute = (dir: 1 | -1) => setMinute((m) => (m + dir * 15 + 60) % 60);
+  const stepHour = (dir: 1 | -1) => setHour12((h) => (h - 1 + dir + 12) % 12 + 1);
+  const stepDuration = (dir: 1 | -1) =>
+    setDurationHrs((d) => Math.min(12, Math.max(1, d + dir)));
+
+  return (
+    <View style={styles.card}>
+      <View style={styles.cardTitleRow}>
+        <Ionicons name="notifications-outline" size={16} color="#0F172A" />
+        <Text style={styles.cardTitle}>Streak Reminder Time</Text>
+      </View>
+
+      {/* Mode toggle */}
+      <View style={styles.modeToggle}>
+        <TouchableOpacity
+          style={[styles.modeBtn, mode === "time" && styles.modeBtnActive]}
+          onPress={() => setMode("time")}
+          activeOpacity={0.8}
+        >
+          <Text style={[styles.modeBtnText, mode === "time" && styles.modeBtnTextActive]}>
+            Set a time
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.modeBtn, mode === "duration" && styles.modeBtnActive]}
+          onPress={() => setMode("duration")}
+          activeOpacity={0.8}
+        >
+          <Text style={[styles.modeBtnText, mode === "duration" && styles.modeBtnTextActive]}>
+            In X hours
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {mode === "time" ? (
+        <View style={styles.pickerRow}>
+          {/* Hour */}
+          <View style={styles.spinnerCol}>
+            <TouchableOpacity onPress={() => stepHour(1)} style={styles.spinnerBtn}>
+              <Ionicons name="chevron-up" size={20} color="#22C55E" />
+            </TouchableOpacity>
+            <Text style={styles.spinnerValue}>{hour12.toString().padStart(2, "0")}</Text>
+            <TouchableOpacity onPress={() => stepHour(-1)} style={styles.spinnerBtn}>
+              <Ionicons name="chevron-down" size={20} color="#22C55E" />
+            </TouchableOpacity>
+          </View>
+
+          <Text style={styles.timeSeparator}>:</Text>
+
+          {/* Minute */}
+          <View style={styles.spinnerCol}>
+            <TouchableOpacity onPress={() => stepMinute(1)} style={styles.spinnerBtn}>
+              <Ionicons name="chevron-up" size={20} color="#22C55E" />
+            </TouchableOpacity>
+            <Text style={styles.spinnerValue}>{minute.toString().padStart(2, "0")}</Text>
+            <TouchableOpacity onPress={() => stepMinute(-1)} style={styles.spinnerBtn}>
+              <Ionicons name="chevron-down" size={20} color="#22C55E" />
+            </TouchableOpacity>
+          </View>
+
+          {/* AM/PM */}
+          <TouchableOpacity
+            style={styles.ampmBtn}
+            onPress={() => setIsPM((p) => !p)}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.ampmText}>{isPM ? "PM" : "AM"}</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <View style={styles.durationRow}>
+          <Text style={styles.durationLabel}>Remind me in</Text>
+          <View style={styles.durationStepper}>
+            <TouchableOpacity onPress={() => stepDuration(-1)} style={styles.stepBtn}>
+              <Ionicons name="remove" size={20} color="#22C55E" />
+            </TouchableOpacity>
+            <Text style={styles.stepValue}>{durationHrs}h</Text>
+            <TouchableOpacity onPress={() => stepDuration(1)} style={styles.stepBtn}>
+              <Ionicons name="add" size={20} color="#22C55E" />
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.durationResult}>
+            → {fmt12(durationHour(), 0)}
+          </Text>
+        </View>
+      )}
+
+      <TouchableOpacity style={styles.saveReminderBtn} onPress={handleSave} activeOpacity={0.85}>
+        <Ionicons name="checkmark-circle" size={16} color="#FFFFFF" />
+        <Text style={styles.saveReminderText}>Save Reminder</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
 
@@ -716,5 +885,124 @@ const styles = StyleSheet.create({
 
   pressed: {
     opacity: 0.8,
+  },
+
+  modeToggle: {
+    flexDirection: "row",
+    backgroundColor: "#F1F5F9",
+    borderRadius: 10,
+    padding: 3,
+    marginBottom: 16,
+  },
+  modeBtn: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: "center",
+    borderRadius: 8,
+  },
+  modeBtnActive: {
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  modeBtnText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#94A3B8",
+  },
+  modeBtnTextActive: {
+    color: "#0F172A",
+  },
+  pickerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginBottom: 16,
+  },
+  spinnerCol: {
+    alignItems: "center",
+    gap: 4,
+  },
+  spinnerBtn: {
+    padding: 6,
+  },
+  spinnerValue: {
+    fontSize: 36,
+    fontWeight: "800",
+    color: "#0F172A",
+    minWidth: 54,
+    textAlign: "center",
+  },
+  timeSeparator: {
+    fontSize: 32,
+    fontWeight: "800",
+    color: "#0F172A",
+    marginBottom: 4,
+  },
+  ampmBtn: {
+    backgroundColor: "#F1F5F9",
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginLeft: 4,
+  },
+  ampmText: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#0F172A",
+  },
+  durationRow: {
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 16,
+  },
+  durationLabel: {
+    fontSize: 14,
+    color: "#64748B",
+    fontWeight: "600",
+  },
+  durationStepper: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+  },
+  stepBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#F0FDF4",
+    borderWidth: 1.5,
+    borderColor: "#22C55E",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  stepValue: {
+    fontSize: 28,
+    fontWeight: "800",
+    color: "#0F172A",
+    minWidth: 56,
+    textAlign: "center",
+  },
+  durationResult: {
+    fontSize: 13,
+    color: "#22C55E",
+    fontWeight: "700",
+  },
+  saveReminderBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    backgroundColor: "#22C55E",
+    borderRadius: 12,
+    paddingVertical: 12,
+  },
+  saveReminderText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#FFFFFF",
   },
 });

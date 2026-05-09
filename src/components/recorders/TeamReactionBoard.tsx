@@ -133,7 +133,7 @@ export function TeamReactionBoard({ onComplete }: TeamReactionBoardProps) {
             setCurrentMemberIndex(0);
           }}
         >
-          <Text style={styles.startButtonText}>🚀 Start Test</Text>
+          <Text style={styles.startButtonText}>Start Test</Text>
         </TouchableOpacity>
       </View>
     );
@@ -287,7 +287,7 @@ export function TeamReactionBoard({ onComplete }: TeamReactionBoardProps) {
           onComplete(final);
         }}
       >
-        <Text style={styles.completeButtonText}>✅ Save Results</Text>
+        <Text style={styles.completeButtonText}>Save Results</Text>
       </TouchableOpacity>
     </View>
   );

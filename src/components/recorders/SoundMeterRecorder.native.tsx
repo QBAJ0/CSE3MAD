@@ -1,6 +1,6 @@
 // components/recorders/SoundMeterRecorder.tsx
 import { Audio } from "expo-av";
-import { useEffect, useRef, useState } from "react";
+import { ComponentProps, useEffect, useRef, useState } from "react";
 import {
   Alert,
   Animated,
@@ -9,7 +9,10 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useHaptic } from "../../hooks/useHaptic";
+
+type IoniconName = ComponentProps<typeof Ionicons>["name"];
 
 interface SoundMeterRecorderProps {
   onCapture: (db: number) => void;
@@ -125,14 +128,17 @@ export function SoundMeterRecorder({
     }
   };
 
-  const getRiskLevel = (db: number) => {
-    if (db < 40) return { label: "Quiet", color: "#10B981", emoji: "😌" };
+  const getRiskLevel = (db: number): { label: string; color: string; icon: IoniconName } => {
+    if (db < 40)
+      return { label: "Quiet", color: "#10B981", icon: "volume-mute" };
     if (db < 60)
-      return { label: "Conversation", color: "#84CC16", emoji: "🗣️" };
-    if (db < 75) return { label: "Busy", color: "#EAB308", emoji: "📢" };
-    if (db < 90) return { label: "Loud", color: "#F97316", emoji: "⚠️" };
-    if (db < 110) return { label: "Very Loud", color: "#EF4444", emoji: "🔊" };
-    return { label: "Dangerous", color: "#DC2626", emoji: "🚨" };
+      return { label: "Conversation", color: "#84CC16", icon: "people" };
+    if (db < 75)
+      return { label: "Busy", color: "#EAB308", icon: "megaphone" };
+    if (db < 90) return { label: "Loud", color: "#F97316", icon: "warning" };
+    if (db < 110)
+      return { label: "Very Loud", color: "#EF4444", icon: "volume-high" };
+    return { label: "Dangerous", color: "#DC2626", icon: "alert-circle" };
   };
 
   const risk = getRiskLevel(currentDb);
@@ -141,7 +147,7 @@ export function SoundMeterRecorder({
   if (!permissionGranted) {
     return (
       <View style={styles.container}>
-        <Text style={styles.permissionText}>🎤 Microphone access required</Text>
+        <Text style={styles.permissionText}>Microphone access required</Text>
         <TouchableOpacity
           style={styles.permissionButton}
           onPress={requestPermissions}
@@ -156,22 +162,28 @@ export function SoundMeterRecorder({
     <View style={styles.container}>
       {!recording && existingValue ? (
         <View style={styles.savedContainer}>
-          <Text style={styles.savedText}>📊 Measured: {existingValue} dB</Text>
+          <Text style={styles.savedText}>Measured: {existingValue} dB</Text>
           <View
             style={[
               styles.savedBadge,
               { backgroundColor: getRiskLevel(existingValue).color + "20" },
             ]}
           >
-            <Text
-              style={[
-                styles.savedBadgeText,
-                { color: getRiskLevel(existingValue).color },
-              ]}
-            >
-              {getRiskLevel(existingValue).emoji}{" "}
-              {getRiskLevel(existingValue).label}
-            </Text>
+            <View style={styles.riskInfoRow}>
+              <Ionicons
+                name={getRiskLevel(existingValue).icon}
+                size={16}
+                color={getRiskLevel(existingValue).color}
+              />
+              <Text
+                style={[
+                  styles.savedBadgeText,
+                  { color: getRiskLevel(existingValue).color },
+                ]}
+              >
+                {getRiskLevel(existingValue).label}
+              </Text>
+            </View>
           </View>
           <TouchableOpacity
             style={styles.retakeButton}
@@ -216,21 +228,18 @@ export function SoundMeterRecorder({
               {currentDb.toFixed(0)}
             </Text>
             <Text style={styles.dbUnit}>dB</Text>
-            <Text style={[styles.riskLabel, { color: risk.color }]}>
-              {risk.emoji} {risk.label}
-            </Text>
-          </View>
+            <View style={styles.riskInfoRow}>
+              <Ionicons name={risk.icon} size={16} color={risk.color} />
+              <Text style={[styles.riskLabel, { color: risk.color }]}> {risk.label}</Text>
+            </View>
 
-          {/* Peak Reading */}
-          <View style={styles.peakContainer}>
             <Text style={styles.peakLabel}>Peak:</Text>
-            <Text style={[styles.peakValue, { color: peakRisk.color }]}>
+            <Text style={[styles.peakValue, { color: peakRisk.color }]}> 
               {peakDb.toFixed(0)} dB
             </Text>
-            <Text style={styles.peakEmoji}>{peakRisk.emoji}</Text>
+            <Ionicons name={peakRisk.icon} size={18} color={peakRisk.color} />
           </View>
 
-          {/* Control Button */}
           <TouchableOpacity
             style={[
               styles.recordButton,
@@ -239,7 +248,7 @@ export function SoundMeterRecorder({
             onPress={recording ? stopRecording : startRecording}
           >
             <Text style={styles.recordButtonText}>
-              {recording ? "⏹️ Stop & Save" : "🎤 Start Measuring"}
+              {recording ? "Stop & Save" : "Start Measuring"}
             </Text>
           </TouchableOpacity>
 
@@ -317,6 +326,11 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: "#94A3B8",
     fontWeight: "600",
+  },
+  riskInfoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
   },
   riskLabel: {
     fontSize: 16,

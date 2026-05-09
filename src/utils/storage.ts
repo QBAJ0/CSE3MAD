@@ -8,7 +8,12 @@ export const STORAGE_KEYS = {
   STREAK: "streak",
   LAST_ACTIVE: "last_active",
   EARNED_BADGES: "stemm_earned_badges",
+  REMINDER_HOUR: "reminder_hour",
+  REMINDER_MINUTE: "reminder_minute",
 } as const;
+
+export const DEFAULT_REMINDER_HOUR = 19;
+export const DEFAULT_REMINDER_MINUTE = 0;
 
 export const storage = {
   async saveTeam(team: TeamData): Promise<void> {
@@ -109,6 +114,42 @@ export const storage = {
       );
     } catch (e) {
       console.error("Failed to unlock badges:", e);
+    }
+  },
+
+  async getReminderHour(): Promise<number> {
+    try {
+      const val = await AsyncStorage.getItem(STORAGE_KEYS.REMINDER_HOUR);
+      return val ? parseInt(val) : DEFAULT_REMINDER_HOUR;
+    } catch (e) {
+      console.error("Failed to get reminder hour:", e);
+      return DEFAULT_REMINDER_HOUR;
+    }
+  },
+
+  async saveReminderHour(hour: number): Promise<void> {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEYS.REMINDER_HOUR, hour.toString());
+    } catch (e) {
+      console.error("Failed to save reminder hour:", e);
+    }
+  },
+
+  async getReminderMinute(): Promise<number> {
+    try {
+      const val = await AsyncStorage.getItem(STORAGE_KEYS.REMINDER_MINUTE);
+      return val ? parseInt(val) : DEFAULT_REMINDER_MINUTE;
+    } catch (e) {
+      console.error("Failed to get reminder minute:", e);
+      return DEFAULT_REMINDER_MINUTE;
+    }
+  },
+
+  async saveReminderMinute(minute: number): Promise<void> {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEYS.REMINDER_MINUTE, minute.toString());
+    } catch (e) {
+      console.error("Failed to save reminder minute:", e);
     }
   },
 
