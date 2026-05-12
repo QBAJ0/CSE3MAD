@@ -38,12 +38,12 @@
             "backgroundColor": "#000000"
           }
         }
-      ]
-      //  "expo-custom-assets"
+      ],
+      "expo-sqlite"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    } //
+    }
   }
 }

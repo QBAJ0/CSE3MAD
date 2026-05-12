@@ -105,6 +105,20 @@ export default function TabsLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="sqlite-test"
+        options={{
+          title: 'SQLite',
+          tabBarIcon: ({ focused, color }) => (
+            <TabIcon
+              name="hardware-chip-outline"
+              activeName="hardware-chip"
+              focused={focused}
+              color={color}
+            />
+          ),
+        }}
+      />
     </Tabs>
   );
 }
