@@ -5,8 +5,8 @@ import {
   getDocs,
   setDoc,
 } from "firebase/firestore";
+import { db } from "@/src/firebase";
 import { ActivityResult, LeaderboardEntry } from "../types";
-import { db } from "./firebase";
 
 export function buildLocalLeaderboard(
   activities: ActivityResult[],
