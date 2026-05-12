@@ -13,7 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import MapView, { Marker } from "react-native-maps";
+import { ResultLocationMap } from "@/src/components/ResultLocationMap";
 import { getChallengeById } from "../../../src/data/challenges";
 import { ActivityResult } from "../../../src/types";
 import { storage } from "../../../src/utils/storage";
@@ -349,23 +349,10 @@ export default function ActivityDetailsScreen() {
                 </Text>
               </View>
 
-              <MapView
-                style={styles.map}
-                initialRegion={{
-                  latitude: activity.location.lat,
-                  longitude: activity.location.lng,
-                  latitudeDelta: 0.01,
-                  longitudeDelta: 0.01,
-                }}
-              >
-                <Marker
-                  coordinate={{
-                    latitude: activity.location.lat,
-                    longitude: activity.location.lng,
-                  }}
-                  title="Experiment Location"
-                />
-              </MapView>
+              <ResultLocationMap
+                lat={activity.location.lat}
+                lng={activity.location.lng}
+              />
             </View>
           )}
         </View>
@@ -772,13 +759,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#166534",
     marginBottom: 8,
-  },
-
-  map: {
-    width: "100%",
-    height: 200,
-    borderRadius: 12,
-    overflow: "hidden",
   },
 
   reflectionText: {

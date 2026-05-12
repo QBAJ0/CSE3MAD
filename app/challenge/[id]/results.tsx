@@ -14,7 +14,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import MapView, { Marker } from "react-native-maps";
+import { ResultLocationMap } from "@/src/components/ResultLocationMap";
 import { ChallengeTabBar } from "../../../src/components/challenge/ChallengeTabBar";
 import { GAMIFICATION, SCORING } from "../../../src/config/constants";
 import { useActivity } from "../../../src/context/ActivityContext";
@@ -368,28 +368,14 @@ export default function ResultsScreen() {
             </View>
           </View>
 
-          <MapView
-            style={styles.map}
-            initialRegion={{
-              latitude: draft.location.lat,
-              longitude: draft.location.lng,
-              latitudeDelta: 0.005,
-              longitudeDelta: 0.005,
-            }}
-            scrollEnabled={false}
-            zoomEnabled={false}
-            pitchEnabled={false}
-            rotateEnabled={false}
-          >
-            <Marker
-              coordinate={{
-                latitude: draft.location.lat,
-                longitude: draft.location.lng,
-              }}
-              title="Experiment site"
-              description={challenge.title}
-            />
-          </MapView>
+          <ResultLocationMap
+            lat={draft.location.lat}
+            lng={draft.location.lng}
+            title="Experiment site"
+            description={challenge.title}
+            interactive={false}
+            regionDelta={0.005}
+          />
 
           <Text style={styles.mapCoords}>
             {draft.location.lat.toFixed(5)}, {draft.location.lng.toFixed(5)}
@@ -752,10 +738,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "800",
     color: "#FFFFFF",
-  },
-  map: {
-    width: "100%",
-    height: 180,
   },
   mapCoords: {
     fontSize: 11,
