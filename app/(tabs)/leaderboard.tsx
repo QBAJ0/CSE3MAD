@@ -3,7 +3,8 @@
 // The top 3 teams get a podium display, the rest appear in a ranked list.
 
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -14,7 +15,9 @@ import {
 } from "react-native";
 import { useTeam } from "../../src/context/TeamContext";
 import { LeaderboardTimeFrame, useLeaderboard } from "../../src/hooks/useLeaderboard";
-import { LeaderboardEntry } from "../../src/types";
+import { fetchLeaderboard } from "../../src/services/resultDb";
+import type { LeaderboardEntry } from "../../src/types";
+import type { LeaderboardRow } from "../../src/types/db";
 
 // Text labels for top 3 ranks
 const RANK_LABEL: Record<number, string> = { 1: "1st", 2: "2nd", 3: "3rd" };
@@ -38,6 +41,26 @@ export default function LeaderboardScreen() {
 
   // Which time filter is active: this week, this month, or all time
   const [timeFrame, setTimeFrame] = useState<LeaderboardTimeFrame>("all");
+
+  const [sqlRows, setSqlRows] = useState<LeaderboardRow[]>([]);
+  const [sqlLoading, setSqlLoading] = useState(false);
+
+  const loadSqlLeaderboard = useCallback(async () => {
+    try {
+      setSqlLoading(true);
+      setSqlRows(await fetchLeaderboard());
+    } catch {
+      setSqlRows([]);
+    } finally {
+      setSqlLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      void loadSqlLeaderboard();
+    }, [loadSqlLeaderboard]),
+  );
 
   // Load leaderboard data for the selected time frame
   const { entries: leaderboard, loading } = useLeaderboard(timeFrame);
@@ -234,6 +257,30 @@ export default function LeaderboardScreen() {
           </View>
         </View>
       )}
+
+      <View style={styles.sqlSection}>
+        <Text style={styles.sqlSectionTitle}>Lab scores (SQLite)</Text>
+        <Text style={styles.sqlSectionHint}>
+          Totals from saved activity results on this device.
+        </Text>
+        {sqlLoading ? (
+          <ActivityIndicator size="small" color="#22C55E" style={{ marginVertical: 12 }} />
+        ) : sqlRows.length === 0 ? (
+          <Text style={styles.sqlEmpty}>No SQLite activity results yet.</Text>
+        ) : (
+          sqlRows.map((r) => (
+            <View key={`sql-${r.teamId}`} style={styles.sqlRow}>
+              <Text style={styles.sqlRank}>#{r.rank}</Text>
+              <View style={styles.sqlRowBody}>
+                <Text style={styles.sqlTeam}>{r.teamName}</Text>
+                <Text style={styles.sqlMeta}>
+                  Score {r.totalScore} · {r.completedActivityCount} activities
+                </Text>
+              </View>
+            </View>
+          ))
+        )}
+      </View>
     </ScrollView>
   );
 }
@@ -484,5 +531,59 @@ const styles = StyleSheet.create({
     width: 1,
     height: 36,
     backgroundColor: "rgba(255,255,255,0.3)",
+  },
+
+  sqlSection: {
+    marginTop: 24,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: "#E2E8F0",
+    gap: 8,
+  },
+  sqlSectionTitle: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: "#64748B",
+    letterSpacing: 0.5,
+  },
+  sqlSectionHint: {
+    fontSize: 12,
+    color: "#94A3B8",
+    marginBottom: 4,
+  },
+  sqlEmpty: {
+    fontSize: 14,
+    color: "#94A3B8",
+    paddingVertical: 8,
+  },
+  sqlRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: "#F1F5F9",
+    gap: 10,
+  },
+  sqlRank: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: "#94A3B8",
+    minWidth: 36,
+  },
+  sqlRowBody: {
+    flex: 1,
+    gap: 2,
+  },
+  sqlTeam: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#0F172A",
+  },
+  sqlMeta: {
+    fontSize: 12,
+    color: "#64748B",
   },
 });

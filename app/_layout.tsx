@@ -14,6 +14,7 @@ export default function RootLayout() {
               <Stack.Screen name="index" />
               <Stack.Screen name="(onboarding)" />
               <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="activity" options={{ headerShown: false }} />
               <Stack.Screen
                 name="challenge/[id]/index"
                 options={{

@@ -78,6 +78,34 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="activities"
+        options={{
+          title: 'Lab',
+          tabBarIcon: ({ focused, color }) => (
+            <TabIcon
+              name="flask-outline"
+              activeName="flask"
+              focused={focused}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="results"
+        options={{
+          title: 'Results',
+          tabBarIcon: ({ focused, color }) => (
+            <TabIcon
+              name="document-text-outline"
+              activeName="document-text"
+              focused={focused}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="leaderboard"
         options={{
           title: 'Leaderboard',
