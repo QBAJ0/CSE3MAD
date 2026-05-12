@@ -119,6 +119,20 @@ export default function TabsLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="auth"
+        options={{
+          title: 'Auth',
+          tabBarIcon: ({ focused, color }) => (
+            <TabIcon
+              name="log-in-outline"
+              activeName="log-in"
+              focused={focused}
+              color={color}
+            />
+          ),
+        }}
+      />
     </Tabs>
   );
 }
