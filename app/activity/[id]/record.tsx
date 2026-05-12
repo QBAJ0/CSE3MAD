@@ -1,6 +1,8 @@
 import { getSqliteActivityById } from "@/src/data/sqliteActivities";
+import { useTeam } from "@/src/context/TeamContext";
 import { insertActivityResult } from "@/src/services/resultDb";
 import { saveResultToFirestore } from "@/src/services/resultCloud";
+import { ensureSqliteTeamIdForContextTeam } from "@/src/services/sqliteTeamBridge";
 import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import { useLayoutEffect, useMemo, useState } from "react";
 import {
@@ -20,12 +22,12 @@ function paramId(raw: string | string[] | undefined): string | undefined {
 }
 
 export default function RecordResultScreen() {
+  const { team, loading: teamLoading } = useTeam();
   const { id: idParam } = useLocalSearchParams<{ id?: string | string[] }>();
   const navigation = useNavigation();
   const id = paramId(idParam);
   const challenge = useMemo(() => (id ? getSqliteActivityById(id) : undefined), [id]);
 
-  const [teamIdText, setTeamIdText] = useState("");
   const [scoreText, setScoreText] = useState("");
   const [sensorText, setSensorText] = useState("");
   const [notes, setNotes] = useState("");
@@ -42,9 +44,11 @@ export default function RecordResultScreen() {
       Alert.alert("Cannot save", "Unknown activity.");
       return;
     }
-    const teamId = Number.parseInt(teamIdText.trim(), 10);
-    if (!Number.isFinite(teamId) || teamId <= 0) {
-      Alert.alert("Check team id", "Enter a positive whole number for team id.");
+    if (!team) {
+      Alert.alert(
+        "No team",
+        "Finish team setup from onboarding first, then try again.",
+      );
       return;
     }
     const score = Number.parseInt(scoreText.trim(), 10);
@@ -69,6 +73,7 @@ export default function RecordResultScreen() {
 
     setBusy(true);
     try {
+      const teamId = await ensureSqliteTeamIdForContextTeam(team);
       const newId = await insertActivityResult({
         teamId,
         activityId: challenge.id,
@@ -100,6 +105,15 @@ export default function RecordResultScreen() {
     }
   }
 
+  if (teamLoading) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color="#2563eb" />
+        <Text style={styles.muted}>Loading team…</Text>
+      </View>
+    );
+  }
+
   if (!id) {
     return (
       <View style={styles.centered}>
@@ -117,21 +131,27 @@ export default function RecordResultScreen() {
     );
   }
 
+  if (!team) {
+    return (
+      <View style={styles.centered}>
+        <Text style={styles.error}>No team saved yet</Text>
+        <Text style={styles.muted}>
+          Complete onboarding and create your team before recording lab results.
+        </Text>
+      </View>
+    );
+  }
+
   return (
     <ScrollView
       contentContainerStyle={styles.container}
       keyboardShouldPersistTaps="handled"
     >
       <Text style={styles.hint}>{challenge.measurementLabel}</Text>
-      <View style={styles.field}>
-        <Text style={styles.label}>Team id</Text>
-        <TextInput
-          style={styles.input}
-          keyboardType="number-pad"
-          placeholder="e.g. 1"
-          value={teamIdText}
-          onChangeText={setTeamIdText}
-        />
+      <View style={styles.teamCard}>
+        <Text style={styles.teamLabel}>Team</Text>
+        <Text style={styles.teamName}>{team.teamName}</Text>
+        <Text style={styles.teamMeta}>ID: {team.discriminator}</Text>
       </View>
       <View style={styles.field}>
         <Text style={styles.label}>Score</Text>
@@ -197,6 +217,29 @@ const styles = StyleSheet.create({
     color: "#475569",
     lineHeight: 21,
     marginBottom: 4,
+  },
+  teamCard: {
+    borderWidth: 1,
+    borderColor: "#bbf7d0",
+    borderRadius: 10,
+    padding: 12,
+    backgroundColor: "#f0fdf4",
+    gap: 4,
+  },
+  teamLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#166534",
+    textTransform: "uppercase",
+  },
+  teamName: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: "#0f172a",
+  },
+  teamMeta: {
+    fontSize: 13,
+    color: "#475569",
   },
   field: {
     gap: 6,
