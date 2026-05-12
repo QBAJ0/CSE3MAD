@@ -78,34 +78,6 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="activities"
-        options={{
-          title: 'Lab',
-          tabBarIcon: ({ focused, color }) => (
-            <TabIcon
-              name="flask-outline"
-              activeName="flask"
-              focused={focused}
-              color={color}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="results"
-        options={{
-          title: 'Results',
-          tabBarIcon: ({ focused, color }) => (
-            <TabIcon
-              name="document-text-outline"
-              activeName="document-text"
-              focused={focused}
-              color={color}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="leaderboard"
         options={{
           title: 'Leaderboard',
@@ -133,34 +105,10 @@ export default function TabsLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="sqlite-test"
-        options={{
-          title: 'SQLite',
-          tabBarIcon: ({ focused, color }) => (
-            <TabIcon
-              name="hardware-chip-outline"
-              activeName="hardware-chip"
-              focused={focused}
-              color={color}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="auth"
-        options={{
-          title: 'Auth',
-          tabBarIcon: ({ focused, color }) => (
-            <TabIcon
-              name="log-in-outline"
-              activeName="log-in"
-              focused={focused}
-              color={color}
-            />
-          ),
-        }}
-      />
+      <Tabs.Screen name="activities" options={{ href: null }} />
+      <Tabs.Screen name="results" options={{ href: null }} />
+      <Tabs.Screen name="sqlite-test" options={{ href: null }} />
+      <Tabs.Screen name="auth" options={{ href: null }} />
     </Tabs>
   );
 }

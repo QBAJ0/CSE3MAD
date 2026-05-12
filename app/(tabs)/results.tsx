@@ -92,7 +92,8 @@ export default function ResultsTabScreen() {
           <Text style={styles.error}>{error}</Text>
         ) : (
           <Text style={styles.empty}>
-            No saved activity results yet. Record a result from the Lab tab.
+            No saved activity results yet. Open Profile, then Data & tools → Lab
+            activities to record.
           </Text>
         )}
       </ScrollView>

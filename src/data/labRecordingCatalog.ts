@@ -1,4 +1,9 @@
-export type SqliteActivity = {
+/**
+ * Lab-only catalog for quick SQLite result capture (`/activity/[id]`).
+ * Main XP challenges, badges, and full metadata live in `challenges.ts`.
+ */
+
+export type LabRecordingActivity = {
   id: string;
   title: string;
   category: string;
@@ -7,7 +12,7 @@ export type SqliteActivity = {
   scoreHint: string;
 };
 
-export const STEMM_SQLITE_ACTIVITIES: SqliteActivity[] = [
+export const LAB_RECORDING_ACTIVITIES: LabRecordingActivity[] = [
   {
     id: "parachute-drop",
     title: "Parachute Drop Challenge",
@@ -38,6 +43,8 @@ export const STEMM_SQLITE_ACTIVITIES: SqliteActivity[] = [
   },
 ];
 
-export function getSqliteActivityById(id: string): SqliteActivity | undefined {
-  return STEMM_SQLITE_ACTIVITIES.find((c) => c.id === id);
+export function getLabRecordingActivityById(
+  id: string,
+): LabRecordingActivity | undefined {
+  return LAB_RECORDING_ACTIVITIES.find((c) => c.id === id);
 }

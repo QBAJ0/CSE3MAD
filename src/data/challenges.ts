@@ -1,4 +1,5 @@
-// data/challenges.ts
+// data/challenges.ts — canonical XP challenge catalog (Challenges tab, `/challenge/...`).
+// Lab-only simplified recording list: `labRecordingCatalog.ts`.
 import { Challenge } from "../types";
 
 export const CHALLENGES: Challenge[] = [

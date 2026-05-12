@@ -1,15 +1,16 @@
-import { STEMM_SQLITE_ACTIVITIES } from "@/src/data/sqliteActivities";
+import { LAB_RECORDING_ACTIVITIES } from "@/src/data/labRecordingCatalog";
 import { router } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text } from "react-native";
 
 export default function ActivitiesScreen() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>STEMM activities</Text>
+      <Text style={styles.title}>Lab recording activities</Text>
       <Text style={styles.subtitle}>
-        Choose a challenge, open its details, then record your team result.
+        Short list for SQLite + optional cloud saves. Main XP challenges are
+        under the Challenges tab.
       </Text>
-      {STEMM_SQLITE_ACTIVITIES.map((item) => (
+      {LAB_RECORDING_ACTIVITIES.map((item) => (
         <Pressable
           key={item.id}
           style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}

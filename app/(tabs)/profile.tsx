@@ -135,6 +135,52 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.card}>
+        <View style={styles.cardTitleRow}>
+          <Ionicons name="construct-outline" size={16} color="#0F172A" />
+          <Text style={styles.cardTitle}>Data & tools</Text>
+        </View>
+        <Text style={styles.toolsHint}>
+          Local lab saves, SQLite checks, and account sign-in (optional).
+        </Text>
+
+        <Pressable
+          style={({ pressed }) => [styles.toolRow, pressed && styles.pressed]}
+          onPress={() => router.push("/(tabs)/activities")}
+        >
+          <Ionicons name="flask-outline" size={20} color="#0F172A" />
+          <Text style={styles.toolLabel}>Lab activities</Text>
+          <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
+        </Pressable>
+
+        <Pressable
+          style={({ pressed }) => [styles.toolRow, pressed && styles.pressed]}
+          onPress={() => router.push("/(tabs)/results")}
+        >
+          <Ionicons name="document-text-outline" size={20} color="#0F172A" />
+          <Text style={styles.toolLabel}>Lab results (SQLite)</Text>
+          <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
+        </Pressable>
+
+        <Pressable
+          style={({ pressed }) => [styles.toolRow, pressed && styles.pressed]}
+          onPress={() => router.push("/(tabs)/sqlite-test")}
+        >
+          <Ionicons name="hardware-chip-outline" size={20} color="#0F172A" />
+          <Text style={styles.toolLabel}>SQLite check</Text>
+          <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
+        </Pressable>
+
+        <Pressable
+          style={({ pressed }) => [styles.toolRow, pressed && styles.pressed]}
+          onPress={() => router.push("/(tabs)/auth")}
+        >
+          <Ionicons name="log-in-outline" size={20} color="#0F172A" />
+          <Text style={styles.toolLabel}>Email sign-in</Text>
+          <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
+        </Pressable>
+      </View>
+
+      <View style={styles.card}>
         <View style={styles.cardHeader}>
           <View style={styles.cardTitleRow}>
             <Ionicons name="ribbon-outline" size={16} color="#0F172A" />
@@ -477,6 +523,29 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#94A3B8",
     fontWeight: "600",
+  },
+
+  toolsHint: {
+    fontSize: 13,
+    color: "#64748B",
+    lineHeight: 18,
+    marginBottom: 12,
+  },
+
+  toolRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1F5F9",
+  },
+
+  toolLabel: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#0F172A",
   },
 
   badgeGrid: {

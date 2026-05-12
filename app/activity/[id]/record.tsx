@@ -1,4 +1,4 @@
-import { getSqliteActivityById } from "@/src/data/sqliteActivities";
+import { getLabRecordingActivityById } from "@/src/data/labRecordingCatalog";
 import { useTeam } from "@/src/context/TeamContext";
 import { insertActivityResult } from "@/src/services/resultDb";
 import { saveResultToFirestore } from "@/src/services/resultCloud";
@@ -26,7 +26,10 @@ export default function RecordResultScreen() {
   const { id: idParam } = useLocalSearchParams<{ id?: string | string[] }>();
   const navigation = useNavigation();
   const id = paramId(idParam);
-  const challenge = useMemo(() => (id ? getSqliteActivityById(id) : undefined), [id]);
+  const challenge = useMemo(
+    () => (id ? getLabRecordingActivityById(id) : undefined),
+    [id],
+  );
 
   const [scoreText, setScoreText] = useState("");
   const [sensorText, setSensorText] = useState("");

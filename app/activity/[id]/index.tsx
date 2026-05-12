@@ -1,4 +1,4 @@
-import { getSqliteActivityById } from "@/src/data/sqliteActivities";
+import { getLabRecordingActivityById } from "@/src/data/labRecordingCatalog";
 import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import { useLayoutEffect, useMemo } from "react";
 import {
@@ -18,7 +18,10 @@ export default function ActivityDetailScreen() {
   const { id: idParam } = useLocalSearchParams<{ id?: string | string[] }>();
   const navigation = useNavigation();
   const id = paramId(idParam);
-  const challenge = useMemo(() => (id ? getSqliteActivityById(id) : undefined), [id]);
+  const challenge = useMemo(
+    () => (id ? getLabRecordingActivityById(id) : undefined),
+    [id],
+  );
 
   useLayoutEffect(() => {
     navigation.setOptions({
