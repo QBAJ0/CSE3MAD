@@ -38,6 +38,20 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="results"
+        options={{
+          title: 'Results',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="doc.text.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="leaderboard"
+        options={{
+          title: 'Leaderboard',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="trophy.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="sqlite-test"
         options={{
           title: 'SQLite',
