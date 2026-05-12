@@ -90,7 +90,10 @@ export default function LeaderboardScreen() {
       {/* ── Title ── */}
       <View style={styles.titleRow}>
         <Ionicons name="trophy" size={26} color="#0F172A" />
-        <Text style={styles.title}>Leaderboard</Text>
+        <View style={styles.titleBlock}>
+          <Text style={styles.title}>Leaderboard</Text>
+          <Text style={styles.subtitle}>Experience points</Text>
+        </View>
       </View>
 
       {/* ── Time frame filter ── */}
@@ -258,27 +261,42 @@ export default function LeaderboardScreen() {
         </View>
       )}
 
-      <View style={styles.sqlSection}>
-        <Text style={styles.sqlSectionTitle}>Lab scores (SQLite)</Text>
-        <Text style={styles.sqlSectionHint}>
-          Totals from saved activity results on this device.
+      <View style={styles.labSectionWrap}>
+        <Text style={styles.sectionLabel}>LOCAL LAB SCORES</Text>
+        <Text style={styles.labSectionHint}>
+          Saved lab activity totals on this device (SQLite). Separate from XP
+          above.
         </Text>
         {sqlLoading ? (
-          <ActivityIndicator size="small" color="#22C55E" style={{ marginVertical: 12 }} />
+          <View style={[styles.row, { justifyContent: "center" }]}>
+            <ActivityIndicator size="small" color="#22C55E" />
+          </View>
         ) : sqlRows.length === 0 ? (
-          <Text style={styles.sqlEmpty}>No SQLite activity results yet.</Text>
+          <Text style={styles.labEmpty}>No lab results saved yet.</Text>
         ) : (
-          sqlRows.map((r) => (
-            <View key={`sql-${r.teamId}`} style={styles.sqlRow}>
-              <Text style={styles.sqlRank}>#{r.rank}</Text>
-              <View style={styles.sqlRowBody}>
-                <Text style={styles.sqlTeam}>{r.teamName}</Text>
-                <Text style={styles.sqlMeta}>
-                  Score {r.totalScore} · {r.completedActivityCount} activities
-                </Text>
+          sqlRows.map((r) => {
+            const isYou = team?.teamName === r.teamName;
+            return (
+              <View
+                key={`sql-${r.teamId}`}
+                style={[styles.row, isYou && styles.rowYou]}
+              >
+                <View style={styles.rowRank}>
+                  <Text style={styles.rowRankText}>#{r.rank}</Text>
+                </View>
+                <View style={styles.rowInfo}>
+                  <Text style={styles.rowName}>{r.teamName}</Text>
+                  <Text style={styles.rowId}>
+                    {r.completedActivityCount} activities recorded
+                  </Text>
+                </View>
+                <View style={styles.rowRight}>
+                  <Text style={styles.rowXP}>{r.totalScore}</Text>
+                  <Text style={styles.rowXPLabel}>LAB</Text>
+                </View>
               </View>
-            </View>
-          ))
+            );
+          })
         )}
       </View>
     </ScrollView>
@@ -307,10 +325,19 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 16,
   },
+  titleBlock: {
+    flex: 1,
+    gap: 2,
+  },
   title: {
     fontSize: 30,
     fontWeight: "800",
     color: "#0F172A",
+  },
+  subtitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#64748B",
   },
 
   // Time frame filter
@@ -533,57 +560,22 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.3)",
   },
 
-  sqlSection: {
-    marginTop: 24,
+  labSectionWrap: {
+    marginTop: 28,
     paddingTop: 20,
     borderTopWidth: 1,
     borderTopColor: "#E2E8F0",
-    gap: 8,
+    gap: 10,
   },
-  sqlSectionTitle: {
+  labSectionHint: {
     fontSize: 13,
-    fontWeight: "800",
     color: "#64748B",
-    letterSpacing: 0.5,
-  },
-  sqlSectionHint: {
-    fontSize: 12,
-    color: "#94A3B8",
+    lineHeight: 18,
     marginBottom: 4,
   },
-  sqlEmpty: {
+  labEmpty: {
     fontSize: 14,
     color: "#94A3B8",
     paddingVertical: 8,
-  },
-  sqlRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: "#F1F5F9",
-    gap: 10,
-  },
-  sqlRank: {
-    fontSize: 15,
-    fontWeight: "800",
-    color: "#94A3B8",
-    minWidth: 36,
-  },
-  sqlRowBody: {
-    flex: 1,
-    gap: 2,
-  },
-  sqlTeam: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#0F172A",
-  },
-  sqlMeta: {
-    fontSize: 12,
-    color: "#64748B",
   },
 });
