@@ -134,12 +134,12 @@ export function AccelerometerRecorder({
 
   const getStabilityLevel = (peak: number) => {
     if (peak < 0.05)
-      return { label: "Rock Solid", color: "#10B981", emoji: "🪨" };
-    if (peak < 0.1) return { label: "Stable", color: "#84CC16", emoji: "✅" };
-    if (peak < 0.2) return { label: "Wobbly", color: "#EAB308", emoji: "🌀" };
+      return { label: "Rock Solid", color: "#2F80ED" };
+    if (peak < 0.1) return { label: "Stable", color: "#F28C28" };
+    if (peak < 0.2) return { label: "Wobbly", color: "#F6B84A" };
     if (peak < 0.35)
-      return { label: "Unstable", color: "#F97316", emoji: "⚠️" };
-    return { label: "Collapse Risk", color: "#EF4444", emoji: "💀" };
+      return { label: "Unstable", color: "#F97316" };
+    return { label: "Collapse Risk", color: "#EF4444" };
   };
 
   const stability = getStabilityLevel(peakMagnitude);
@@ -201,7 +201,7 @@ export function AccelerometerRecorder({
             ]}
           >
             <Text style={[styles.savedBadgeText, { color: stability.color }]}>
-              {stability.emoji} {stability.label}
+              {stability.label}
             </Text>
           </View>
           <TouchableOpacity
@@ -222,7 +222,7 @@ export function AccelerometerRecorder({
         <Svg width={CHART_WIDTH} height={CHART_HEIGHT}>
           <Path
             d={getChartPath()}
-            stroke="#22C55E"
+            stroke="#2F80ED"
             strokeWidth={2}
             fill="none"
           />
@@ -232,7 +232,7 @@ export function AccelerometerRecorder({
             x2={CHART_WIDTH}
             y1={CHART_HEIGHT * 0.2}
             y2={CHART_HEIGHT * 0.2}
-            stroke="#EAB308"
+            stroke="#F6B84A"
             strokeWidth={1}
             strokeDasharray="4,4"
             opacity={0.5}
@@ -294,7 +294,7 @@ export function AccelerometerRecorder({
           ]}
         >
           <Text style={[styles.statusText, { color: stability.color }]}>
-            {stability.emoji} {stability.label}
+              {stability.label}
           </Text>
         </View>
       </View>
@@ -326,31 +326,31 @@ export function AccelerometerRecorder({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#1E293B",
+    backgroundColor: "#FFFFFF",
     borderRadius: 16,
-    padding: 16,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#E2E8F0",
+    padding: 16,
   },
   permissionText: {
-    color: "#F8FAFC",
+    color: "#12343B",
     textAlign: "center",
     marginBottom: 12,
   },
   permissionButton: {
-    backgroundColor: "#22C55E",
+    backgroundColor: "#2F80ED",
     padding: 12,
     borderRadius: 10,
     alignItems: "center",
   },
   permissionButtonText: {
-    color: "#0F172A",
+    color: "#F0F6FF",
     fontWeight: "700",
   },
   chartContainer: {
     alignItems: "center",
     marginBottom: 16,
-    backgroundColor: "#0F172A",
+    backgroundColor: "#F0F6FF",
     borderRadius: 12,
     padding: 8,
   },
@@ -368,10 +368,10 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   magnitudeLabel: {
-    color: "#22C55E",
+    color: "#2F80ED",
   },
   valueText: {
-    color: "#F8FAFC",
+    color: "#12343B",
     fontSize: 16,
     fontWeight: "700",
     fontVariant: ["tabular-nums"],
@@ -382,11 +382,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 16,
     padding: 12,
-    backgroundColor: "#0F172A",
+    backgroundColor: "#F0F6FF",
     borderRadius: 12,
   },
   peakLabel: {
-    color: "#F8FAFC",
+    color: "#12343B",
     fontSize: 14,
     fontWeight: "600",
   },
@@ -400,7 +400,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   recordButton: {
-    backgroundColor: "#22C55E",
+    backgroundColor: "#2F80ED",
     padding: 16,
     borderRadius: 12,
     alignItems: "center",
@@ -424,7 +424,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   savedTitle: {
-    color: "#22C55E",
+    color: "#2F80ED",
     fontSize: 16,
     fontWeight: "700",
   },
@@ -436,7 +436,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   savedStatValue: {
-    color: "#F8FAFC",
+    color: "#12343B",
     fontSize: 24,
     fontWeight: "800",
     fontVariant: ["tabular-nums"],

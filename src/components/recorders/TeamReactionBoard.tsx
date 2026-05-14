@@ -1,11 +1,11 @@
-// components/recorders/TeamReactionBoard.tsx
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useState } from "react";
 import {
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { useTeam } from "../../context/TeamContext";
 import { useHaptic } from "../../hooks/useHaptic";
@@ -30,9 +30,6 @@ export function TeamReactionBoard({ onComplete }: TeamReactionBoardProps) {
   const { haptic } = useHaptic();
   const [phase, setPhase] = useState<Phase>("setup");
   const [currentMemberIndex, setCurrentMemberIndex] = useState(0);
-  const [results, setResults] = useState<MemberResult[]>(
-    team?.members.map((m) => ({ name: m.name })) || [],
-  );
   const [dominantTimes, setDominantTimes] = useState<Record<string, number>>(
     {},
   );
@@ -109,14 +106,20 @@ export function TeamReactionBoard({ onComplete }: TeamReactionBoardProps) {
   if (phase === "setup") {
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>🎮 Reaction Board</Text>
-        <Text style={styles.subtitle}>Test your team's reaction time!</Text>
+        <View style={styles.titleRow}>
+          <Ionicons name="pulse-outline" size={22} color="#2F80ED" />
+          <Text style={styles.title}>Reaction Board</Text>
+        </View>
+        <Text style={styles.subtitle}>{"Test your team's reaction time!"}</Text>
 
         <View style={styles.memberList}>
           {team?.members.map((member, idx) => (
             <View key={idx} style={styles.memberItem}>
               <Text style={styles.memberName}>{member.name}</Text>
-              <Text style={styles.memberStatus}>⏳ Ready</Text>
+              <View style={styles.statusRow}>
+                <Ionicons name="ellipse-outline" size={12} color="#64748B" />
+                <Text style={styles.memberStatus}>Ready</Text>
+              </View>
             </View>
           ))}
         </View>
@@ -143,7 +146,10 @@ export function TeamReactionBoard({ onComplete }: TeamReactionBoardProps) {
     return (
       <View style={styles.container}>
         <View style={styles.phaseHeader}>
-          <Text style={styles.phaseTitle}>👆 Phase 1: Dominant Hand</Text>
+          <View style={styles.phaseTitleRow}>
+            <Ionicons name="hand-left-outline" size={18} color="#12343B" />
+            <Text style={styles.phaseTitle}>Phase 1: Dominant Hand</Text>
+          </View>
           <Text style={styles.phaseProgress}>
             {currentMemberIndex + 1} of {totalMembers}
           </Text>
@@ -154,6 +160,7 @@ export function TeamReactionBoard({ onComplete }: TeamReactionBoardProps) {
         <TapReactionGame
           key={`dominant-${currentMemberIndex}`}
           memberName={currentMember?.name || ""}
+          handLabel="Dominant Hand"
           onComplete={handleDominantComplete}
           existingTimes={[]}
         />
@@ -165,7 +172,10 @@ export function TeamReactionBoard({ onComplete }: TeamReactionBoardProps) {
     return (
       <View style={styles.container}>
         <View style={styles.phaseHeader}>
-          <Text style={styles.phaseTitle}>🖐️ Phase 2: Non-Dominant Hand</Text>
+          <View style={styles.phaseTitleRow}>
+            <Ionicons name="hand-right-outline" size={18} color="#12343B" />
+            <Text style={styles.phaseTitle}>Phase 2: Non-Dominant Hand</Text>
+          </View>
           <Text style={styles.phaseProgress}>
             {currentMemberIndex + 1} of {totalMembers}
           </Text>
@@ -176,6 +186,7 @@ export function TeamReactionBoard({ onComplete }: TeamReactionBoardProps) {
         <TapReactionGame
           key={`nonDominant-${currentMemberIndex}`}
           memberName={currentMember?.name || ""}
+          handLabel="Non-Dominant Hand"
           onComplete={handleNonDominantComplete}
           existingTimes={[]}
         />
@@ -187,7 +198,10 @@ export function TeamReactionBoard({ onComplete }: TeamReactionBoardProps) {
     return (
       <View style={styles.container}>
         <View style={styles.phaseHeader}>
-          <Text style={styles.phaseTitle}>✏️ Phase 3: Tracing Challenge</Text>
+          <View style={styles.phaseTitleRow}>
+            <Ionicons name="pencil-outline" size={18} color="#12343B" />
+            <Text style={styles.phaseTitle}>Phase 3: Tracing Challenge</Text>
+          </View>
           <Text style={styles.phaseProgress}>
             {currentMemberIndex + 1} of {totalMembers}
           </Text>
@@ -203,7 +217,6 @@ export function TeamReactionBoard({ onComplete }: TeamReactionBoardProps) {
     );
   }
 
-  // Phase: complete - show results
   const finalResults =
     team?.members.map((m) => ({
       name: m.name,
@@ -227,7 +240,10 @@ export function TeamReactionBoard({ onComplete }: TeamReactionBoardProps) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>🏆 Team Results</Text>
+      <View style={styles.titleRow}>
+        <Ionicons name="trophy-outline" size={22} color="#2F80ED" />
+        <Text style={styles.title}>Team Results</Text>
+      </View>
 
       <View style={styles.fastestCard}>
         <Text style={styles.fastestLabel}>Fastest Reaction</Text>
@@ -242,13 +258,13 @@ export function TeamReactionBoard({ onComplete }: TeamReactionBoardProps) {
             <View style={styles.resultRow}>
               <Text style={styles.resultLabel}>Dominant Hand:</Text>
               <Text style={styles.resultValue}>
-                {result.dominantMs || "—"} ms
+                {result.dominantMs || "-"} ms
               </Text>
             </View>
             <View style={styles.resultRow}>
               <Text style={styles.resultLabel}>Non-Dominant:</Text>
               <Text style={styles.resultValue}>
-                {result.nonDominantMs || "—"} ms
+                {result.nonDominantMs || "-"} ms
               </Text>
             </View>
             {result.difference !== 0 && (
@@ -295,21 +311,29 @@ export function TeamReactionBoard({ onComplete }: TeamReactionBoardProps) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#1E293B",
+    backgroundColor: "#FFFFFF",
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
     padding: 20,
     marginBottom: 16,
+  },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginBottom: 8,
   },
   title: {
     fontSize: 22,
     fontWeight: "800",
-    color: "#F8FAFC",
+    color: "#12343B",
     textAlign: "center",
-    marginBottom: 8,
   },
   subtitle: {
     fontSize: 14,
-    color: "#94A3B8",
+    color: "#64748B",
     textAlign: "center",
     marginBottom: 20,
   },
@@ -318,20 +342,21 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     padding: 12,
-    backgroundColor: "#0F172A",
+    backgroundColor: "#F0F6FF",
     borderRadius: 10,
     marginBottom: 8,
   },
-  memberName: { color: "#F8FAFC", fontWeight: "600" },
+  memberName: { color: "#12343B", fontWeight: "600" },
+  statusRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   memberStatus: { color: "#64748B" },
   phaseInfo: {
-    color: "#22C55E",
+    color: "#2F80ED",
     textAlign: "center",
     marginBottom: 16,
     fontWeight: "600",
   },
   startButton: {
-    backgroundColor: "#22C55E",
+    backgroundColor: "#2F80ED",
     padding: 16,
     borderRadius: 12,
     alignItems: "center",
@@ -342,34 +367,35 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 16,
   },
-  phaseTitle: { color: "#F8FAFC", fontSize: 16, fontWeight: "700" },
-  phaseProgress: { color: "#94A3B8" },
+  phaseTitleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  phaseTitle: { color: "#12343B", fontSize: 16, fontWeight: "700" },
+  phaseProgress: { color: "#64748B" },
   memberPrompt: {
-    color: "#22C55E",
+    color: "#2F80ED",
     fontWeight: "700",
     fontSize: 14,
     textAlign: "center",
     marginBottom: 12,
   },
   fastestCard: {
-    backgroundColor: "#22C55E",
+    backgroundColor: "#2F80ED",
     borderRadius: 16,
     padding: 20,
     alignItems: "center",
     marginBottom: 20,
   },
-  fastestLabel: { color: "#0F172A", fontSize: 12, fontWeight: "600" },
-  fastestName: { color: "#0F172A", fontSize: 24, fontWeight: "800" },
-  fastestTime: { color: "#0F172A", fontSize: 18, fontWeight: "700" },
+  fastestLabel: { color: "#F0F6FF", fontSize: 12, fontWeight: "600" },
+  fastestName: { color: "#F0F6FF", fontSize: 24, fontWeight: "800" },
+  fastestTime: { color: "#F0F6FF", fontSize: 18, fontWeight: "700" },
   resultsList: { maxHeight: 300, marginBottom: 16 },
   resultCard: {
-    backgroundColor: "#0F172A",
+    backgroundColor: "#F0F6FF",
     borderRadius: 12,
     padding: 14,
     marginBottom: 10,
   },
   resultName: {
-    color: "#F8FAFC",
+    color: "#12343B",
     fontSize: 16,
     fontWeight: "700",
     marginBottom: 8,
@@ -379,8 +405,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 4,
   },
-  resultLabel: { color: "#94A3B8", fontSize: 13 },
-  resultValue: { color: "#22C55E", fontWeight: "700", fontSize: 13 },
+  resultLabel: { color: "#64748B", fontSize: 13 },
+  resultValue: { color: "#2F80ED", fontWeight: "700", fontSize: 13 },
   resultDiff: {
     textAlign: "center",
     fontSize: 12,
@@ -389,9 +415,9 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   slower: { backgroundColor: "#FEE2E2", color: "#DC2626" },
-  faster: { backgroundColor: "#DCFCE7", color: "#16A34A" },
+  faster: { backgroundColor: "#EEF5FF", color: "#2F80ED" },
   completeButton: {
-    backgroundColor: "#10B981",
+    backgroundColor: "#2F80ED",
     padding: 16,
     borderRadius: 12,
     alignItems: "center",

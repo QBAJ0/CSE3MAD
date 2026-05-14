@@ -69,17 +69,17 @@ export function GPSTagger({ onLocationCapture, initialLocation }: Props) {
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: "#1E293B",
+    backgroundColor: "#FFFFFF",
     padding: 14,
     borderRadius: 12,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#E2E8F0",
   },
   buttonCaptured: {
-    backgroundColor: "#F0FDF4",
-    borderColor: "#22C55E",
+    backgroundColor: "#EEF5FF",
+    borderColor: "#2F80ED",
   },
-  buttonText: { color: "#F8FAFC", fontSize: 15, fontWeight: "600" },
-  buttonTextCaptured: { color: "#166534" },
+  buttonText: { color: "#12343B", fontSize: 15, fontWeight: "600" },
+  buttonTextCaptured: { color: "#007C7A" },
 });

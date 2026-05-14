@@ -125,9 +125,9 @@ export function GyroscopeRecorder({
                   width: `${smoothness}%`,
                   backgroundColor:
                     smoothness > 70
-                      ? "#10B981"
+                      ? "#2F80ED"
                       : smoothness > 40
-                        ? "#EAB308"
+                        ? "#F6B84A"
                         : "#EF4444",
                 },
               ]}
@@ -153,20 +153,20 @@ export function GyroscopeRecorder({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#1E293B",
+    backgroundColor: "#FFFFFF",
     borderRadius: 16,
-    padding: 16,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#E2E8F0",
+    padding: 16,
   },
-  permissionText: { color: "#F8FAFC", textAlign: "center", marginBottom: 12 },
+  permissionText: { color: "#12343B", textAlign: "center", marginBottom: 12 },
   permissionButton: {
-    backgroundColor: "#22C55E",
+    backgroundColor: "#2F80ED",
     padding: 12,
     borderRadius: 10,
     alignItems: "center",
   },
-  permissionButtonText: { color: "#0F172A", fontWeight: "700" },
+  permissionButtonText: { color: "#F0F6FF", fontWeight: "700" },
   valuesContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
@@ -174,25 +174,25 @@ const styles = StyleSheet.create({
   },
   valueItem: { alignItems: "center" },
   valueLabel: { color: "#64748B", fontSize: 12, fontWeight: "600" },
-  valueText: { color: "#F8FAFC", fontSize: 16, fontWeight: "700" },
+  valueText: { color: "#12343B", fontSize: 16, fontWeight: "700" },
   smoothnessContainer: { marginBottom: 20, alignItems: "center" },
-  smoothnessLabel: { color: "#94A3B8", fontSize: 12, marginBottom: 8 },
+  smoothnessLabel: { color: "#64748B", fontSize: 12, marginBottom: 8 },
   smoothnessBar: {
     width: "100%",
     height: 20,
-    backgroundColor: "#334155",
+    backgroundColor: "#E2E8F0",
     borderRadius: 10,
     overflow: "hidden",
   },
   smoothnessFill: { height: "100%", borderRadius: 10 },
   smoothnessValue: {
-    color: "#F8FAFC",
+    color: "#12343B",
     fontSize: 18,
     fontWeight: "700",
     marginTop: 8,
   },
   recordButton: {
-    backgroundColor: "#22C55E",
+    backgroundColor: "#2F80ED",
     padding: 16,
     borderRadius: 12,
     alignItems: "center",

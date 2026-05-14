@@ -42,7 +42,7 @@ export function PhotoRecorder({
         haptic("success");
         setCameraOpen(false);
       }
-    } catch (error) {
+    } catch {
       Alert.alert("Error", "Failed to take photo");
     }
   };
@@ -157,24 +157,24 @@ export function PhotoRecorder({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#1E293B",
+    backgroundColor: "#FFFFFF",
     borderRadius: 16,
-    padding: 12,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#E2E8F0",
+    padding: 12,
   },
-  permissionText: { color: "#F8FAFC", textAlign: "center", marginBottom: 12 },
+  permissionText: { color: "#12343B", textAlign: "center", marginBottom: 12 },
   permissionButton: {
-    backgroundColor: "#22C55E",
+    backgroundColor: "#2F80ED",
     padding: 12,
     borderRadius: 10,
     alignItems: "center",
   },
-  permissionButtonText: { color: "#0F172A", fontWeight: "700" },
+  permissionButtonText: { color: "#F0F6FF", fontWeight: "700" },
   buttonRow: { flexDirection: "row", gap: 12 },
   cameraButton: {
     flex: 1,
-    backgroundColor: "#22C55E",
+    backgroundColor: "#2F80ED",
     padding: 14,
     borderRadius: 12,
     alignItems: "center",

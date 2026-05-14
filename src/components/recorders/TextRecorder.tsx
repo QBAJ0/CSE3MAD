@@ -12,7 +12,7 @@ export function TextRecorder({ measurement, value, onChange }: Props) {
     <TextInput
       style={styles.input}
       placeholder={measurement.placeholder || `Enter ${measurement.label}`}
-      placeholderTextColor="#94A3B8"
+      placeholderTextColor="#64748B"
       value={value}
       onChangeText={onChange}
     />
@@ -22,11 +22,11 @@ export function TextRecorder({ measurement, value, onChange }: Props) {
 const styles = StyleSheet.create({
   input: {
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#E2E8F0",
     borderRadius: 12,
     padding: 14,
     fontSize: 16,
-    backgroundColor: "#1E293B",
-    color: "#F8FAFC",
+    backgroundColor: "#FFFFFF",
+    color: "#12343B",
   },
 });

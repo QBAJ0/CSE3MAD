@@ -285,7 +285,7 @@ export function VideoRecorder({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#12343B",
     borderRadius: 12,
     padding: 12,
     borderWidth: 1,
@@ -294,20 +294,20 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#334155",
+    color: "#E2E8F0",
     marginBottom: 8,
   },
   captureButton: {
-    backgroundColor: "#1E293B",
+    backgroundColor: "#FFFFFF",
     padding: 16,
     borderRadius: 12,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#22C55E",
+    borderColor: "#2F80ED",
     borderStyle: "dashed",
   },
   captureButtonText: {
-    color: "#22C55E",
+    color: "#2F80ED",
     fontSize: 16,
     fontWeight: "700",
   },
@@ -382,7 +382,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   permissionButton: {
-    backgroundColor: "#22C55E",
+    backgroundColor: "#2F80ED",
     padding: 12,
     borderRadius: 10,
     alignItems: "center",

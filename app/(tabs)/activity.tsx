@@ -1,6 +1,5 @@
 // app/(tabs)/activity.tsx
 // The challenges list screen.
-// Students can filter by category and tap a challenge to open it.
 
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
@@ -54,7 +53,7 @@ export default function ActivityScreen() {
       {/* ── Header ── */}
       <View style={styles.header}>
         <View style={styles.titleRow}>
-          <Ionicons name="flash" size={26} color="#0F172A" />
+          <Ionicons name="flash" size={26} color="#007C7A" />
           <Text style={styles.title}>Challenges</Text>
         </View>
         <View style={styles.progressPill}>
@@ -66,7 +65,7 @@ export default function ActivityScreen() {
 
       {/* ── Overall progress bar ── */}
       {loading ? (
-        <ActivityIndicator size="small" color="#22C55E" style={styles.progressLoading} />
+        <ActivityIndicator size="small" color="#2F80ED" style={styles.progressLoading} />
       ) : (
         <>
           <View style={styles.progressTrack}>
@@ -145,7 +144,14 @@ export default function ActivityScreen() {
             {/* Card body */}
             <View style={styles.cardBody}>
               <View style={styles.titleRowCard}>
-                <Text style={styles.challengeTitle} numberOfLines={1}>
+                <Text
+                  style={[
+                    styles.challengeTitle,
+                    isDone && styles.challengeTitleDone,
+                    isNext && styles.challengeTitleNext,
+                  ]}
+                  numberOfLines={1}
+                >
                   {challenge.title}
                 </Text>
                 {isDone && (
@@ -156,7 +162,15 @@ export default function ActivityScreen() {
                 )}
               </View>
 
-              <Text style={styles.category}>{challenge.category}</Text>
+              <Text
+                style={[
+                  styles.category,
+                  isDone && styles.categoryDone,
+                  isNext && styles.categoryNext,
+                ]}
+              >
+                {challenge.category}
+              </Text>
               <Text style={styles.description} numberOfLines={2}>
                 {challenge.shortDescription}
               </Text>
@@ -176,7 +190,7 @@ export default function ActivityScreen() {
                   </Text>
                 </View>
                 <View style={styles.xpPill}>
-                  <Ionicons name="flash" size={11} color="#F59E0B" />
+                  <Ionicons name="flash" size={11} color="#F28C28" />
                   <Text style={styles.xpPillText}>{xp}+ XP</Text>
                 </View>
               </View>
@@ -200,7 +214,7 @@ export default function ActivityScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#FFF5E8",
   },
   content: {
     padding: 20,
@@ -221,32 +235,32 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 30,
     fontWeight: "800",
-    color: "#0F172A",
+    color: "#007C7A",
   },
   progressPill: {
-    backgroundColor: "#F0FDF4",
+    backgroundColor: "#F6D7A8",
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 999,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#22C55E",
+    borderColor: "#F28C28",
   },
   progressPillText: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#166534",
+    color: "#007C7A",
   },
 
   progressTrack: {
     height: 7,
-    backgroundColor: "#E2E8F0",
+    backgroundColor: "#FFFFFF",
     borderRadius: 4,
     overflow: "hidden",
     marginBottom: 4,
   },
   progressFill: {
     height: "100%",
-    backgroundColor: "#22C55E",
+    backgroundColor: "#2F80ED",
     borderRadius: 4,
   },
   progressLabel: {
@@ -270,20 +284,20 @@ const styles = StyleSheet.create({
   },
   chip: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 999,
+    paddingVertical: 9,
+    borderRadius: 12,
     backgroundColor: "#FFFFFF",
     borderWidth: 1.5,
-    borderColor: "#E2E8F0",
+    borderColor: "#FFF5E8",
   },
   chipActive: {
-    backgroundColor: "#22C55E",
-    borderColor: "#22C55E",
+    backgroundColor: "#F28C28",
+    borderColor: "#F28C28",
   },
   chipText: {
     fontSize: 13,
-    fontWeight: "600",
-    color: "#64748B",
+    fontWeight: "700",
+    color: "#007C7A",
   },
   chipTextActive: {
     color: "#FFFFFF",
@@ -299,11 +313,12 @@ const styles = StyleSheet.create({
     borderColor: "transparent",
   },
   cardDone: {
-    borderColor: "#22C55E",
-    backgroundColor: "#F0FDF4",
+    backgroundColor: "#FFF5E8",
+    borderColor: "#2F80ED",
   },
   cardNext: {
-    borderColor: "#F97316",
+    backgroundColor: "#FFF4EC",
+    borderColor: "#F28C28",
   },
 
   startBadge: {
@@ -313,10 +328,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 3,
-    backgroundColor: "#F97316",
+    backgroundColor: "#F28C28",
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 999,
+    borderRadius: 8,
     zIndex: 1,
   },
   startBadgeText: {
@@ -342,7 +357,7 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: "#22C55E",
+    backgroundColor: "#2F80ED",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
@@ -359,17 +374,24 @@ const styles = StyleSheet.create({
   challengeTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#0F172A",
+    color: "#007C7A",
     flex: 1,
+  },
+  challengeTitleDone: {
+    color: "#007C7A",
+    opacity: 0.7,
+  },
+  challengeTitleNext: {
+    color: "#007C7A",
   },
   doneBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 3,
-    backgroundColor: "#22C55E",
+    backgroundColor: "#2F80ED",
     paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 999,
+    borderRadius: 8,
   },
   doneBadgeText: {
     fontSize: 10,
@@ -379,10 +401,16 @@ const styles = StyleSheet.create({
   category: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#22C55E",
+    color: "#2F80ED",
     marginBottom: 4,
     textTransform: "uppercase",
     letterSpacing: 0.5,
+  },
+  categoryDone: {
+    color: "#94A3B8",
+  },
+  categoryNext: {
+    color: "#F28C28",
   },
   description: {
     fontSize: 13,
@@ -410,16 +438,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 3,
-    backgroundColor: "#1E293B",
+    backgroundColor: "#F6D7A8",
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 999,
+    borderRadius: 8,
     marginLeft: "auto",
   },
   xpPillText: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#F59E0B",
+    color: "#F28C28",
   },
 
   emptyState: {

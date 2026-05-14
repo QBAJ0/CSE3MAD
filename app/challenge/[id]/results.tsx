@@ -3,7 +3,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { ResizeMode, Video } from "expo-av";
 import { router, useLocalSearchParams } from "expo-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Alert,
   Pressable,
@@ -14,8 +14,10 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import MapView, { Marker } from "react-native-maps";
 import { ChallengeTabBar } from "../../../src/components/challenge/ChallengeTabBar";
+import { GPSMapView } from "../../../src/components/challenge/GPSMapView";
+import { SoundMap } from "../../../src/components/challenge/SoundMap";
+import { parseSoundMapPoints } from "../../../src/utils/soundMap";
 import { GAMIFICATION, SCORING } from "../../../src/config/constants";
 import { useActivity } from "../../../src/context/ActivityContext";
 import { useTeam } from "../../../src/context/TeamContext";
@@ -25,7 +27,177 @@ import {
   deriveParachute,
   gForceRiskCategory,
 } from "../../../src/services/physics";
+import {
+  Challenge,
+  DifficultyMode,
+  Measurement,
+  Prototype,
+} from "../../../src/types";
 import { storage } from "../../../src/utils/storage";
+
+const MATERIAL_STIFFNESS: Record<string, number> = {
+  "Thin printer paper": 0.05,
+  "Standard card stock": 0.2,
+  "Thin cardboard": 0.5,
+  "Corrugated cardboard": 2.5,
+};
+
+function deriveFanForce(material: string, bendAngleDeg: number): number | null {
+  const k = MATERIAL_STIFFNESS[material];
+  if (!k || isNaN(bendAngleDeg) || bendAngleDeg <= 0) return null;
+  const thetaRad = (bendAngleDeg * Math.PI) / 180;
+  return k * thetaRad;
+}
+
+const G_FORCE_LABELS: Record<
+  "none" | "minor" | "serious" | "severe" | "lifeThreatening",
+  string
+> = {
+  none: "No injury risk",
+  minor: "Minor injury risk",
+  serious: "Serious injury possible",
+  severe: "High injury risk",
+  lifeThreatening: "Life-threatening",
+};
+
+type BreakdownItem = { label: string; value: string; isPenalty?: boolean };
+
+const EVIDENCE_RECORDERS = new Set<Measurement["recorder"]>([
+  "gps",
+  "video",
+  "videoAnalyzer",
+  "slowMotion",
+  "photo",
+]);
+
+const hasMeasurementValue = (value: unknown) =>
+  value !== undefined && value !== null && String(value).trim().length > 0;
+
+const getActiveMeasurements = (
+  challenge: Challenge | undefined,
+  difficulty: DifficultyMode,
+) =>
+  challenge?.measurements.filter(
+    (measurement) =>
+      !measurement.difficulty || measurement.difficulty === difficulty,
+  ) ?? [];
+
+const hasCompleteRequiredData = (
+  challenge: Challenge | undefined,
+  prototypes: Prototype[],
+  difficulty: DifficultyMode,
+) => {
+  const requiredMeasurements = getActiveMeasurements(challenge, difficulty).filter(
+    (measurement) => !EVIDENCE_RECORDERS.has(measurement.recorder),
+  );
+
+  if (prototypes.length === 0 || requiredMeasurements.length === 0) {
+    return false;
+  }
+
+  return prototypes.every((prototype) =>
+    requiredMeasurements.every((measurement) =>
+      hasMeasurementValue(prototype.measurements[measurement.key]),
+    ),
+  );
+};
+
+const hasEvidenceAttached = (
+  challenge: Challenge | undefined,
+  prototypes: Prototype[],
+  difficulty: DifficultyMode,
+  hasLocation: boolean,
+) => {
+  if (hasLocation) return true;
+
+  const evidenceKeys = getActiveMeasurements(challenge, difficulty)
+    .filter((measurement) => EVIDENCE_RECORDERS.has(measurement.recorder))
+    .map((measurement) => measurement.key);
+
+  return prototypes.some((prototype) =>
+    evidenceKeys.some((key) => hasMeasurementValue(prototype.measurements[key])),
+  );
+};
+
+const hasTeamworkEvidence = (prototypes: Prototype[]) =>
+  prototypes.some((prototype) => {
+    const rawTeamResults = prototype.measurements.teamResults;
+    if (!hasMeasurementValue(rawTeamResults)) return false;
+
+    if (typeof rawTeamResults !== "string") return true;
+
+    try {
+      const parsed = JSON.parse(rawTeamResults);
+      return Array.isArray(parsed) && parsed.length > 1;
+    } catch {
+      return true;
+    }
+  });
+
+function buildPointsBreakdown(
+  prototypeCount: number,
+  reflectionChars: number,
+  hasCompleteData: boolean,
+  hasEvidence: boolean,
+  hasTeamwork: boolean,
+  difficulty: string,
+  hasTimeExpired: boolean,
+): { items: BreakdownItem[]; total: number } {
+  const items: BreakdownItem[] = [];
+  let pts: number = SCORING.BASE_XP;
+  items.push({ label: "Base completion", value: `+${SCORING.BASE_XP}` });
+
+  if (prototypeCount >= 2) {
+    const bonus =
+      SCORING.MULTI_DESIGN_2 + (prototypeCount >= 3 ? SCORING.MULTI_DESIGN_3 : 0);
+    pts += bonus;
+    items.push({ label: `Multiple designs (×${prototypeCount})`, value: `+${bonus}` });
+  }
+
+  if (hasCompleteData) {
+    pts += SCORING.DATA_QUALITY;
+    items.push({
+      label: "Complete data set",
+      value: `+${SCORING.DATA_QUALITY}`,
+    });
+  }
+
+  if (reflectionChars > GAMIFICATION.REFLECTION_THRESHOLD_1) {
+    pts += SCORING.REFLECTION_BONUS;
+    items.push({
+      label: "Detailed observations",
+      value: `+${SCORING.REFLECTION_BONUS}`,
+    });
+  }
+
+  if (hasEvidence) {
+    pts += SCORING.EVIDENCE_BONUS;
+    items.push({
+      label: "Evidence attached",
+      value: `+${SCORING.EVIDENCE_BONUS}`,
+    });
+  }
+
+  if (hasTeamwork) {
+    pts += SCORING.TEAMWORK_BONUS;
+    items.push({
+      label: "Teamwork evidence",
+      value: `+${SCORING.TEAMWORK_BONUS}`,
+    });
+  }
+
+  if (difficulty === "highSchool") {
+    pts = Math.floor(pts * SCORING.HIGH_SCHOOL_MULTIPLIER);
+    items.push({ label: "High school multiplier", value: "×1.5" });
+  }
+
+  if (hasTimeExpired) {
+    pts = Math.floor(pts * SCORING.TIME_PENALTY_MULTIPLIER);
+    items.push({ label: "Time penalty", value: "-20%", isPenalty: true });
+  }
+
+  return { items, total: pts };
+}
 
 export default function ResultsScreen() {
   const { id, timeExpired } = useLocalSearchParams<{
@@ -43,6 +215,53 @@ export default function ResultsScreen() {
 
   const hasTimeExpired = timeExpired === "true";
 
+  const observationQuestions = challenge?.observationQuestions ?? [
+    "What did you observe during the experiment?",
+    "Were your predictions correct? What was different?",
+    "What would you change if you ran the experiment again?",
+  ];
+
+  const combinedReflection = observationQuestions
+    .map((q, i) => `${q}\n${observations[i] ?? ""}`)
+    .join("\n\n");
+  const totalReflectionChars = combinedReflection.length;
+
+  const scoringDifficulty = draft.difficulty ?? "primary";
+  const hasCompleteData = hasCompleteRequiredData(
+    challenge,
+    draft.prototypes,
+    scoringDifficulty,
+  );
+  const hasEvidence = hasEvidenceAttached(
+    challenge,
+    draft.prototypes,
+    scoringDifficulty,
+    !!draft.location,
+  );
+  const hasTeamwork = hasTeamworkEvidence(draft.prototypes);
+
+  const { items: breakdownItems, total: predictedPoints } = useMemo(
+    () =>
+      buildPointsBreakdown(
+        draft.prototypes.length,
+        totalReflectionChars,
+        hasCompleteData,
+        hasEvidence,
+        hasTeamwork,
+        scoringDifficulty,
+        hasTimeExpired,
+      ),
+    [
+      draft.prototypes.length,
+      totalReflectionChars,
+      hasCompleteData,
+      hasEvidence,
+      hasTeamwork,
+      scoringDifficulty,
+      hasTimeExpired,
+    ],
+  );
+
   if (!challenge || !team) {
     return (
       <View style={styles.screen}>
@@ -50,47 +269,6 @@ export default function ResultsScreen() {
       </View>
     );
   }
-
-  const observationQuestions = challenge.observationQuestions ?? [
-    "What did you observe during the experiment?",
-    "Were your predictions correct? What was different?",
-    "What would you change if you ran the experiment again?",
-  ];
-
-  const totalReflectionChars = Object.values(observations).join(" ").length;
-
-  const combinedReflection = observationQuestions
-    .map((q, i) => `${q}\n${observations[i] ?? ""}`)
-    .join("\n\n");
-
-  const calculatePoints = () => {
-    let pts: number = SCORING.BASE_XP;
-
-    if (draft.prototypes.length >= 2) pts += SCORING.MULTI_DESIGN_2;
-    if (draft.prototypes.length >= 3) pts += SCORING.MULTI_DESIGN_3;
-    if (rating >= 4) pts += SCORING.HIGH_RATING_4;
-    if (rating === 5) pts += SCORING.HIGH_RATING_5;
-
-    if (totalReflectionChars > GAMIFICATION.REFLECTION_THRESHOLD_1) {
-      pts += SCORING.REFLECTION_BONUS;
-    }
-
-    if (totalReflectionChars > GAMIFICATION.REFLECTION_THRESHOLD_2) {
-      pts += SCORING.REFLECTION_BONUS;
-    }
-
-    if (draft.location) pts += SCORING.GPS_TAGGED;
-
-    if (draft.difficulty === "highSchool") {
-      pts = Math.floor(pts * SCORING.HIGH_SCHOOL_MULTIPLIER);
-    }
-
-    if (hasTimeExpired) {
-      pts = Math.floor(pts * SCORING.TIME_PENALTY_MULTIPLIER);
-    }
-
-    return pts;
-  };
 
   const isReadyToSubmit = () =>
     rating > 0 &&
@@ -111,8 +289,6 @@ export default function ResultsScreen() {
 
     setIsSubmitting(true);
 
-    const points = calculatePoints();
-
     const result = await finalize({
       rating: rating as 1 | 2 | 3 | 4 | 5,
       reflection: combinedReflection,
@@ -120,12 +296,12 @@ export default function ResultsScreen() {
     });
 
     if (result) {
-      await updateTeamPoints(points);
+      await updateTeamPoints(predictedPoints);
       await storage.updateStreak();
 
       Alert.alert(
         "Challenge Complete!",
-        `+${points} XP earned!\n\nGreat science, team!`,
+        `+${predictedPoints} XP earned!\n\nGreat science, team!`,
         [
           {
             text: "Awesome!",
@@ -141,7 +317,18 @@ export default function ResultsScreen() {
     setIsSubmitting(false);
   };
 
-  const predictedPoints = calculatePoints();
+  const fanPhysics =
+    challenge.id === 3
+      ? draft.prototypes.map((p) => ({
+          designName: String(p.measurements.designName ?? `Design ${p.index + 1}`),
+          material: String(p.measurements.material ?? ""),
+          bendAngle: parseFloat(String(p.measurements.bendAngle ?? "")),
+          force: deriveFanForce(
+            String(p.measurements.material ?? ""),
+            parseFloat(String(p.measurements.bendAngle ?? "")),
+          ),
+        }))
+      : null;
 
   const parachutePhysics: ParachuteDerived[] | null =
     challenge.id === 1 && draft.difficulty === "highSchool"
@@ -179,6 +366,8 @@ export default function ResultsScreen() {
 
   const hasVideoEvidence = draft.prototypes.some((p) => p.measurements.video);
 
+  const soundMapPoints = parseSoundMapPoints(challenge.id, draft.prototypes);
+
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <ChallengeTabBar
@@ -192,7 +381,7 @@ export default function ResultsScreen() {
 
       <View style={styles.header}>
         <View style={styles.headerIconCircle}>
-          <Ionicons name={challenge.icon as any} size={36} color="#22C55E" />
+          <Ionicons name={challenge.icon as any} size={36} color="#2F80ED" />
         </View>
         <Text style={styles.headerTitle}>Reflect</Text>
         <Text style={styles.headerSubtitle}>{challenge.title}</Text>
@@ -210,7 +399,7 @@ export default function ResultsScreen() {
 
       <View style={styles.card}>
         <View style={styles.cardTitleRow}>
-          <Ionicons name="help-circle-outline" size={16} color="#0F172A" />
+          <Ionicons name="help-circle-outline" size={16} color="#12343B" />
           <Text style={styles.cardTitle}>Your Prediction</Text>
         </View>
         <View style={styles.predictionBubble}>
@@ -223,7 +412,7 @@ export default function ResultsScreen() {
       {draft.prototypes.length > 0 && tableKeys.length > 0 && (
         <View style={styles.card}>
           <View style={styles.cardTitleRow}>
-            <Ionicons name="bar-chart-outline" size={16} color="#0F172A" />
+            <Ionicons name="bar-chart-outline" size={16} color="#12343B" />
             <Text style={styles.cardTitle}>Results</Text>
           </View>
 
@@ -274,10 +463,20 @@ export default function ResultsScreen() {
         </View>
       )}
 
+      {soundMapPoints.length > 0 && (
+        <View style={styles.mapCard}>
+          <View style={styles.mapCardHeader}>
+            <Ionicons name="volume-high-outline" size={15} color="#007C7A" />
+            <Text style={styles.mapCardTitle}>Sound Pollution Zone Map</Text>
+          </View>
+          <SoundMap points={soundMapPoints} />
+        </View>
+      )}
+
       {hasVideoEvidence && (
         <View style={styles.card}>
           <View style={styles.cardTitleRow}>
-            <Ionicons name="videocam-outline" size={16} color="#0F172A" />
+            <Ionicons name="videocam-outline" size={16} color="#12343B" />
             <Text style={styles.cardTitle}>Media Evidence</Text>
           </View>
 
@@ -307,10 +506,57 @@ export default function ResultsScreen() {
         </View>
       )}
 
+      {fanPhysics && fanPhysics.some((f) => f.force != null) && (
+        <View style={styles.card}>
+          <View style={styles.cardTitleRow}>
+            <Ionicons name="flask-outline" size={16} color="#12343B" />
+            <Text style={styles.cardTitle}>Air Force Calculations</Text>
+          </View>
+          <Text style={styles.physicsRow}>
+            Formula: F ≈ k · θ  (stiffness × bend angle in radians)
+          </Text>
+
+          {fanPhysics.map((f, i) => (
+            <View key={i} style={styles.physicsBlock}>
+              <Text style={styles.physicsBlockLabel}>{f.designName}</Text>
+              {f.material !== "" && (
+                <Text style={styles.physicsRow}>Material: {f.material}</Text>
+              )}
+              {!isNaN(f.bendAngle) && f.bendAngle > 0 && (
+                <Text style={styles.physicsRow}>
+                  Bend angle: {f.bendAngle}° = {((f.bendAngle * Math.PI) / 180).toFixed(3)} rad
+                </Text>
+              )}
+              {f.force != null && (
+                <Text style={styles.physicsRow}>
+                  Estimated air force: {f.force.toFixed(4)} N
+                </Text>
+              )}
+            </View>
+          ))}
+
+          {fanPhysics.filter((f) => f.force != null).length > 1 && (() => {
+            const sorted = [...fanPhysics]
+              .filter((f) => f.force != null)
+              .sort((a, b) => (b.force ?? 0) - (a.force ?? 0));
+            return (
+              <View style={[styles.physicsBlock, { marginTop: 8 }]}>
+                <Text style={styles.physicsBlockLabel}>Ranking (most air force first)</Text>
+                {sorted.map((f, i) => (
+                  <Text key={i} style={styles.physicsRow}>
+                    {i + 1}. {f.designName} — {f.force!.toFixed(4)} N
+                  </Text>
+                ))}
+              </View>
+            );
+          })()}
+        </View>
+      )}
+
       {parachutePhysics && (
         <View style={styles.card}>
           <View style={styles.cardTitleRow}>
-            <Ionicons name="flask-outline" size={16} color="#0F172A" />
+            <Ionicons name="flask-outline" size={16} color="#12343B" />
             <Text style={styles.cardTitle}>Physics Calculations</Text>
           </View>
 
@@ -340,16 +586,7 @@ export default function ResultsScreen() {
                 <Text style={styles.physicsRow}>
                   G-force on impact: {calc.gForce.toFixed(1)} g —{" "}
                   <Text style={styles.physicsRisk}>
-                    {gForceRiskCategory(calc.gForce) === "none" &&
-                      "No injury risk"}
-                    {gForceRiskCategory(calc.gForce) === "minor" &&
-                      "Minor injury risk"}
-                    {gForceRiskCategory(calc.gForce) === "serious" &&
-                      "Serious injury possible"}
-                    {gForceRiskCategory(calc.gForce) === "severe" &&
-                      "High injury risk"}
-                    {gForceRiskCategory(calc.gForce) === "lifeThreatening" &&
-                      "Life-threatening"}
+                    {G_FORCE_LABELS[gForceRiskCategory(calc.gForce)]}
                   </Text>
                 </Text>
               )}
@@ -361,35 +598,14 @@ export default function ResultsScreen() {
       {draft.location && (
         <View style={styles.mapCard}>
           <View style={styles.mapCardHeader}>
-            <Ionicons name="location" size={15} color="#166534" />
+            <Ionicons name="location" size={15} color="#007C7A" />
             <Text style={styles.mapCardTitle}>Experiment Location</Text>
             <View style={styles.gpsBonusBadge}>
-              <Text style={styles.gpsBonusText}>+{SCORING.GPS_TAGGED} XP</Text>
+              <Text style={styles.gpsBonusText}>+{SCORING.EVIDENCE_BONUS} XP</Text>
             </View>
           </View>
 
-          <MapView
-            style={styles.map}
-            initialRegion={{
-              latitude: draft.location.lat,
-              longitude: draft.location.lng,
-              latitudeDelta: 0.005,
-              longitudeDelta: 0.005,
-            }}
-            scrollEnabled={false}
-            zoomEnabled={false}
-            pitchEnabled={false}
-            rotateEnabled={false}
-          >
-            <Marker
-              coordinate={{
-                latitude: draft.location.lat,
-                longitude: draft.location.lng,
-              }}
-              title="Experiment site"
-              description={challenge.title}
-            />
-          </MapView>
+          <GPSMapView lat={draft.location.lat} lng={draft.location.lng} />
 
           <Text style={styles.mapCoords}>
             {draft.location.lat.toFixed(5)}, {draft.location.lng.toFixed(5)}
@@ -399,7 +615,7 @@ export default function ResultsScreen() {
 
       <View style={styles.card}>
         <View style={styles.cardTitleRow}>
-          <Ionicons name="document-text-outline" size={16} color="#0F172A" />
+          <Ionicons name="document-text-outline" size={16} color="#12343B" />
           <Text style={styles.cardTitle}>Your Observations</Text>
         </View>
 
@@ -433,7 +649,7 @@ export default function ResultsScreen() {
 
       <View style={styles.card}>
         <View style={styles.cardTitleRow}>
-          <Ionicons name="star-outline" size={16} color="#0F172A" />
+          <Ionicons name="star-outline" size={16} color="#12343B" />
           <Text style={styles.cardTitle}>Rate this activity</Text>
         </View>
 
@@ -453,65 +669,24 @@ export default function ResultsScreen() {
           ))}
         </View>
 
-        {rating >= 4 && (
-          <View style={styles.ratingBonus}>
-            <Text style={styles.ratingBonusText}>
-              +
-              {SCORING.HIGH_RATING_4 +
-                (rating === 5 ? SCORING.HIGH_RATING_5 : 0)}{" "}
-              XP bonus!
-            </Text>
-          </View>
-        )}
+        <View style={styles.ratingNote}>
+          <Text style={styles.ratingNoteText}>
+            Your rating helps improve the activity. It does not change XP.
+          </Text>
+        </View>
       </View>
 
       <View style={styles.pointsCard}>
         <Text style={styles.pointsTitle}>Points Breakdown</Text>
 
-        <PointsRow label="Base completion" value={`+${SCORING.BASE_XP}`} />
-
-        {draft.prototypes.length >= 2 && (
+        {breakdownItems.map((item) => (
           <PointsRow
-            label={`Multiple designs (×${draft.prototypes.length})`}
-            value={`+${
-              SCORING.MULTI_DESIGN_2 +
-              (draft.prototypes.length >= 3 ? SCORING.MULTI_DESIGN_3 : 0)
-            }`}
+            key={item.label}
+            label={item.label}
+            value={item.value}
+            isPenalty={item.isPenalty}
           />
-        )}
-
-        {rating >= 4 && (
-          <PointsRow
-            label={`High rating (${rating}★)`}
-            value={`+${
-              SCORING.HIGH_RATING_4 + (rating === 5 ? SCORING.HIGH_RATING_5 : 0)
-            }`}
-          />
-        )}
-
-        {totalReflectionChars > GAMIFICATION.REFLECTION_THRESHOLD_1 && (
-          <PointsRow
-            label="Detailed observations"
-            value={`+${
-              SCORING.REFLECTION_BONUS +
-              (totalReflectionChars > GAMIFICATION.REFLECTION_THRESHOLD_2
-                ? SCORING.REFLECTION_BONUS
-                : 0)
-            }`}
-          />
-        )}
-
-        {draft.location && (
-          <PointsRow label="GPS tagged" value={`+${SCORING.GPS_TAGGED}`} />
-        )}
-
-        {draft.difficulty === "highSchool" && (
-          <PointsRow label="High school multiplier" value="×1.5" />
-        )}
-
-        {hasTimeExpired && (
-          <PointsRow label="⏰ Time penalty" value="-20%" isPenalty />
-        )}
+        ))}
 
         <View style={styles.pointsDivider} />
 
@@ -535,6 +710,27 @@ export default function ResultsScreen() {
             : `CLAIM REWARD  +${predictedPoints} XP`}
         </Text>
       </Pressable>
+
+      <TouchableOpacity
+        style={styles.exitLink}
+        onPress={() => {
+          Alert.alert(
+            "Save draft and exit?",
+            "Your current activity results will be kept so you can resume later.",
+            [
+              { text: "Keep Reflecting", style: "cancel" },
+              {
+                text: "Save Draft & Exit",
+                onPress: () => {
+                  router.replace("/(tabs)/activity");
+                },
+              },
+            ],
+          );
+        }}
+      >
+        <Text style={styles.exitLinkText}>Save Draft & Exit</Text>
+      </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.redoLink}
@@ -605,14 +801,14 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: "#F0FDF4",
+    backgroundColor: "#EEF5FF",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 8,
     borderWidth: 2,
-    borderColor: "#22C55E",
+    borderColor: "#2F80ED",
   },
-  headerTitle: { fontSize: 28, fontWeight: "800", color: "#0F172A" },
+  headerTitle: { fontSize: 28, fontWeight: "800", color: "#12343B" },
   headerSubtitle: { fontSize: 14, color: "#64748B", marginTop: 2 },
 
   penaltyBanner: {
@@ -648,7 +844,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 16,
     fontWeight: "800",
-    color: "#0F172A",
+    color: "#12343B",
   },
 
   predictionBubble: {
@@ -674,7 +870,7 @@ const styles = StyleSheet.create({
   tableRowAlt: { backgroundColor: "#F8FAFC" },
   tableCell: { flex: 1, fontSize: 12, color: "#334155", textAlign: "center" },
   designCell: { flex: 1.2, textAlign: "left" },
-  tableCellBold: { fontWeight: "700", color: "#0F172A" },
+  tableCellBold: { fontWeight: "700", color: "#12343B" },
   tableHeaderCell: { fontWeight: "700", color: "#64748B", fontSize: 11 },
 
   mediaSubtitle: {
@@ -694,7 +890,7 @@ const styles = StyleSheet.create({
   mediaLabel: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#0F172A",
+    color: "#12343B",
     marginBottom: 8,
   },
   mediaVideo: {
@@ -706,14 +902,14 @@ const styles = StyleSheet.create({
 
   physicsBlock: {
     borderLeftWidth: 3,
-    borderLeftColor: "#22C55E",
+    borderLeftColor: "#2F80ED",
     paddingLeft: 12,
     marginBottom: 14,
   },
   physicsBlockLabel: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#0F172A",
+    color: "#12343B",
     marginBottom: 4,
   },
   physicsRow: { fontSize: 13, color: "#334155", marginBottom: 2 },
@@ -726,7 +922,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "#BBF7D0",
+    borderColor: "#BFD8FF",
   },
   mapCardHeader: {
     flexDirection: "row",
@@ -734,16 +930,16 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: "#F0FDF4",
+    backgroundColor: "#EEF5FF",
   },
   mapCardTitle: {
     flex: 1,
     fontSize: 14,
     fontWeight: "700",
-    color: "#166534",
+    color: "#007C7A",
   },
   gpsBonusBadge: {
-    backgroundColor: "#22C55E",
+    backgroundColor: "#2F80ED",
     paddingHorizontal: 10,
     paddingVertical: 3,
     borderRadius: 999,
@@ -787,12 +983,12 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 14,
     minHeight: 70,
-    color: "#0F172A",
+    color: "#12343B",
     backgroundColor: "#F8FAFC",
   },
   observationInputValid: {
-    borderColor: "#22C55E",
-    backgroundColor: "#F0FDF4",
+    borderColor: "#2F80ED",
+    backgroundColor: "#EEF5FF",
   },
 
   starsRow: {
@@ -801,27 +997,29 @@ const styles = StyleSheet.create({
     gap: 10,
     marginTop: 4,
   },
-  ratingBonus: {
+  ratingNote: {
     alignSelf: "center",
     marginTop: 10,
-    backgroundColor: "#DCFCE7",
+    backgroundColor: "#EEF5FF",
     paddingHorizontal: 14,
-    paddingVertical: 5,
-    borderRadius: 20,
+    paddingVertical: 7,
+    borderRadius: 12,
   },
-  ratingBonusText: { fontSize: 13, color: "#166534", fontWeight: "700" },
+  ratingNoteText: { fontSize: 13, color: "#007C7A", fontWeight: "700" },
 
   pointsCard: {
-    backgroundColor: "#0F172A",
+    backgroundColor: "#EEF5FF",
     borderRadius: 20,
     padding: 20,
     marginHorizontal: 20,
     marginBottom: 14,
+    borderWidth: 1,
+    borderColor: "#2F80ED",
   },
   pointsTitle: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#94A3B8",
+    color: "#2F80ED",
     marginBottom: 14,
     textTransform: "uppercase",
     letterSpacing: 0.8,
@@ -831,11 +1029,11 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingVertical: 7,
   },
-  pointsLabel: { fontSize: 14, color: "#CBD5E1" },
-  pointsValue: { fontSize: 14, fontWeight: "700", color: "#22C55E" },
+  pointsLabel: { fontSize: 14, color: "#374151" },
+  pointsValue: { fontSize: 14, fontWeight: "700", color: "#2F80ED" },
   pointsDivider: {
     height: 1,
-    backgroundColor: "#1E293B",
+    backgroundColor: "#BFD8FF",
     marginVertical: 10,
   },
   pointsTotalRow: {
@@ -843,11 +1041,11 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
-  pointsTotalLabel: { fontSize: 15, fontWeight: "700", color: "#F8FAFC" },
-  pointsTotalValue: { fontSize: 32, fontWeight: "800", color: "#22C55E" },
+  pointsTotalLabel: { fontSize: 15, fontWeight: "700", color: "#12343B" },
+  pointsTotalValue: { fontSize: 32, fontWeight: "800", color: "#2F80ED" },
 
   claimBtn: {
-    backgroundColor: "#22C55E",
+    backgroundColor: "#2F80ED",
     marginHorizontal: 20,
     paddingVertical: 20,
     borderRadius: 20,
@@ -863,4 +1061,7 @@ const styles = StyleSheet.create({
 
   redoLink: { alignItems: "center", paddingVertical: 16 },
   redoLinkText: { fontSize: 14, color: "#64748B", fontWeight: "600" },
+  exitLink: { alignItems: "center", paddingTop: 14, paddingBottom: 2 },
+  exitLinkText: { fontSize: 14, color: "#B91C1C", fontWeight: "700" },
+
 });

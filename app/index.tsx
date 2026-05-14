@@ -67,7 +67,7 @@ export default function SplashScreen() {
       {/* Loading spinner — shows while we wait for data */}
       <ActivityIndicator
         size="small"
-        color="#22C55E"
+        color="#2F80ED"
         style={styles.spinner}
       />
     </View>
@@ -78,7 +78,7 @@ export default function SplashScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0F172A",   // dark navy background
+    backgroundColor: "#007C7A",
     alignItems: "center",
     justifyContent: "center",
     padding: 24,
@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,             // makes it a perfect circle
-    backgroundColor: "#22C55E",   // green
+    backgroundColor: "#F28C28",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 24,

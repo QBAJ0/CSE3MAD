@@ -130,11 +130,11 @@ export function SoundMeterRecorder({
 
   const getRiskLevel = (db: number): { label: string; color: string; icon: IoniconName } => {
     if (db < 40)
-      return { label: "Quiet", color: "#10B981", icon: "volume-mute" };
+      return { label: "Quiet", color: "#2F80ED", icon: "volume-mute" };
     if (db < 60)
-      return { label: "Conversation", color: "#84CC16", icon: "people" };
+      return { label: "Conversation", color: "#F28C28", icon: "people" };
     if (db < 75)
-      return { label: "Busy", color: "#EAB308", icon: "megaphone" };
+      return { label: "Busy", color: "#F6B84A", icon: "megaphone" };
     if (db < 90) return { label: "Loud", color: "#F97316", icon: "warning" };
     if (db < 110)
       return { label: "Very Loud", color: "#EF4444", icon: "volume-high" };
@@ -266,25 +266,25 @@ export function SoundMeterRecorder({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#1E293B",
+    backgroundColor: "#FFFFFF",
     borderRadius: 16,
-    padding: 16,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#E2E8F0",
+    padding: 16,
   },
   permissionText: {
-    color: "#F8FAFC",
+    color: "#12343B",
     textAlign: "center",
     marginBottom: 12,
   },
   permissionButton: {
-    backgroundColor: "#22C55E",
+    backgroundColor: "#2F80ED",
     padding: 12,
     borderRadius: 10,
     alignItems: "center",
   },
   permissionButtonText: {
-    color: "#0F172A",
+    color: "#F0F6FF",
     fontWeight: "700",
   },
   meterContainer: {
@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
   },
   meterBackground: {
     height: 40,
-    backgroundColor: "#334155",
+    backgroundColor: "#E2E8F0",
     borderRadius: 20,
     overflow: "hidden",
   },
@@ -324,7 +324,7 @@ const styles = StyleSheet.create({
   },
   dbUnit: {
     fontSize: 20,
-    color: "#94A3B8",
+    color: "#64748B",
     fontWeight: "600",
   },
   riskInfoRow: {
@@ -344,11 +344,11 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 20,
     padding: 10,
-    backgroundColor: "#0F172A",
+    backgroundColor: "#F0F6FF",
     borderRadius: 12,
   },
   peakLabel: {
-    color: "#94A3B8",
+    color: "#64748B",
     fontSize: 14,
   },
   peakValue: {
@@ -360,7 +360,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
   },
   recordButton: {
-    backgroundColor: "#22C55E",
+    backgroundColor: "#2F80ED",
     padding: 16,
     borderRadius: 12,
     alignItems: "center",
@@ -384,7 +384,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   savedText: {
-    color: "#22C55E",
+    color: "#2F80ED",
     fontSize: 24,
     fontWeight: "700",
   },

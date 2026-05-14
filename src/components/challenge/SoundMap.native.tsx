@@ -1,81 +1,57 @@
-// components/SoundMap.tsx
 import React from "react";
-import { Dimensions, StyleSheet, Text, View } from "react-native";
-import MapView, { Circle, Marker, PROVIDER_GOOGLE } from "react-native-maps";
-
-const { width, height } = Dimensions.get("window");
-
-interface SoundReading {
-  id: string;
-  action: string;
-  db: number;
-  location: { latitude: number; longitude: number };
-  timestamp: string;
-  teamName: string;
-}
+import { StyleSheet, Text, View } from "react-native";
+import MapView, { Circle, Marker } from "react-native-maps";
+import { SOUND_DB_TIERS } from "../../config/constants";
+import { SoundMapPoint } from "../../types";
 
 interface SoundMapProps {
-  readings: SoundReading[];
-  onSelect?: (reading: SoundReading) => void;
+  points: SoundMapPoint[];
 }
 
-export function SoundMap({ readings, onSelect }: SoundMapProps) {
-  const getRiskColor = (db: number) => {
-    if (db < 40) return "#10B981";
-    if (db < 60) return "#84CC16";
-    if (db < 75) return "#EAB308";
-    if (db < 90) return "#F97316";
-    return "#EF4444";
-  };
+export type { SoundMapPoint };
 
-  const getRadius = (db: number) => {
-    return 20 + (db / 120) * 50;
-  };
+function dbColor(db: number): string {
+  return SOUND_DB_TIERS.find((t) => db < t.max)?.color ?? "#EF4444";
+}
 
-  const initialRegion =
-    readings.length > 0
-      ? {
-          latitude: readings[0].location.latitude,
-          longitude: readings[0].location.longitude,
-          latitudeDelta: 0.01,
-          longitudeDelta: 0.01,
-        }
-      : {
-          latitude: -33.8688,
-          longitude: 151.2093,
-          latitudeDelta: 0.05,
-          longitudeDelta: 0.05,
-        };
+function dbRadius(db: number): number {
+  return 10 + (db / 120) * 60;
+}
+
+export function SoundMap({ points }: SoundMapProps) {
+  if (points.length === 0) return null;
 
   return (
-    <View style={styles.container}>
+    <View>
       <MapView
         style={styles.map}
-        provider={PROVIDER_GOOGLE}
-        initialRegion={initialRegion}
+        initialRegion={{
+          latitude: points[0].latitude,
+          longitude: points[0].longitude,
+          latitudeDelta: 0.003,
+          longitudeDelta: 0.003,
+        }}
+        scrollEnabled={false}
+        zoomEnabled={false}
+        pitchEnabled={false}
+        rotateEnabled={false}
       >
-        {readings.map((reading) => (
-          <React.Fragment key={reading.id}>
+        {points.map((pt) => (
+          <React.Fragment key={pt.id}>
             <Circle
-              center={reading.location}
-              radius={getRadius(reading.db)}
-              strokeColor={getRiskColor(reading.db)}
+              center={{ latitude: pt.latitude, longitude: pt.longitude }}
+              radius={dbRadius(pt.db)}
+              strokeColor={dbColor(pt.db)}
               strokeWidth={2}
-              fillColor={`${getRiskColor(reading.db)}40`}
+              fillColor={`${dbColor(pt.db)}40`}
             />
             <Marker
-              coordinate={reading.location}
-              title={reading.action}
-              description={`${reading.db} dB`}
-              onPress={() => onSelect?.(reading)}
+              coordinate={{ latitude: pt.latitude, longitude: pt.longitude }}
+              title={pt.label}
+              description={`${pt.db.toFixed(0)} dB`}
             >
-              <View
-                style={[
-                  styles.marker,
-                  { backgroundColor: getRiskColor(reading.db) },
-                ]}
-              >
-                <Text style={styles.markerText}>{reading.db}</Text>
+              <View style={[styles.pin, { backgroundColor: dbColor(pt.db) }]}>
+                <Text style={styles.pinText}>{Math.round(pt.db)}</Text>
               </View>
             </Marker>
           </React.Fragment>
@@ -83,51 +59,38 @@ export function SoundMap({ readings, onSelect }: SoundMapProps) {
       </MapView>
 
       <View style={styles.legend}>
-        <Text style={styles.legendTitle}>Sound Level</Text>
-        <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: "#10B981" }]} />
-          <Text>Quiet (&lt;40dB)</Text>
-        </View>
-        <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: "#EAB308" }]} />
-          <Text>Moderate (60-75dB)</Text>
-        </View>
-        <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: "#EF4444" }]} />
-          <Text>Loud (&gt;90dB)</Text>
-        </View>
+        {SOUND_DB_TIERS.map((t) => (
+          <View key={t.label} style={styles.legendRow}>
+            <View style={[styles.legendDot, { backgroundColor: t.color }]} />
+            <Text style={styles.legendText}>{t.label}</Text>
+          </View>
+        ))}
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, height: 300 },
-  map: { width: "100%", height: "100%" },
-  marker: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  map: { width: "100%", height: 200 },
+  pin: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
     borderColor: "#FFF",
   },
-  markerText: { color: "#FFF", fontWeight: "800" },
+  pinText: { color: "#FFF", fontWeight: "800", fontSize: 11 },
   legend: {
-    position: "absolute",
-    bottom: 10,
-    right: 10,
-    backgroundColor: "rgba(0,0,0,0.7)",
-    padding: 10,
-    borderRadius: 10,
-  },
-  legendTitle: { color: "#FFF", fontWeight: "700", marginBottom: 5 },
-  legendItem: {
     flexDirection: "row",
-    alignItems: "center",
+    flexWrap: "wrap",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     gap: 8,
-    marginBottom: 3,
+    backgroundColor: "#F8FAFC",
   },
-  legendDot: { width: 12, height: 12, borderRadius: 6 },
+  legendRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  legendDot: { width: 10, height: 10, borderRadius: 5 },
+  legendText: { fontSize: 11, color: "#475569", fontWeight: "500" },
 });

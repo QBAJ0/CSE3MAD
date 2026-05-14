@@ -26,12 +26,12 @@ import { scheduleStreakReminder, cancelStreakReminder } from "../../src/utils/no
 import { DEFAULT_REMINDER_HOUR, DEFAULT_REMINDER_MINUTE, storage } from "../../src/utils/storage";
 
 const AVATAR_COLORS = [
-  "#22C55E",
-  "#3B82F6",
-  "#F59E0B",
-  "#EF4444",
-  "#8B5CF6",
-  "#06B6D4",
+  "#007C7A",
+  "#2F80ED",
+  "#F6D7A8",
+  "#F28C28",
+  "#007C7A",
+  "#2F80ED",
 ];
 
 export default function ProfileScreen() {
@@ -113,7 +113,7 @@ export default function ProfileScreen() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#22C55E" />
+        <ActivityIndicator size="large" color="#2F80ED" />
       </View>
     );
   }
@@ -126,7 +126,7 @@ export default function ProfileScreen() {
     >
       <View style={styles.header}>
         <View style={styles.avatarCircle}>
-          <Ionicons name="flask" size={40} color="#22C55E" />
+          <Ionicons name="flask" size={40} color="#F6D7A8" />
         </View>
 
         <Text style={styles.teamName}>{team?.teamName ?? "My Team"}</Text>
@@ -157,7 +157,7 @@ export default function ProfileScreen() {
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <View style={styles.cardTitleRow}>
-            <Ionicons name="ribbon-outline" size={16} color="#0F172A" />
+            <Ionicons name="ribbon-outline" size={16} color="#007C7A" />
             <Text style={styles.cardTitle}>Badge Collection</Text>
           </View>
 
@@ -178,11 +178,11 @@ export default function ProfileScreen() {
                   {
                     backgroundColor: isEarned
                       ? RARITY_BG[badge.rarity]
-                      : "#F1F5F9",
+                      : "#FFF5E8",
                     borderColor: isEarned
                       ? RARITY_BORDER[badge.rarity]
-                      : "#E2E8F0",
-                    opacity: isEarned ? 1 : 0.45,
+                      : "#FFF5E8",
+                    opacity: isEarned ? 1 : 0.5,
                   },
                 ]}
               >
@@ -220,7 +220,7 @@ export default function ProfileScreen() {
 
       <View style={styles.card}>
         <View style={styles.cardTitleRow}>
-          <Ionicons name="people-outline" size={16} color="#0F172A" />
+          <Ionicons name="people-outline" size={16} color="#007C7A" />
           <Text style={styles.cardTitle}>Team Members</Text>
         </View>
 
@@ -251,7 +251,7 @@ export default function ProfileScreen() {
 
       <View style={styles.card}>
         <View style={styles.cardTitleRow}>
-          <Ionicons name="time-outline" size={16} color="#0F172A" />
+          <Ionicons name="time-outline" size={16} color="#007C7A" />
           <Text style={styles.cardTitle}>Results History</Text>
         </View>
 
@@ -294,7 +294,7 @@ export default function ProfileScreen() {
                     <Ionicons
                       name={challenge.icon as any}
                       size={22}
-                      color="#22C55E"
+                      color="#2F80ED"
                     />
                   </View>
 
@@ -318,7 +318,7 @@ export default function ProfileScreen() {
 
                 <View style={styles.historyDetailsRow}>
                   <View style={styles.historyBadge}>
-                    <Ionicons name="star" size={13} color="#F59E0B" />
+                    <Ionicons name="star" size={13} color="#F28C28" />
                     <Text style={styles.historyBadgeText}>
                       {activity.rating}/5
                     </Text>
@@ -338,14 +338,14 @@ export default function ProfileScreen() {
 
                   {videoAttached && (
                     <View style={styles.videoBadge}>
-                      <Ionicons name="videocam" size={13} color="#0369A1" />
+                      <Ionicons name="videocam" size={13} color="#007C7A" />
                       <Text style={styles.videoBadgeText}>Video saved</Text>
                     </View>
                   )}
 
                   {gpsAttached && (
                     <View style={styles.gpsBadge}>
-                      <Ionicons name="location" size={13} color="#166534" />
+                      <Ionicons name="location" size={13} color="#007C7A" />
                       <Text style={styles.gpsBadgeText}>GPS</Text>
                     </View>
                   )}
@@ -399,20 +399,17 @@ function NotificationTimeCard({
 }) {
   const [mode, setMode] = useState<"time" | "duration">("time");
 
-  // Time-picker state (12h)
   const toH12 = (h: number) => h % 12 || 12;
   const [hour12, setHour12] = useState(toH12(initialHour));
   const [minute, setMinute] = useState(initialMinute);
   const [isPM, setIsPM] = useState(initialHour >= 12);
 
-  // Sync spinners when parent reloads saved values from storage
   useEffect(() => {
     setHour12(toH12(initialHour));
     setMinute(initialMinute);
     setIsPM(initialHour >= 12);
   }, [initialHour, initialMinute]);
 
-  // Duration state
   const [durationHrs, setDurationHrs] = useState(2);
 
   const durationHour = () => {
@@ -437,7 +434,7 @@ function NotificationTimeCard({
   return (
     <View style={styles.card}>
       <View style={styles.cardTitleRow}>
-        <Ionicons name="notifications-outline" size={16} color="#0F172A" />
+        <Ionicons name="notifications-outline" size={16} color="#007C7A" />
         <Text style={styles.cardTitle}>Streak Reminder Time</Text>
       </View>
 
@@ -468,11 +465,11 @@ function NotificationTimeCard({
           {/* Hour */}
           <View style={styles.spinnerCol}>
             <TouchableOpacity onPress={() => stepHour(1)} style={styles.spinnerBtn}>
-              <Ionicons name="chevron-up" size={20} color="#22C55E" />
+              <Ionicons name="chevron-up" size={20} color="#007C7A" />
             </TouchableOpacity>
             <Text style={styles.spinnerValue}>{hour12.toString().padStart(2, "0")}</Text>
             <TouchableOpacity onPress={() => stepHour(-1)} style={styles.spinnerBtn}>
-              <Ionicons name="chevron-down" size={20} color="#22C55E" />
+              <Ionicons name="chevron-down" size={20} color="#007C7A" />
             </TouchableOpacity>
           </View>
 
@@ -481,11 +478,11 @@ function NotificationTimeCard({
           {/* Minute */}
           <View style={styles.spinnerCol}>
             <TouchableOpacity onPress={() => stepMinute(1)} style={styles.spinnerBtn}>
-              <Ionicons name="chevron-up" size={20} color="#22C55E" />
+              <Ionicons name="chevron-up" size={20} color="#007C7A" />
             </TouchableOpacity>
             <Text style={styles.spinnerValue}>{minute.toString().padStart(2, "0")}</Text>
             <TouchableOpacity onPress={() => stepMinute(-1)} style={styles.spinnerBtn}>
-              <Ionicons name="chevron-down" size={20} color="#22C55E" />
+              <Ionicons name="chevron-down" size={20} color="#007C7A" />
             </TouchableOpacity>
           </View>
 
@@ -503,11 +500,11 @@ function NotificationTimeCard({
           <Text style={styles.durationLabel}>Remind me in</Text>
           <View style={styles.durationStepper}>
             <TouchableOpacity onPress={() => stepDuration(-1)} style={styles.stepBtn}>
-              <Ionicons name="remove" size={20} color="#22C55E" />
+              <Ionicons name="remove" size={20} color="#007C7A" />
             </TouchableOpacity>
             <Text style={styles.stepValue}>{durationHrs}h</Text>
             <TouchableOpacity onPress={() => stepDuration(1)} style={styles.stepBtn}>
-              <Ionicons name="add" size={20} color="#22C55E" />
+              <Ionicons name="add" size={20} color="#007C7A" />
             </TouchableOpacity>
           </View>
           <Text style={styles.durationResult}>
@@ -527,7 +524,7 @@ function NotificationTimeCard({
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#FFF5E8",
   },
 
   content: {
@@ -538,11 +535,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#FFF5E8",
   },
 
   header: {
-    backgroundColor: "#0F172A",
+    backgroundColor: "#007C7A",
     paddingTop: 58,
     paddingBottom: 28,
     paddingHorizontal: 24,
@@ -557,9 +554,9 @@ const styles = StyleSheet.create({
     width: 84,
     height: 84,
     borderRadius: 42,
-    backgroundColor: "rgba(34,197,94,0.2)",
+    backgroundColor: "rgba(255,202,167,0.2)",
     borderWidth: 3,
-    borderColor: "#22C55E",
+    borderColor: "#F6D7A8",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 10,
@@ -574,19 +571,19 @@ const styles = StyleSheet.create({
   teamId: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#22C55E",
+    color: "#F6D7A8",
     marginBottom: 18,
   },
 
   statsRow: {
     flexDirection: "row",
-    backgroundColor: "rgba(255,255,255,0.08)",
+    backgroundColor: "rgba(255,255,255,0.15)",
     borderRadius: 16,
     paddingVertical: 14,
     paddingHorizontal: 20,
     gap: 20,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
+    borderColor: "rgba(255,255,255,0.25)",
   },
 
   stat: {
@@ -602,14 +599,14 @@ const styles = StyleSheet.create({
 
   statLabel: {
     fontSize: 10,
-    color: "#94A3B8",
+    color: "rgba(255,255,255,0.7)",
     marginTop: 2,
     fontWeight: "600",
   },
 
   statDivider: {
     width: 1,
-    backgroundColor: "rgba(255,255,255,0.15)",
+    backgroundColor: "rgba(255,255,255,0.2)",
   },
 
   card: {
@@ -619,7 +616,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: "#F1F5F9",
+    borderColor: "#FFF5E8",
   },
 
   cardHeader: {
@@ -639,7 +636,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 16,
     fontWeight: "800",
-    color: "#0F172A",
+    color: "#007C7A",
   },
 
   cardSubtitle: {
@@ -684,7 +681,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
+    borderBottomColor: "#FFF5E8",
     gap: 12,
   },
 
@@ -709,7 +706,7 @@ const styles = StyleSheet.create({
   memberName: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#0F172A",
+    color: "#007C7A",
   },
 
   memberGrade: {
@@ -719,12 +716,12 @@ const styles = StyleSheet.create({
   },
 
   historyCard: {
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#FFF5E8",
     borderRadius: 16,
     padding: 14,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: "#FFF5E8",
   },
 
   historyTopRow: {
@@ -737,7 +734,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "#F0FDF4",
+    backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -749,7 +746,7 @@ const styles = StyleSheet.create({
   historyName: {
     fontSize: 14,
     fontWeight: "800",
-    color: "#0F172A",
+    color: "#007C7A",
   },
 
   historyMeta: {
@@ -765,7 +762,7 @@ const styles = StyleSheet.create({
   historyXPValue: {
     fontSize: 17,
     fontWeight: "800",
-    color: "#22C55E",
+    color: "#F28C28",
   },
 
   historyXPLabel: {
@@ -786,16 +783,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 4,
     backgroundColor: "#FFFFFF",
-    borderRadius: 999,
+    borderRadius: 8,
     paddingHorizontal: 9,
     paddingVertical: 5,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: "#FFF5E8",
   },
 
   historyBadgeText: {
     fontSize: 11,
-    color: "#475569",
+    color: "#007C7A",
     fontWeight: "700",
   },
 
@@ -803,17 +800,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: "#E0F2FE",
-    borderRadius: 999,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 8,
     paddingHorizontal: 9,
     paddingVertical: 5,
     borderWidth: 1,
-    borderColor: "#BAE6FD",
+    borderColor: "#2F80ED",
   },
 
   videoBadgeText: {
     fontSize: 11,
-    color: "#0369A1",
+    color: "#007C7A",
     fontWeight: "800",
   },
 
@@ -821,17 +818,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: "#DCFCE7",
-    borderRadius: 999,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 8,
     paddingHorizontal: 9,
     paddingVertical: 5,
     borderWidth: 1,
-    borderColor: "#BBF7D0",
+    borderColor: "#2F80ED",
   },
 
   gpsBadgeText: {
     fontSize: 11,
-    color: "#166534",
+    color: "#007C7A",
     fontWeight: "800",
   },
 
@@ -889,8 +886,8 @@ const styles = StyleSheet.create({
 
   modeToggle: {
     flexDirection: "row",
-    backgroundColor: "#F1F5F9",
-    borderRadius: 10,
+    backgroundColor: "#FFF5E8",
+    borderRadius: 12,
     padding: 3,
     marginBottom: 16,
   },
@@ -898,7 +895,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 8,
     alignItems: "center",
-    borderRadius: 8,
+    borderRadius: 10,
   },
   modeBtnActive: {
     backgroundColor: "#FFFFFF",
@@ -913,7 +910,8 @@ const styles = StyleSheet.create({
     color: "#94A3B8",
   },
   modeBtnTextActive: {
-    color: "#0F172A",
+    color: "#007C7A",
+    fontWeight: "700",
   },
   pickerRow: {
     flexDirection: "row",
@@ -932,19 +930,19 @@ const styles = StyleSheet.create({
   spinnerValue: {
     fontSize: 36,
     fontWeight: "800",
-    color: "#0F172A",
+    color: "#007C7A",
     minWidth: 54,
     textAlign: "center",
   },
   timeSeparator: {
     fontSize: 32,
     fontWeight: "800",
-    color: "#0F172A",
+    color: "#007C7A",
     marginBottom: 4,
   },
   ampmBtn: {
-    backgroundColor: "#F1F5F9",
-    borderRadius: 10,
+    backgroundColor: "#FFF5E8",
+    borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 10,
     marginLeft: 4,
@@ -952,7 +950,7 @@ const styles = StyleSheet.create({
   ampmText: {
     fontSize: 16,
     fontWeight: "800",
-    color: "#0F172A",
+    color: "#007C7A",
   },
   durationRow: {
     alignItems: "center",
@@ -972,23 +970,23 @@ const styles = StyleSheet.create({
   stepBtn: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: "#F0FDF4",
+    borderRadius: 12,
+    backgroundColor: "#FFF5E8",
     borderWidth: 1.5,
-    borderColor: "#22C55E",
+    borderColor: "#007C7A",
     alignItems: "center",
     justifyContent: "center",
   },
   stepValue: {
     fontSize: 28,
     fontWeight: "800",
-    color: "#0F172A",
+    color: "#007C7A",
     minWidth: 56,
     textAlign: "center",
   },
   durationResult: {
     fontSize: 13,
-    color: "#22C55E",
+    color: "#F28C28",
     fontWeight: "700",
   },
   saveReminderBtn: {
@@ -996,7 +994,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
-    backgroundColor: "#22C55E",
+    backgroundColor: "#F28C28",
     borderRadius: 12,
     paddingVertical: 12,
   },

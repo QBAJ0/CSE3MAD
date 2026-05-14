@@ -8,7 +8,7 @@ export const CHALLENGES: Challenge[] = [
     title: "Parachute Drop",
     category: "Engineering + Physics",
     icon: "arrow-down-circle-outline",
-    color: "#FF6B6B",
+    color: "#F28C28",
     shortDescription:
       "Design and test a parachute for the slowest, safest landing.",
     overview:
@@ -135,7 +135,7 @@ export const CHALLENGES: Challenge[] = [
       },
       {
         heading: "Materials matter!",
-        color: "#22C55E",
+        color: "#2F80ED",
         bullets: [
           "Lighter, larger canopies create more drag.",
           "Thin plastic is better than paper — it doesn't crumple.",
@@ -165,7 +165,7 @@ export const CHALLENGES: Challenge[] = [
     title: "Sound Pollution Hunter",
     category: "Environmental Science",
     icon: "volume-high-outline",
-    color: "#4ECDC4",
+    color: "#2F80ED",
     shortDescription:
       "Measure classroom sounds and compare loud and quiet zones.",
     overview:
@@ -223,7 +223,7 @@ export const CHALLENGES: Challenge[] = [
       },
       {
         heading: "How sound travels",
-        color: "#22C55E",
+        color: "#2F80ED",
         bullets: [
           "Sound travels as vibrations (pressure waves) through air.",
           "Hard surfaces reflect sound; soft surfaces absorb it.",
@@ -253,15 +253,17 @@ export const CHALLENGES: Challenge[] = [
     title: "Hand Fan Challenge",
     category: "Physics",
     icon: "thermometer-outline",
-    color: "#45B7D1",
+    color: "#F6B84A",
     shortDescription: "Test how air movement affects flexible materials.",
     overview:
       "Test how air movement affects materials by building different fan designs.",
     equipment: ["Paper", "Cardboard", "Scissors", "Tape"],
     instructions: [
       "Stand paper upright",
+      "Place phone flat on the paper strip",
       "Fan air from 30cm",
-      "Measure bend angle",
+      "Measure bend angle with a protractor",
+      "Check tilt sensor reading",
       "Try different distances (15cm, 30cm, 45cm)",
     ],
     features: ["predictionRequired", "multiplePrototypes"],
@@ -288,10 +290,16 @@ export const CHALLENGES: Challenge[] = [
       },
       {
         key: "bendAngle",
-        label: "Bend angle",
+        label: "Bend angle (protractor)",
         unit: "°",
         recorder: "manualNumber",
         placeholder: "0",
+      },
+      {
+        key: "tiltData",
+        label: "Tilt sensor",
+        unit: "g",
+        recorder: "accelerometer",
       },
       {
         key: "distance",
@@ -331,7 +339,7 @@ export const CHALLENGES: Challenge[] = [
       },
       {
         heading: "Material properties",
-        color: "#22C55E",
+        color: "#2F80ED",
         bullets: [
           "Lighter, thinner materials bend more easily.",
           "Corrugated cardboard is stiffer due to its structure.",
@@ -352,7 +360,7 @@ export const CHALLENGES: Challenge[] = [
     title: "Earthquake Structure",
     category: "Engineering",
     icon: "construct-outline",
-    color: "#96CEB4",
+    color: "#007C7A",
     shortDescription: "Build a structure that resists vibration.",
     overview:
       "Design structures that withstand vibration, simulating earthquakes.",
@@ -419,7 +427,7 @@ export const CHALLENGES: Challenge[] = [
       },
       {
         heading: "Engineering solutions",
-        color: "#22C55E",
+        color: "#2F80ED",
         bullets: [
           "Real buildings use base isolators and tuned mass dampers.",
           "Flexible structures absorb energy better than rigid ones.",
@@ -437,10 +445,10 @@ export const CHALLENGES: Challenge[] = [
   // Activity 5: Stretch & Grace
   {
     id: 5,
-    title: "Stretch & Grace",
-    category: "Biomechanics",
+    title: "Human Performance Lab",
+    category: "Medical Science + Biomechanics",
     icon: "body-outline",
-    color: "#FFEAA7",
+    color: "#F6D7A8",
     shortDescription: "Measure speed, smoothness, and control during movement.",
     overview:
       "Measure speed, smoothness, and coordination using phone sensors.",
@@ -497,7 +505,7 @@ export const CHALLENGES: Challenge[] = [
       },
       {
         heading: "Muscle control",
-        color: "#22C55E",
+        color: "#2F80ED",
         bullets: [
           "Smooth movement requires many muscles coordinating together.",
           "Your brain sends signals through nerves 100s of times per second.",
@@ -527,7 +535,7 @@ export const CHALLENGES: Challenge[] = [
     title: "Reaction Board",
     category: "Neuroscience",
     icon: "pulse-outline",
-    color: "#DDA0DD",
+    color: "#8E3D59",
     shortDescription: "Test reaction time and coordination.",
     overview:
       "Measure reaction time and coordination through digital challenges.",
@@ -543,6 +551,11 @@ export const CHALLENGES: Challenge[] = [
     difficultyLevels: ["primary", "highSchool"],
     measurements: [
       { key: "teamResults", label: "Team Results", recorder: "teamReaction" },
+      {
+        key: "tracingResult",
+        label: "Tracing Test",
+        recorder: "tracing",
+      },
       {
         key: "videoUri",
         label: "Team Test Video",
@@ -574,7 +587,7 @@ export const CHALLENGES: Challenge[] = [
       },
       {
         heading: "Dominant hand advantage",
-        color: "#22C55E",
+        color: "#2F80ED",
         bullets: [
           "Your dominant hand is usually faster due to better-trained pathways.",
           "This gap narrows with deliberate practice of the non-dominant hand.",
@@ -595,7 +608,7 @@ export const CHALLENGES: Challenge[] = [
     title: "Breathing Trainer",
     category: "Medical Science",
     icon: "heart-outline",
-    color: "#98D8C8",
+    color: "#78A6F5",
     shortDescription: "Analyse breathing patterns before and after exercise.",
     overview:
       "Analyse breathing patterns using phone sensors to measure chest movement.",
@@ -624,16 +637,16 @@ export const CHALLENGES: Challenge[] = [
       },
       {
         key: "breathingData",
-        label: "Chest movement",
-        unit: "g",
-        recorder: "accelerometer",
-      },
-      {
-        key: "breathsPerMinute",
         label: "Breaths per minute",
         unit: "bpm",
+        recorder: "breathing",
+      },
+      {
+        key: "recoveryMinutes",
+        label: "Recovery time (back to rest)",
+        unit: "min",
         recorder: "manualNumber",
-        placeholder: "12",
+        placeholder: "e.g. 2",
       },
       {
         key: "videoUri",
@@ -657,7 +670,7 @@ export const CHALLENGES: Challenge[] = [
       },
       {
         heading: "Breathing rate",
-        color: "#22C55E",
+        color: "#2F80ED",
         bullets: [
           "Normal resting breathing rate: 12–20 breaths per minute.",
           "Exercise can double or triple your breathing rate.",

@@ -8,14 +8,33 @@ interface Props {
 }
 
 export function NumberRecorder({ measurement, value, onChange }: Props) {
+  const handleChange = (text: string) => {
+    const normalized = text.replace(",", ".");
+    let next = "";
+    let hasDecimal = false;
+
+    for (const char of normalized) {
+      if (char >= "0" && char <= "9") {
+        next += char;
+      } else if (char === "." && !hasDecimal) {
+        next += char;
+        hasDecimal = true;
+      }
+    }
+
+    if (next.startsWith(".")) next = `0${next}`;
+    onChange(next);
+  };
+
   return (
     <TextInput
       style={styles.input}
       placeholder={measurement.placeholder || `Enter ${measurement.label}`}
-      placeholderTextColor="#94A3B8"
+      placeholderTextColor="#64748B"
       value={value}
-      onChangeText={onChange}
-      keyboardType="numeric"
+      onChangeText={handleChange}
+      keyboardType="decimal-pad"
+      inputMode="decimal"
     />
   );
 }
@@ -23,11 +42,11 @@ export function NumberRecorder({ measurement, value, onChange }: Props) {
 const styles = StyleSheet.create({
   input: {
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#E2E8F0",
     borderRadius: 12,
     padding: 14,
     fontSize: 16,
-    backgroundColor: "#1E293B",
-    color: "#F8FAFC",
+    backgroundColor: "#FFFFFF",
+    color: "#12343B",
   },
 });

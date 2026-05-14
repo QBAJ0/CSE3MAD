@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { useState } from "react";
+import { ReactNode, useState } from "react";
 import {
   Alert,
   Pressable,
@@ -13,6 +13,7 @@ import { ChallengeTabBar } from "../../../src/components/challenge/ChallengeTabB
 import { ChallengeTimer } from "../../../src/components/challenge/ChallengeTimer";
 import { VideoFrameAnalyzer } from "../../../src/components/challenge/VideoFrameAnalyzer";
 import { AccelerometerRecorder } from "../../../src/components/recorders/AccelerometerRecorder";
+import { BreathingRecorder } from "../../../src/components/recorders/BreathingRecorder";
 import { ChoiceRecorder } from "../../../src/components/recorders/ChoiceRecorder";
 import { GPSTagger } from "../../../src/components/recorders/GPSTagger";
 import { GyroscopeRecorder } from "../../../src/components/recorders/GyroscopeRecorder";
@@ -28,9 +29,64 @@ import { useActivity } from "../../../src/context/ActivityContext";
 import { useTeam } from "../../../src/context/TeamContext";
 import { getChallengeById } from "../../../src/data/challenges";
 import { useHaptic } from "../../../src/hooks/useHaptic";
-// Comment out slow motion import if you don't have vision-camera installed
-// import { SlowMotionRecorder } from '../../../src/components/recorders/SlowMotionRecorder';
 import { TapReactionGame } from "../../../src/components/recorders/TapReactionGame";
+import { Measurement } from "../../../src/types";
+
+// GPS, video, photo and frame-analysis are optional bonuses — don't block completion
+const OPTIONAL_RECORDERS = new Set<Measurement["recorder"]>([
+  "gps", "video", "photo", "videoAnalyzer", "slowMotion",
+]);
+
+type SaveFn = (key: string, val: string | number) => void;
+
+// Recorders whose props are fully derivable from (measurement, value, save) — no component state needed
+const RECORDER_RENDERERS: Partial<Record<
+  Measurement["recorder"],
+  (m: Measurement, value: string, save: SaveFn) => ReactNode
+>> = {
+  manualText: (m, v, save) => (
+    <TextRecorder measurement={m} value={v} onChange={(val) => save(m.key, val)} />
+  ),
+  manualNumber: (m, v, save) => (
+    <NumberRecorder measurement={m} value={v} onChange={(val) => save(m.key, val)} />
+  ),
+  manualChoice: (m, v, save) => (
+    <ChoiceRecorder measurement={m} value={v} onChange={(val) => save(m.key, val)} />
+  ),
+  stopwatch: (m, v, save) => (
+    <StopwatchRecorder measurement={m} value={v} onChange={(val) => save(m.key, val)} />
+  ),
+  tracing: (m, _v, save) => (
+    <TracingRecorder onComplete={(result) => save(m.key, JSON.stringify(result))} />
+  ),
+  photo: (m, v, save) => (
+    <PhotoRecorder onCapture={(uri) => save(m.key, uri)} existingUri={v} label="Photo" />
+  ),
+  teamReaction: (_m, _v, save) => (
+    <TeamReactionBoard onComplete={(results) => save("teamResults", JSON.stringify(results))} />
+  ),
+  soundMeter: (m, v, save) => (
+    <SoundMeterRecorder onCapture={(db) => save(m.key, db)} existingValue={parseFloat(v)} />
+  ),
+  accelerometer: (m, v, save) => (
+    <AccelerometerRecorder
+      onCapture={(data) => save(m.key, data.peak)}
+      existingValue={v ? { peak: parseFloat(v), average: 0 } : undefined}
+    />
+  ),
+  breathing: (m, v, save) => (
+    <BreathingRecorder
+      onCapture={(bpm) => save(m.key, bpm)}
+      existingValue={v ? parseFloat(v) : undefined}
+    />
+  ),
+  gyroscope: (m, _v, save) => (
+    <GyroscopeRecorder onCapture={(data) => save(m.key, data.smoothness)} />
+  ),
+  video: (m, v, save) => (
+    <VideoRecorder onCapture={(uri) => save(m.key, uri)} existingUri={v} />
+  ),
+};
 
 export default function RecordScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -87,11 +143,6 @@ export default function RecordScreen() {
     saveMeasurement("location", `${lat.toFixed(4)}, ${lng.toFixed(4)}`);
   };
 
-  // GPS, video, photo and frame-analysis are optional bonuses — don't block completion
-  const OPTIONAL_RECORDERS = new Set([
-    "gps", "video", "photo", "videoAnalyzer", "slowMotion",
-  ]);
-
   const isComplete = () =>
     measurements
       .filter((m) => !OPTIONAL_RECORDERS.has(m.recorder))
@@ -104,7 +155,7 @@ export default function RecordScreen() {
     haptic("error");
     setTimeExpired(true);
     Alert.alert(
-      "⏰ Time's Up!",
+      "Time's Up!",
       `Your ${challenge.estimatedMinutes}-minute challenge has ended. Points will be reduced by 20%.`,
       [
         {
@@ -135,64 +186,33 @@ export default function RecordScreen() {
     }
   };
 
-  const renderRecorder = (measurement: any) => {
+  const handleSaveDraft = () => {
+    haptic("warning");
+    Alert.alert(
+      "Save draft and exit?",
+      "Your current activity data will be kept so you can resume later.",
+      [
+        { text: "Keep Working", style: "cancel" },
+        {
+          text: "Save Draft & Exit",
+          onPress: () => {
+            router.replace("/(tabs)/activity");
+          },
+        },
+      ],
+    );
+  };
+
+  const renderRecorder = (measurement: Measurement) => {
     const value = String(current.measurements[measurement.key] || "");
-    const onChange = (val: string) => saveMeasurement(measurement.key, val);
 
+    const renderer = RECORDER_RENDERERS[measurement.recorder];
+    if (renderer) return renderer(measurement, value, saveMeasurement);
+
+    // Cases that need component-level state (current.measurements, draft.location)
     switch (measurement.recorder) {
-      case "manualText":
-        return (
-          <TextRecorder
-            measurement={measurement}
-            value={value}
-            onChange={onChange}
-          />
-        );
-      case "manualNumber":
-        return (
-          <NumberRecorder
-            measurement={measurement}
-            value={value}
-            onChange={onChange}
-          />
-        );
-      case "manualChoice":
-        return (
-          <ChoiceRecorder
-            measurement={measurement}
-            value={value}
-            onChange={onChange}
-          />
-        );
-      case "stopwatch":
-        return (
-          <StopwatchRecorder
-            measurement={measurement}
-            value={value}
-            onChange={onChange}
-          />
-        );
-
-      case "tracing":
-        return (
-          <TracingRecorder
-            onComplete={(result) =>
-              saveMeasurement(measurement.key, JSON.stringify(result))
-            }
-          />
-        );
-      case "photo":
-        return (
-          <PhotoRecorder
-            onCapture={(uri) => saveMeasurement(measurement.key, uri)}
-            existingUri={value}
-            label="Photo"
-          />
-        );
       case "videoAnalyzer": {
-        const videoUri = String(
-          current.measurements["slowMotionVideo"] || "",
-        );
+        const videoUri = String(current.measurements["slowMotionVideo"] || "");
         return (
           <VideoFrameAnalyzer
             videoUri={videoUri}
@@ -208,53 +228,19 @@ export default function RecordScreen() {
           />
         );
       }
-
-      case "teamReaction":
-        return (
-          <TeamReactionBoard
-            onComplete={(results) => {
-              saveMeasurement("teamResults", JSON.stringify(results));
-            }}
-          />
-        );
-      case "soundMeter":
-        return (
-          <SoundMeterRecorder
-            onCapture={(db) => saveMeasurement(measurement.key, db)}
-            existingValue={parseFloat(value)}
-          />
-        );
-      case "accelerometer":
-        return (
-          <AccelerometerRecorder
-            onCapture={(data) => saveMeasurement(measurement.key, data.peak)}
-            existingValue={value ? { peak: parseFloat(value), average: 0 } : undefined}
-          />
-        );
       case "tapReaction":
         return (
           <TapReactionGame
-            onComplete={(result) => {
-              saveMeasurement(measurement.key, JSON.stringify(result));
-            }}
+            onComplete={(result) =>
+              saveMeasurement(measurement.key, JSON.stringify(result))
+            }
             existingTimes={
               value
                 ? (() => {
-                    try {
-                      return JSON.parse(value).times;
-                    } catch {
-                      return undefined;
-                    }
+                    try { return JSON.parse(value).times; }
+                    catch { return undefined; }
                   })()
                 : undefined
-            }
-          />
-        );
-      case "gyroscope":
-        return (
-          <GyroscopeRecorder
-            onCapture={(data) =>
-              saveMeasurement(measurement.key, data.smoothness)
             }
           />
         );
@@ -265,16 +251,6 @@ export default function RecordScreen() {
             initialLocation={draft.location ?? undefined}
           />
         );
-      case "video":
-        return (
-          <VideoRecorder
-            onCapture={(uri) => saveMeasurement(measurement.key, uri)}
-            existingUri={value}
-          />
-        );
-      // Comment out slowMotion case until you install vision-camera
-      // case "slowMotion":
-      //   return <SlowMotionRecorder onCapture={(uri, fps) => saveMeasurement(measurement.key, uri)} existingUri={value} />;
       default:
         return null;
     }
@@ -306,6 +282,10 @@ export default function RecordScreen() {
         </Text>
       </View>
       <Text style={styles.title}>Record Your Results</Text>
+
+      <TouchableOpacity style={styles.exitBtn} onPress={handleSaveDraft}>
+        <Text style={styles.exitText}>Save Draft & Exit</Text>
+      </TouchableOpacity>
 
       {draft.prototypes.length > 1 && (
         <View style={styles.protoRow}>
@@ -370,7 +350,7 @@ const styles = StyleSheet.create({
   content: { padding: 20, paddingBottom: 40 },
   badge: {
     alignSelf: "flex-start",
-    backgroundColor: "#ECFCCB",
+    backgroundColor: "#F6D7A8",
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 999,
@@ -378,6 +358,21 @@ const styles = StyleSheet.create({
   },
   badgeText: { fontSize: 13, fontWeight: "700", color: "#3F6212" },
   title: { fontSize: 26, fontWeight: "800", marginBottom: 16 },
+  exitBtn: {
+    alignSelf: "flex-start",
+    borderWidth: 1,
+    borderColor: "#FCA5A5",
+    backgroundColor: "#FEF2F2",
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    marginBottom: 16,
+  },
+  exitText: {
+    color: "#B91C1C",
+    fontSize: 13,
+    fontWeight: "700",
+  },
   protoRow: {
     flexDirection: "row",
     gap: 10,
@@ -392,7 +387,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  protoActive: { backgroundColor: "#22C55E" },
+  protoActive: { backgroundColor: "#2F80ED" },
   protoText: { fontSize: 16, fontWeight: "700", color: "#64748B" },
   protoActiveText: { color: "#FFF" },
   measureCard: {
@@ -404,7 +399,7 @@ const styles = StyleSheet.create({
   field: { marginBottom: 20 },
   label: { fontSize: 14, fontWeight: "700", marginBottom: 8, color: "#334155" },
   nextBtn: {
-    backgroundColor: "#22C55E",
+    backgroundColor: "#2F80ED",
     paddingVertical: 16,
     borderRadius: 16,
     alignItems: "center",

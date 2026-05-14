@@ -1,4 +1,5 @@
 // components/recorders/TracingRecorder.tsx
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useEffect, useRef, useState } from "react";
 import {
     Dimensions,
@@ -245,10 +246,10 @@ export function TracingRecorder({
   const getScoreFeedback = () => {
     if (score === null) return null;
     if (score >= 90)
-      return { text: "⭐ Excellent tracer! ⭐", color: "#10B981" };
-    if (score >= 70) return { text: "👍 Good job!", color: "#84CC16" };
-    if (score >= 50) return { text: "📈 Keep practicing!", color: "#EAB308" };
-    return { text: "💪 Try again to improve!", color: "#F97316" };
+      return { text: "Excellent tracer!", color: "#2F80ED" };
+    if (score >= 70) return { text: "Good job!", color: "#F28C28" };
+    if (score >= 50) return { text: "Keep practicing!", color: "#F6B84A" };
+    return { text: "Try again to improve!", color: "#F97316" };
   };
 
   const feedback = getScoreFeedback();
@@ -295,7 +296,10 @@ export function TracingRecorder({
     return (
       <View style={styles.container}>
         <View style={styles.resultContainer}>
-          <Text style={styles.resultTitle}>🎯 Tracing Results</Text>
+          <View style={styles.resultTitleRow}>
+            <Ionicons name="analytics-outline" size={20} color="#12343B" />
+            <Text style={styles.resultTitle}>Tracing Results</Text>
+          </View>
           <View style={styles.resultStats}>
             <View style={styles.resultStat}>
               <Text style={[styles.resultValue, { color: feedback?.color }]}>
@@ -326,7 +330,10 @@ export function TracingRecorder({
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>✏️ Tracing Challenge</Text>
+        <View style={styles.titleRow}>
+          <Ionicons name="pencil-outline" size={20} color="#12343B" />
+          <Text style={styles.title}>Tracing Challenge</Text>
+        </View>
         <Text style={styles.subtitle}>
           {isTracing
             ? "Trace the moving green dot!"
@@ -346,7 +353,7 @@ export function TracingRecorder({
           {/* Target path (faded) */}
           <Path
             d={getTargetPathString()}
-            stroke="#334155"
+            stroke="#CBD5E1"
             strokeWidth={2}
             fill="none"
             strokeDasharray="6,6"
@@ -369,14 +376,14 @@ export function TracingRecorder({
                 cx={currentTarget.x}
                 cy={currentTarget.y}
                 r={14}
-                fill="#22C55E"
+                fill="#2F80ED"
                 opacity={0.3}
               />
               <Circle
                 cx={currentTarget.x}
                 cy={currentTarget.y}
                 r={8}
-                fill="#22C55E"
+                fill="#2F80ED"
               />
               <Circle
                 cx={currentTarget.x}
@@ -400,8 +407,8 @@ export function TracingRecorder({
       <View style={styles.instructions}>
         <Text style={styles.instructionText}>
           {isTracing
-            ? "👆 Keep your finger on the green dot as it moves!"
-            : "✨ Follow the path exactly where the dot goes"}
+            ? "Keep your finger on the green dot as it moves!"
+            : "Follow the path exactly where the dot goes"}
         </Text>
       </View>
 
@@ -410,8 +417,9 @@ export function TracingRecorder({
         onPress={startTracing}
         disabled={isTracing}
       >
+        <Ionicons name="play" size={16} color="#FFF" />
         <Text style={styles.startButtonText}>
-          {isTracing ? "Tracing..." : "🚀 Start Tracing"}
+          {isTracing ? "Tracing..." : "Start Tracing"}
         </Text>
       </TouchableOpacity>
     </View>
@@ -420,29 +428,36 @@ export function TracingRecorder({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#1E293B",
+    backgroundColor: "#FFFFFF",
     borderRadius: 16,
-    padding: 16,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#E2E8F0",
+    padding: 16,
     alignItems: "center",
   },
   header: {
     alignItems: "center",
     marginBottom: 16,
   },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginBottom: 4,
+  },
   title: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#F8FAFC",
+    color: "#12343B",
     marginBottom: 4,
   },
   subtitle: {
     fontSize: 12,
-    color: "#94A3B8",
+    color: "#64748B",
   },
   canvas: {
-    backgroundColor: "#0F172A",
+    backgroundColor: "#F0F6FF",
     borderRadius: 12,
     marginBottom: 16,
     overflow: "hidden",
@@ -459,7 +474,7 @@ const styles = StyleSheet.create({
   },
   overlayText: {
     fontSize: 80,
-    color: "#334155",
+    color: "#E2E8F0",
     fontWeight: "800",
   },
   instructions: {
@@ -472,14 +487,17 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   startButton: {
-    backgroundColor: "#22C55E",
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: "#2F80ED",
     paddingVertical: 14,
     paddingHorizontal: 32,
     borderRadius: 12,
     alignItems: "center",
   },
   startButtonDisabled: {
-    backgroundColor: "#334155",
+    backgroundColor: "#E2E8F0",
   },
   startButtonText: {
     color: "#FFF",
@@ -490,10 +508,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     width: "100%",
   },
+  resultTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginBottom: 12,
+  },
   resultTitle: {
     fontSize: 20,
     fontWeight: "800",
-    color: "#F8FAFC",
+    color: "#12343B",
     marginBottom: 16,
   },
   resultStats: {

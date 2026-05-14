@@ -12,6 +12,7 @@ export { TracingRecorder } from "./TracingRecorder";
 // Platform-specific recorders: Metro resolves .native / .web variants automatically.
 // Import them via this barrel or directly from their file.
 export { AccelerometerRecorder } from "./AccelerometerRecorder";
+export { BreathingRecorder } from "./BreathingRecorder";
 export { GyroscopeRecorder } from "./GyroscopeRecorder";
 export { SoundMeterRecorder } from "./SoundMeterRecorder";
 export { VideoRecorder } from "./VideoRecorder";

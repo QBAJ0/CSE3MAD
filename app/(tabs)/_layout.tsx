@@ -27,7 +27,7 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#22C55E',
+        tabBarActiveTintColor: '#F28C28',
         tabBarInactiveTintColor: '#94A3B8',
         tabBarStyle: {
           backgroundColor: '#FFFFFF',
@@ -118,6 +118,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   iconWrapActive: {
-    backgroundColor: 'rgba(34,197,94,0.12)',
+    backgroundColor: 'rgba(242,140,40,0.16)',
   },
 });
