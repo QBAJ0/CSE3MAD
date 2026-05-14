@@ -9,10 +9,7 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true,
-      "infoPlist": {
-        "UIBackgroundModes": ["fetch"]
-      }
+      "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
@@ -42,11 +39,10 @@
           }
         }
       ]
-      //  "expo-custom-assets"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    } //
+    }
   }
 }
