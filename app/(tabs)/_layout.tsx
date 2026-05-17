@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Tabs } from 'expo-router';
 import { Platform, StyleSheet, View } from 'react-native';
+import { AdMobBanner } from '../../src/components/ads/AdMobBanner';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -24,92 +25,99 @@ function TabIcon({
 
 export default function TabsLayout() {
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: '#F28C28',
-        tabBarInactiveTintColor: '#94A3B8',
-        tabBarStyle: {
-          backgroundColor: '#FFFFFF',
-          borderTopWidth: 1,
-          borderTopColor: '#F1F5F9',
-          height: Platform.OS === 'ios' ? 88 : 68,
-          paddingTop: 8,
-          paddingBottom: Platform.OS === 'ios' ? 28 : 10,
-          elevation: 16,
-          shadowColor: '#000',
-          shadowOpacity: 0.1,
-          shadowRadius: 16,
-          shadowOffset: { width: 0, height: -4 },
-        },
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '700',
-          marginTop: 2,
-        },
-      }}
-    >
-      <Tabs.Screen
-        name="home"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ focused, color }) => (
-            <TabIcon
-              name="home-outline"
-              activeName="home"
-              focused={focused}
-              color={color}
-            />
-          ),
+    <View style={styles.root}>
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          tabBarActiveTintColor: '#F28C28',
+          tabBarInactiveTintColor: '#94A3B8',
+          tabBarStyle: {
+            backgroundColor: '#FFFFFF',
+            borderTopWidth: 1,
+            borderTopColor: '#F1F5F9',
+            height: Platform.OS === 'ios' ? 88 : 68,
+            paddingTop: 8,
+            paddingBottom: Platform.OS === 'ios' ? 28 : 10,
+            elevation: 16,
+            shadowColor: '#000',
+            shadowOpacity: 0.1,
+            shadowRadius: 16,
+            shadowOffset: { width: 0, height: -4 },
+          },
+          tabBarLabelStyle: {
+            fontSize: 11,
+            fontWeight: '700',
+            marginTop: 2,
+          },
         }}
-      />
-      <Tabs.Screen
-        name="activity"
-        options={{
-          title: 'Challenges',
-          tabBarIcon: ({ focused, color }) => (
-            <TabIcon
-              name="flash-outline"
-              activeName="flash"
-              focused={focused}
-              color={color}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="leaderboard"
-        options={{
-          title: 'Leaderboard',
-          tabBarIcon: ({ focused, color }) => (
-            <TabIcon
-              name="trophy-outline"
-              activeName="trophy"
-              focused={focused}
-              color={color}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profile',
-          tabBarIcon: ({ focused, color }) => (
-            <TabIcon
-              name="person-outline"
-              activeName="person"
-              focused={focused}
-              color={color}
-            />
-          ),
-        }}
-      />
-    </Tabs>
+      >
+        <Tabs.Screen
+          name="home"
+          options={{
+            title: 'Home',
+            tabBarIcon: ({ focused, color }) => (
+              <TabIcon
+                name="home-outline"
+                activeName="home"
+                focused={focused}
+                color={color}
+              />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="activity"
+          options={{
+            title: 'Challenges',
+            tabBarIcon: ({ focused, color }) => (
+              <TabIcon
+                name="flash-outline"
+                activeName="flash"
+                focused={focused}
+                color={color}
+              />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="leaderboard"
+          options={{
+            title: 'Leaderboard',
+            tabBarIcon: ({ focused, color }) => (
+              <TabIcon
+                name="trophy-outline"
+                activeName="trophy"
+                focused={focused}
+                color={color}
+              />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="profile"
+          options={{
+            title: 'Profile',
+            tabBarIcon: ({ focused, color }) => (
+              <TabIcon
+                name="person-outline"
+                activeName="person"
+                focused={focused}
+                color={color}
+              />
+            ),
+          }}
+        />
+      </Tabs>
+      <AdMobBanner />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
   iconWrap: {
     width: 40,
     height: 32,

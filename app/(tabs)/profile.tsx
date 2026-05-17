@@ -22,7 +22,15 @@ import {
 import { useTeam } from "../../src/context/TeamContext";
 import { getChallengeById } from "../../src/data/challenges";
 import { ActivityResult } from "../../src/types";
-import { scheduleStreakReminder, cancelStreakReminder } from "../../src/utils/notifications";
+import {
+  getNextDailyChallenge,
+  getTeamActivities,
+  hasCompletedActivityToday,
+} from "../../src/utils/dailyChallenge";
+import {
+  cancelChallengeNotifications,
+  scheduleStreakReminderNotification,
+} from "../../src/utils/notifications";
 import { DEFAULT_REMINDER_HOUR, DEFAULT_REMINDER_MINUTE, storage } from "../../src/utils/storage";
 
 const AVATAR_COLORS = [
@@ -84,11 +92,24 @@ export default function ProfileScreen() {
       storage.saveReminderHour(hour),
       storage.saveReminderMinute(minute),
     ]);
-    const streak = await storage.getStreak();
-    if (streak > 0) {
-      scheduleStreakReminder(streak, hour, minute).catch(console.error);
+    const [activities, streak] = await Promise.all([
+      storage.getCompletedActivities(),
+      storage.getStreak(),
+    ]);
+    const teamActivities = getTeamActivities(activities, team);
+    const nextChallenge = getNextDailyChallenge(teamActivities);
+
+    const completedToday = hasCompletedActivityToday(teamActivities);
+
+    if (streak > 0 && !completedToday) {
+      scheduleStreakReminderNotification({
+        streak,
+        hour,
+        minute,
+        challenge: nextChallenge,
+      }).catch(console.error);
     } else {
-      cancelStreakReminder().catch(console.error);
+      cancelChallengeNotifications().catch(console.error);
     }
   };
 

@@ -1,7 +1,15 @@
 import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { useTeam } from "../context/TeamContext";
-import { cancelStreakReminder, scheduleStreakReminder } from "../utils/notifications";
+import {
+  getNextDailyChallenge,
+  getTeamActivities,
+  hasCompletedActivityToday,
+} from "../utils/dailyChallenge";
+import {
+  cancelChallengeNotifications,
+  scheduleStreakReminderNotification,
+} from "../utils/notifications";
 import { storage } from "../utils/storage";
 
 type StreakReminder = {
@@ -32,16 +40,9 @@ export function useStreakReminder(): StreakReminder {
 
           if (!active) return;
 
-          // Filter activities for this team
-          const teamActivities = activities.filter(
-            (a) => a.teamId === team?.discriminator,
-          );
-
-          // Check if any activity was completed today
-          const today = new Date().toDateString();
-          const completedToday = teamActivities.some(
-            (a) => new Date(a.createdAt).toDateString() === today,
-          );
+          const teamActivities = getTeamActivities(activities, team);
+          const completedToday = hasCompletedActivityToday(teamActivities);
+          const nextChallenge = getNextDailyChallenge(teamActivities);
 
           // Show reminder if: streak exists AND no activity completed today
           const showReminder = streak > 0 && !completedToday;
@@ -51,9 +52,14 @@ export function useStreakReminder(): StreakReminder {
               storage.getReminderHour(),
               storage.getReminderMinute(),
             ]);
-            scheduleStreakReminder(streak, hour, minute).catch(console.error);
+            scheduleStreakReminderNotification({
+              challenge: nextChallenge,
+              streak,
+              hour,
+              minute,
+            }).catch(console.error);
           } else {
-            cancelStreakReminder().catch(console.error);
+            cancelChallengeNotifications().catch(console.error);
           }
 
           setReminder({

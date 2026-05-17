@@ -1,8 +1,9 @@
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 interface GyroscopeRecorderProps {
-  onCapture: (data: { smoothness: number; range: number }) => void;
+  onCapture: (data: { smoothness: number; range: number; samples: number }) => void;
   duration?: number;
+  existingValue?: { smoothness: number; range?: number };
 }
 
 export function GyroscopeRecorder({ onCapture }: GyroscopeRecorderProps) {
@@ -15,7 +16,7 @@ export function GyroscopeRecorder({ onCapture }: GyroscopeRecorderProps) {
       </Text>
       <TouchableOpacity
         style={styles.button}
-        onPress={() => onCapture({ smoothness: 0, range: 0 })}
+        onPress={() => onCapture({ smoothness: 0, range: 0, samples: 0 })}
       >
         <Text style={styles.buttonText}>Skip (record 0)</Text>
       </TouchableOpacity>

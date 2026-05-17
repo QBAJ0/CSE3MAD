@@ -130,6 +130,20 @@ export default function ActivityDetailsScreen() {
   const hasGPS = Boolean(activity.location);
 
   const soundMapPoints = parseSoundMapPoints(challenge.id, activity.prototypes);
+  const movementAnalysis =
+    challenge.id === 5
+      ? activity.prototypes
+          .map((p, index) => ({
+            label: String(p.measurements.movementType ?? `Trial ${index + 1}`),
+            smoothness: parseFloat(String(p.measurements.smoothness ?? "")),
+            peakRotation: parseFloat(
+              String(p.measurements.smoothnessPeakRotation ?? ""),
+            ),
+          }))
+          .filter(
+            (item) => !isNaN(item.smoothness) || !isNaN(item.peakRotation),
+          )
+      : [];
 
   return (
     <ScrollView
@@ -327,6 +341,50 @@ export default function ActivityDetailsScreen() {
           </View>
         )}
       </View>
+
+      {movementAnalysis.length > 0 && (
+        <View style={styles.sectionCard}>
+          <TouchableOpacity
+            style={styles.sectionHeader}
+            onPress={() => toggleSection("movement")}
+            activeOpacity={0.7}
+          >
+            <View style={styles.sectionTitleRow}>
+              <Ionicons name="sync-outline" size={18} color="#2F80ED" />
+              <Text style={styles.sectionTitle}>Movement Control</Text>
+            </View>
+            <Ionicons
+              name={
+                expandedSections.has("movement")
+                  ? "chevron-up"
+                  : "chevron-down"
+              }
+              size={20}
+              color="#64748B"
+            />
+          </TouchableOpacity>
+
+          {expandedSections.has("movement") && (
+            <View style={styles.sectionContent}>
+              {movementAnalysis.map((movement, index) => (
+                <View key={index} style={styles.measurementGroup}>
+                  <Text style={styles.measurementName}>{movement.label}</Text>
+                  {!isNaN(movement.smoothness) && (
+                    <Text style={styles.measurementText}>
+                      Smoothness: {movement.smoothness.toFixed(0)}%
+                    </Text>
+                  )}
+                  {!isNaN(movement.peakRotation) && (
+                    <Text style={styles.measurementText}>
+                      Peak rotation: {movement.peakRotation.toFixed(2)} rad/s
+                    </Text>
+                  )}
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+      )}
 
       {/* GPS Section */}
       {hasGPS && (

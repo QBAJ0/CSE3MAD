@@ -350,6 +350,21 @@ export default function ResultsScreen() {
         )
       : null;
 
+  const movementAnalysis =
+    challenge.id === 5
+      ? draft.prototypes
+          .map((p, index) => ({
+            label: String(p.measurements.movementType ?? `Trial ${index + 1}`),
+            smoothness: parseFloat(String(p.measurements.smoothness ?? "")),
+            peakRotation: parseFloat(
+              String(p.measurements.smoothnessPeakRotation ?? ""),
+            ),
+          }))
+          .filter(
+            (item) => !isNaN(item.smoothness) || !isNaN(item.peakRotation),
+          )
+      : [];
+
   const tableKeys = challenge.measurements
     .filter(
       (m) =>
@@ -470,6 +485,31 @@ export default function ResultsScreen() {
             <Text style={styles.mapCardTitle}>Sound Pollution Zone Map</Text>
           </View>
           <SoundMap points={soundMapPoints} />
+        </View>
+      )}
+
+      {movementAnalysis.length > 0 && (
+        <View style={styles.card}>
+          <View style={styles.cardTitleRow}>
+            <Ionicons name="sync-outline" size={16} color="#12343B" />
+            <Text style={styles.cardTitle}>Movement Control</Text>
+          </View>
+
+          {movementAnalysis.map((movement, index) => (
+            <View key={index} style={styles.physicsBlock}>
+              <Text style={styles.physicsBlockLabel}>{movement.label}</Text>
+              {!isNaN(movement.smoothness) && (
+                <Text style={styles.physicsRow}>
+                  Smoothness score: {movement.smoothness.toFixed(0)}%
+                </Text>
+              )}
+              {!isNaN(movement.peakRotation) && (
+                <Text style={styles.physicsRow}>
+                  Peak rotation: {movement.peakRotation.toFixed(2)} rad/s
+                </Text>
+              )}
+            </View>
+          ))}
         </View>
       )}
 

@@ -80,9 +80,6 @@ const RECORDER_RENDERERS: Partial<Record<
       existingValue={v ? parseFloat(v) : undefined}
     />
   ),
-  gyroscope: (m, _v, save) => (
-    <GyroscopeRecorder onCapture={(data) => save(m.key, data.smoothness)} />
-  ),
   video: (m, v, save) => (
     <VideoRecorder onCapture={(uri) => save(m.key, uri)} existingUri={v} />
   ),
@@ -244,6 +241,28 @@ export default function RecordScreen() {
             }
           />
         );
+      case "gyroscope": {
+        const rawPeakRotation = current.measurements[`${measurement.key}PeakRotation`];
+        return (
+          <GyroscopeRecorder
+            onCapture={(data) => {
+              saveMeasurement(measurement.key, data.smoothness);
+              saveMeasurement(`${measurement.key}PeakRotation`, data.range);
+            }}
+            existingValue={
+              value
+                ? {
+                    smoothness: parseFloat(value),
+                    range:
+                      rawPeakRotation !== undefined
+                        ? parseFloat(String(rawPeakRotation))
+                        : undefined,
+                  }
+                : undefined
+            }
+          />
+        );
+      }
       case "gps":
         return (
           <GPSTagger

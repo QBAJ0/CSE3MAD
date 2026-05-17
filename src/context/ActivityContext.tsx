@@ -119,6 +119,19 @@ const hasTeamworkEvidence = (result: Omit<ActivityResult, "points">) =>
     }
   });
 
+const parseLocationMeasurement = (
+  value: string | number | undefined,
+): { lat: number; lng: number } | undefined => {
+  if (typeof value !== "string") return undefined;
+
+  const [latRaw, lngRaw] = value.split(",").map((part) => part.trim());
+  const lat = parseFloat(latRaw);
+  const lng = parseFloat(lngRaw);
+
+  if (isNaN(lat) || isNaN(lng)) return undefined;
+  return { lat, lng };
+};
+
 export function ActivityProvider({ children }: { children: React.ReactNode }) {
   const [draft, setDraft] = useState<Draft>(emptyDraft);
 
@@ -239,6 +252,14 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
       return null;
     }
 
+    const submittedLocation =
+      draft.location ??
+      draft.prototypes
+        .map((prototype) =>
+          parseLocationMeasurement(prototype.measurements.location),
+        )
+        .find((location) => location !== undefined);
+
     // Keep every prototype measurement, including video, photo, and GPS evidence.
     const baseResult = {
       id: draft.id,
@@ -251,7 +272,7 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
       derivedByPrototype: draft.derivedByPrototype ?? {},
       rating,
       reflection,
-      location: draft.location,
+      location: submittedLocation,
       createdAt: draft.createdAt ?? new Date().toISOString(),
     };
 
