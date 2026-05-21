@@ -1,5 +1,6 @@
 // app/(tabs)/leaderboard.tsx
-// Shows all teams ranked by XP. Filter by week, month, or all time.
+// Main competition: Stacey team XP (AsyncStorage / useLeaderboard) — podium + ranks.
+// Secondary (below divider): QB SQLite lab totals from /activity recordings on this device only.
 
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useFocusEffect } from "@react-navigation/native";
@@ -83,7 +84,7 @@ export default function LeaderboardScreen() {
         <Ionicons name="trophy" size={26} color="#007C7A" />
         <View style={styles.titleBlock}>
           <Text style={styles.title}>Leaderboard</Text>
-          <Text style={styles.subtitle}>Experience points</Text>
+          <Text style={styles.subtitle}>Team XP — main competition</Text>
         </View>
       </View>
 
@@ -120,7 +121,7 @@ export default function LeaderboardScreen() {
       {/* ── Top 3 podium ── */}
       {top3.length > 0 && (
         <View style={styles.podiumWrapper}>
-          <Text style={styles.podiumLabel}>Top Performers</Text>
+          <Text style={styles.podiumLabel}>Top teams (XP)</Text>
 
           <View style={styles.podiumRow}>
             {([top3[1], top3[0], top3[2]] as (LeaderboardEntry | undefined)[]).map(
@@ -249,10 +250,12 @@ export default function LeaderboardScreen() {
         </View>
       )}
 
+      {/* QB lab/dev evidence only — not the main XP podium */}
       <View style={styles.labSectionWrap}>
-        <Text style={styles.sectionLabel}>LOCAL LAB SCORES</Text>
+        <Text style={styles.sectionLabel}>LOCAL LAB / DEV SCORES</Text>
         <Text style={styles.labSectionHint}>
-          Saved lab activity totals on this device (SQLite). Separate from XP
+          Totals from lab activity recordings saved in SQLite on this device
+          (hidden Activities tab). For local testing and evidence — not team XP
           above.
         </Text>
         {sqlLoading ? (
@@ -551,6 +554,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.3)",
   },
 
+  // Secondary QB SQLite section — visually separated from XP podium
   labSectionWrap: {
     marginTop: 28,
     paddingTop: 20,

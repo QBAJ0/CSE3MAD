@@ -71,6 +71,7 @@ type LeaderboardAggRow = {
   completedActivityCount: number;
 };
 
+/** SQLite lab leaderboard for /activity recordings — not Stacey challenge XP. */
 export async function fetchLeaderboard(): Promise<LeaderboardRow[]> {
   await ensureReady();
   const db = getDb();
