@@ -18,6 +18,7 @@ import { ChallengeTabBar } from "../../../src/components/challenge/ChallengeTabB
 import { GPSMapView } from "../../../src/components/challenge/GPSMapView";
 import { SoundMap } from "../../../src/components/challenge/SoundMap";
 import { parseSoundMapPoints } from "../../../src/utils/soundMap";
+import { checkNewBadges } from "../../../src/config/badges";
 import { GAMIFICATION, SCORING } from "../../../src/config/constants";
 import { useActivity } from "../../../src/context/ActivityContext";
 import { useTeam } from "../../../src/context/TeamContext";
@@ -143,7 +144,24 @@ export default function ResultsScreen() {
     if (result) {
       const earnedPoints = result.points ?? 0;
       await updateTeamPoints(earnedPoints);
-      await storage.updateStreak();
+      const streak = await storage.updateStreak();
+
+      const [allCompleted, earnedList, savedTeam] = await Promise.all([
+        storage.getCompletedActivities(),
+        storage.getEarnedBadges(),
+        storage.getTeam(),
+      ]);
+      const newBadgeIds = checkNewBadges({
+        result,
+        allCompleted,
+        streak,
+        newTotalXP: savedTeam?.totalPoints ?? 0,
+        earnedIds: new Set(earnedList),
+        teamMemberCount: savedTeam?.members.length ?? 0,
+      });
+      if (newBadgeIds.length > 0) {
+        await storage.unlockBadges(newBadgeIds);
+      }
 
       Alert.alert(
         "Challenge Complete!",
