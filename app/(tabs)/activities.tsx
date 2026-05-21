@@ -1,5 +1,6 @@
 import { LAB_RECORDING_ACTIVITIES } from "@/src/data/labRecordingCatalog";
 import { router } from "expo-router";
+import { asHref } from "@/src/utils/expoHref";
 import { Pressable, ScrollView, StyleSheet, Text } from "react-native";
 
 export default function ActivitiesScreen() {
@@ -14,7 +15,7 @@ export default function ActivitiesScreen() {
         <Pressable
           key={item.id}
           style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
-          onPress={() => router.push(`/activity/${item.id}`)}
+          onPress={() => router.push(asHref(`/activity/${item.id}`))}
         >
           <Text style={styles.cardCategory}>{item.category}</Text>
           <Text style={styles.cardTitle}>{item.title}</Text>

@@ -1,5 +1,6 @@
 import { getLabRecordingActivityById } from "@/src/data/labRecordingCatalog";
 import { router, useLocalSearchParams, useNavigation } from "expo-router";
+import { asHref } from "@/src/utils/expoHref";
 import { useLayoutEffect, useMemo } from "react";
 import {
   Pressable,
@@ -61,7 +62,7 @@ export default function ActivityDetailScreen() {
       </View>
       <Pressable
         style={styles.button}
-        onPress={() => router.push(`/activity/${id}/record`)}
+        onPress={() => router.push(asHref(`/activity/${id}/record`))}
       >
         <Text style={styles.buttonLabel}>Begin recording</Text>
       </Pressable>

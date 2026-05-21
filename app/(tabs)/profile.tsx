@@ -2,6 +2,7 @@
 
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router, useFocusEffect } from "expo-router";
+import { asHref } from "@/src/utils/expoHref";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -186,7 +187,7 @@ export default function ProfileScreen() {
 
         <Pressable
           style={({ pressed }) => [styles.toolRow, pressed && styles.pressed]}
-          onPress={() => router.push("/(tabs)/activities")}
+          onPress={() => router.push(asHref("/(tabs)/activities"))}
         >
           <Ionicons name="flask-outline" size={20} color="#0F172A" />
           <Text style={styles.toolLabel}>Lab activities</Text>
@@ -195,7 +196,7 @@ export default function ProfileScreen() {
 
         <Pressable
           style={({ pressed }) => [styles.toolRow, pressed && styles.pressed]}
-          onPress={() => router.push("/(tabs)/results")}
+          onPress={() => router.push(asHref("/(tabs)/results"))}
         >
           <Ionicons name="document-text-outline" size={20} color="#0F172A" />
           <Text style={styles.toolLabel}>Lab results (SQLite)</Text>
@@ -204,7 +205,7 @@ export default function ProfileScreen() {
 
         <Pressable
           style={({ pressed }) => [styles.toolRow, pressed && styles.pressed]}
-          onPress={() => router.push("/(tabs)/sqlite-test")}
+          onPress={() => router.push(asHref("/(tabs)/sqlite-test"))}
         >
           <Ionicons name="hardware-chip-outline" size={20} color="#0F172A" />
           <Text style={styles.toolLabel}>SQLite check</Text>
@@ -213,7 +214,7 @@ export default function ProfileScreen() {
 
         <Pressable
           style={({ pressed }) => [styles.toolRow, pressed && styles.pressed]}
-          onPress={() => router.push("/(tabs)/auth")}
+          onPress={() => router.push(asHref("/(tabs)/auth"))}
         >
           <Ionicons name="log-in-outline" size={20} color="#0F172A" />
           <Text style={styles.toolLabel}>Email sign-in</Text>
