@@ -1,14 +1,6 @@
 import * as BackgroundFetch from "expo-background-fetch";
 import * as TaskManager from "expo-task-manager";
-import {
-  getNextDailyChallenge,
-  getTeamActivities,
-  hasCompletedActivityToday,
-} from "../utils/dailyChallenge";
-import {
-  cancelChallengeNotifications,
-  scheduleStreakReminderNotification,
-} from "../utils/notifications";
+import { cancelStreakReminder, scheduleStreakReminder } from "../utils/notifications";
 import { storage } from "../utils/storage";
 
 export const STREAK_REMINDER_TASK = "streak-reminder-background";
@@ -24,19 +16,18 @@ TaskManager.defineTask(STREAK_REMINDER_TASK, async () => {
       storage.getReminderMinute(),
     ]);
 
-    const teamActivities = getTeamActivities(activities, team);
-    const completedToday = hasCompletedActivityToday(teamActivities);
-    const nextChallenge = getNextDailyChallenge(teamActivities);
+    const today = new Date().toDateString();
+    const teamActivities = team
+      ? activities.filter((a) => a.teamId === team.discriminator)
+      : activities;
+    const completedToday = teamActivities.some(
+      (a) => new Date(a.createdAt).toDateString() === today,
+    );
 
     if (streak > 0 && !completedToday) {
-      await scheduleStreakReminderNotification({
-        streak,
-        hour,
-        minute,
-        challenge: nextChallenge,
-      });
+      await scheduleStreakReminder(streak, hour, minute);
     } else {
-      await cancelChallengeNotifications();
+      await cancelStreakReminder();
     }
 
     return BackgroundFetch.BackgroundFetchResult.NewData;

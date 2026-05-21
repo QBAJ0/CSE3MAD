@@ -9,7 +9,8 @@ import {
   setDoc,
   where,
 } from "firebase/firestore";
-import { db } from "@/src/firebase";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { auth, cloudStorage, db } from "@/src/firebase";
 import { ActivityResult, Comment, LeaderboardEntry } from "../types";
 
 export type SyncFailReason = "offline" | "permission" | "unknown";
@@ -91,8 +92,89 @@ export function buildLocalLeaderboard(
 
 const COLLECTION = "leaderboard";
 
+function currentOwnerUid(): string | null {
+  return auth?.currentUser?.uid ?? null;
+}
+
+function summarizeEvidence(result: ActivityResult) {
+  const videoUris: string[] = [];
+  const photoUris: string[] = [];
+  const analysisFlags: string[] = [];
+
+  result.prototypes.forEach((prototype) => {
+    Object.entries(prototype.measurements).forEach(([key, value]) => {
+      if (value === undefined || value === null || String(value).trim() === "") {
+        return;
+      }
+      if (key.toLowerCase().includes("video")) videoUris.push(String(value));
+      if (key.toLowerCase().includes("photo")) photoUris.push(String(value));
+      if (key.toLowerCase().includes("analysis")) analysisFlags.push(String(value));
+    });
+  });
+
+  return {
+    hasGps: Boolean(result.location),
+    hasVideo: videoUris.length > 0,
+    hasPhoto: photoUris.length > 0,
+    hasAnalysis: analysisFlags.length > 0,
+    videoUris,
+    photoUris,
+  };
+}
+
+function isEvidenceKey(key: string): boolean {
+  const normalized = key.toLowerCase();
+  return normalized.includes("video") || normalized.includes("photo");
+}
+
+function extensionFromUri(uri: string): string {
+  const withoutQuery = uri.split("?")[0] ?? uri;
+  const match = withoutQuery.match(/\.([a-zA-Z0-9]+)$/);
+  return match ? `.${match[1].toLowerCase()}` : "";
+}
+
+async function uploadEvidenceFiles(result: ActivityResult, ownerUid: string) {
+  if (!cloudStorage) return [];
+
+  const uploads: {
+    prototypeIndex: number;
+    key: string;
+    localUri: string;
+    downloadUrl: string;
+  }[] = [];
+
+  for (const prototype of result.prototypes) {
+    for (const [key, value] of Object.entries(prototype.measurements)) {
+      if (!isEvidenceKey(key) || typeof value !== "string" || value.trim() === "") {
+        continue;
+      }
+
+      try {
+        const response = await fetch(value);
+        const blob = await response.blob();
+        const fileRef = ref(
+          cloudStorage,
+          `activity-evidence/${ownerUid}/${result.id}/prototype-${prototype.index}-${key}${extensionFromUri(value)}`,
+        );
+        await uploadBytes(fileRef, blob);
+        uploads.push({
+          prototypeIndex: prototype.index,
+          key,
+          localUri: value,
+          downloadUrl: await getDownloadURL(fileRef),
+        });
+      } catch (e) {
+        console.warn(`[leaderboard] uploadEvidenceFiles (${classifyError(e)}):`, e);
+      }
+    }
+  }
+
+  return uploads;
+}
+
 export async function pushResultToCloud(result: ActivityResult): Promise<boolean> {
-  if (!db) return false;
+  const ownerUid = currentOwnerUid();
+  if (!db || !ownerUid) return false;
   try {
     const teamRef = doc(db, COLLECTION, result.teamId);
     const snap = await getDoc(teamRef);
@@ -100,6 +182,7 @@ export async function pushResultToCloud(result: ActivityResult): Promise<boolean
     if (snap.exists()) {
       const existing = snap.data();
       await setDoc(teamRef, {
+        ownerUid,
         teamName: result.teamName,
         discriminator: result.teamId,
         totalPoints: (existing.totalPoints || 0) + (result.points || 0),
@@ -110,6 +193,7 @@ export async function pushResultToCloud(result: ActivityResult): Promise<boolean
       });
     } else {
       await setDoc(teamRef, {
+        ownerUid,
         teamName: result.teamName,
         discriminator: result.teamId,
         totalPoints: result.points || 0,
@@ -129,18 +213,28 @@ export async function pushResultToCloud(result: ActivityResult): Promise<boolean
 // Saves the full activity result (including GPS location) to the
 // "activities" collection so teachers can query per-submission data.
 export async function pushActivityToCloud(result: ActivityResult): Promise<boolean> {
-  if (!db) return false;
+  const ownerUid = currentOwnerUid();
+  if (!db || !ownerUid) return false;
   try {
+    const evidence = summarizeEvidence(result);
+    const uploadedEvidence = await uploadEvidenceFiles(result, ownerUid);
     await setDoc(doc(db, "activities", result.id), {
+      ownerUid,
       id: result.id,
       challengeId: result.challengeId,
       teamId: result.teamId,
       teamName: result.teamName,
       difficulty: result.difficulty,
+      prediction: result.prediction,
+      prototypes: result.prototypes,
+      derivedByPrototype: result.derivedByPrototype ?? {},
       points: result.points ?? 0,
       rating: result.rating,
+      reflection: result.reflection,
       completedInTime: result.completedInTime ?? true,
       location: result.location ?? null,
+      evidence,
+      uploadedEvidence,
       createdAt: result.createdAt,
     });
     return true;
@@ -180,9 +274,10 @@ export async function fetchActivitiesByChallenge(
 export async function postComment(
   comment: Omit<Comment, "id">,
 ): Promise<boolean> {
-  if (!db) return false;
+  const ownerUid = currentOwnerUid();
+  if (!db || !ownerUid) return false;
   try {
-    await addDoc(collection(db, "comments"), comment);
+    await addDoc(collection(db, "comments"), { ...comment, ownerUid });
     return true;
   } catch (e) {
     console.warn(`[leaderboard] postComment (${classifyError(e)}):`, e);

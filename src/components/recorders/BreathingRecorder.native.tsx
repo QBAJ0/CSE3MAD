@@ -170,7 +170,7 @@ export function BreathingRecorder({ onCapture, existingValue }: Props) {
             y1={CHART_HEIGHT / 2} y2={CHART_HEIGHT / 2}
             stroke="#CBD5E1" strokeWidth={1} strokeDasharray="4,4"
           />
-          <Path d={getChartPath()} stroke="#2F80ED" strokeWidth={2} fill="none" />
+          <Path d={getChartPath()} stroke="#2563EB" strokeWidth={2} fill="none" />
         </Svg>
       </View>
 
@@ -237,8 +237,8 @@ function Stat({
 }
 
 function badgeColor(bpm: number) {
-  if (bpm <= 20) return "#2F80ED";
-  if (bpm <= 30) return "#F6B84A";
+  if (bpm <= 20) return "#2563EB";
+  if (bpm <= 30) return "#F59E0B";
   return "#EF4444";
 }
 
@@ -257,9 +257,9 @@ const styles = StyleSheet.create({
     borderColor: "#E2E8F0",
     padding: 16,
   },
-  msgText: { color: "#12343B", textAlign: "center", marginBottom: 12 },
+  msgText: { color: "#0F172A", textAlign: "center", marginBottom: 12 },
   chart: {
-    backgroundColor: "#F0F6FF",
+    backgroundColor: "#EFF6FF",
     borderRadius: 12,
     padding: 8,
     alignItems: "center",
@@ -272,12 +272,12 @@ const styles = StyleSheet.create({
   },
   stat: { alignItems: "center" },
   statValue: {
-    color: "#12343B",
+    color: "#0F172A",
     fontSize: 22,
     fontWeight: "800",
     fontVariant: ["tabular-nums"],
   },
-  statHighlight: { color: "#2F80ED" },
+  statHighlight: { color: "#2563EB" },
   statLabel: { color: "#64748B", fontSize: 11, marginTop: 2 },
   progressTrack: {
     height: 6,
@@ -288,11 +288,11 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: "100%",
-    backgroundColor: "#2F80ED",
+    backgroundColor: "#2563EB",
     borderRadius: 4,
   },
   btn: {
-    backgroundColor: "#2F80ED",
+    backgroundColor: "#2563EB",
     padding: 16,
     borderRadius: 12,
     alignItems: "center",
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
   },
   savedLabel: { color: "#64748B", fontSize: 12, textAlign: "center", marginBottom: 4 },
   savedBpm: {
-    color: "#2F80ED",
+    color: "#2563EB",
     fontSize: 56,
     fontWeight: "800",
     textAlign: "center",
@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
   badge: { paddingHorizontal: 16, paddingVertical: 6, borderRadius: 20, alignSelf: "center", marginBottom: 14 },
   badgeText: { fontSize: 13, fontWeight: "700" },
   retakeBtn: {
-    backgroundColor: "#3B82F6",
+    backgroundColor: "#2563EB",
     padding: 10,
     borderRadius: 8,
     alignSelf: "center",

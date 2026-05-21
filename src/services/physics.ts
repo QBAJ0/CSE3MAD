@@ -69,6 +69,23 @@ export function deriveParachute(inputs: ParachuteInputs): ParachuteDerived {
   return out;
 }
 
+const MATERIAL_STIFFNESS: Record<string, number> = {
+  "Thin printer paper": 0.05,
+  "Standard card stock": 0.2,
+  "Thin cardboard": 0.5,
+  "Corrugated cardboard": 2.5,
+};
+
+export function deriveFanForce(
+  material: string,
+  bendAngleDeg: number,
+): number | null {
+  const k = MATERIAL_STIFFNESS[material];
+  if (!k || !Number.isFinite(bendAngleDeg) || bendAngleDeg <= 0) return null;
+  const thetaRad = (bendAngleDeg * Math.PI) / 180;
+  return k * thetaRad;
+}
+
 // Categorise g-force per the spec's injury-risk table.
 export function gForceRiskCategory(
   g: number,

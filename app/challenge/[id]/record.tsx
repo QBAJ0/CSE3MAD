@@ -72,6 +72,7 @@ const RECORDER_RENDERERS: Partial<Record<
     <AccelerometerRecorder
       onCapture={(data) => save(m.key, data.peak)}
       existingValue={v ? { peak: parseFloat(v), average: 0 } : undefined}
+      vibrateMode={!!m.vibrate}
     />
   ),
   breathing: (m, v, save) => (
@@ -79,6 +80,9 @@ const RECORDER_RENDERERS: Partial<Record<
       onCapture={(bpm) => save(m.key, bpm)}
       existingValue={v ? parseFloat(v) : undefined}
     />
+  ),
+  gyroscope: (m, _v, save) => (
+    <GyroscopeRecorder onCapture={(data) => save(m.key, data.smoothness)} />
   ),
   video: (m, v, save) => (
     <VideoRecorder onCapture={(uri) => save(m.key, uri)} existingUri={v} />
@@ -113,7 +117,7 @@ export default function RecordScreen() {
     return (
       <View style={styles.container}>
         <Text style={{ textAlign: "center", marginBottom: 16 }}>
-          Session expired. Please restart the challenge.
+          Session expired. Restart this challenge to keep going.
         </Text>
         <TouchableOpacity
           style={styles.nextBtn}
@@ -169,7 +173,7 @@ export default function RecordScreen() {
       haptic("warning");
       Alert.alert(
         "Incomplete",
-        "Please complete all measurements before continuing.",
+        "Fill the required measurements before moving on.",
       );
       return;
     }
@@ -187,11 +191,11 @@ export default function RecordScreen() {
     haptic("warning");
     Alert.alert(
       "Save draft and exit?",
-      "Your current activity data will be kept so you can resume later.",
+      "Your work will be kept so you can resume later.",
       [
         { text: "Keep Working", style: "cancel" },
         {
-          text: "Save Draft & Exit",
+          text: "Save and exit",
           onPress: () => {
             router.replace("/(tabs)/activity");
           },
@@ -216,10 +220,10 @@ export default function RecordScreen() {
             slowMoFactor={4}
             onComplete={(marks) => {
               saveMeasurement(measurement.key, "analyzed");
-              saveMeasurement("contactTime", marks.contactTime);
+              saveMeasurement("contactTimeSeconds", marks.contactTime);
               saveMeasurement("bounced", marks.bounced ? "Yes" : "No");
               if (marks.timeToBouncePeak) {
-                saveMeasurement("timeToBouncePeak", marks.timeToBouncePeak);
+                saveMeasurement("timeToMaxHeightSeconds", marks.timeToBouncePeak);
               }
             }}
           />
@@ -241,28 +245,6 @@ export default function RecordScreen() {
             }
           />
         );
-      case "gyroscope": {
-        const rawPeakRotation = current.measurements[`${measurement.key}PeakRotation`];
-        return (
-          <GyroscopeRecorder
-            onCapture={(data) => {
-              saveMeasurement(measurement.key, data.smoothness);
-              saveMeasurement(`${measurement.key}PeakRotation`, data.range);
-            }}
-            existingValue={
-              value
-                ? {
-                    smoothness: parseFloat(value),
-                    range:
-                      rawPeakRotation !== undefined
-                        ? parseFloat(String(rawPeakRotation))
-                        : undefined,
-                  }
-                : undefined
-            }
-          />
-        );
-      }
       case "gps":
         return (
           <GPSTagger
@@ -297,13 +279,16 @@ export default function RecordScreen() {
 
       <View style={styles.badge}>
         <Text style={styles.badgeText}>
-          Prototype {currentNum} of {max}
+          Step 2: Test {currentNum} of {max}
         </Text>
       </View>
-      <Text style={styles.title}>Record Your Results</Text>
+      <Text style={styles.title}>Record results</Text>
+      <Text style={styles.helperText}>
+        Fill the required fields. Photos, videos, and GPS add evidence XP.
+      </Text>
 
       <TouchableOpacity style={styles.exitBtn} onPress={handleSaveDraft}>
-        <Text style={styles.exitText}>Save Draft & Exit</Text>
+        <Text style={styles.exitText}>Save and exit</Text>
       </TouchableOpacity>
 
       {draft.prototypes.length > 1 && (
@@ -349,14 +334,14 @@ export default function RecordScreen() {
         <Text style={styles.nextText}>
           {currentNum < max
             ? `Test Next Design (${currentNum}/${max})`
-            : "Go to Reflect →"}
+            : "Reflect"}
         </Text>
       </Pressable>
 
       {timeExpired && (
         <View style={styles.penaltyWarning}>
           <Text style={styles.penaltyWarningText}>
-            Time expired! 20% point penalty applied.
+            Time expired. A 20% XP penalty applies.
           </Text>
         </View>
       )}
@@ -365,18 +350,29 @@ export default function RecordScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F8FAFC" },
+  container: { flex: 1, backgroundColor: "#FFF7ED" },
   content: { padding: 20, paddingBottom: 40 },
   badge: {
     alignSelf: "flex-start",
-    backgroundColor: "#F6D7A8",
+    backgroundColor: "#FED7AA",
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 999,
     marginBottom: 16,
   },
-  badgeText: { fontSize: 13, fontWeight: "700", color: "#3F6212" },
-  title: { fontSize: 26, fontWeight: "800", marginBottom: 16 },
+  badgeText: { fontSize: 13, fontWeight: "800", color: "#0F766E" },
+  title: {
+    fontSize: 26,
+    fontWeight: "800",
+    marginBottom: 6,
+    color: "#0F766E",
+  },
+  helperText: {
+    fontSize: 13,
+    color: "#64748B",
+    lineHeight: 18,
+    marginBottom: 14,
+  },
   exitBtn: {
     alignSelf: "flex-start",
     borderWidth: 1,
@@ -402,23 +398,32 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#FED7AA",
     alignItems: "center",
     justifyContent: "center",
   },
-  protoActive: { backgroundColor: "#2F80ED" },
+  protoActive: { backgroundColor: "#0F766E" },
   protoText: { fontSize: 16, fontWeight: "700", color: "#64748B" },
   protoActiveText: { color: "#FFF" },
   measureCard: {
-    backgroundColor: "#FFF",
+    backgroundColor: "#FFFFFF",
     borderRadius: 20,
     padding: 20,
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#FED7AA",
   },
   field: { marginBottom: 20 },
-  label: { fontSize: 14, fontWeight: "700", marginBottom: 8, color: "#334155" },
+  label: {
+    fontSize: 14,
+    fontWeight: "800",
+    marginBottom: 8,
+    color: "#0F766E",
+  },
   nextBtn: {
-    backgroundColor: "#2F80ED",
+    backgroundColor: "#F97316",
     paddingVertical: 16,
     borderRadius: 16,
     alignItems: "center",

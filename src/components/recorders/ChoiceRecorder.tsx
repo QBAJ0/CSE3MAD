@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     alignItems: "center",
   },
-  choiceSelected: { backgroundColor: "#2F80ED", borderColor: "#2F80ED" },
-  choiceText: { color: "#12343B", fontSize: 14 },
-  choiceTextSelected: { color: "#F0F6FF", fontWeight: "700" },
+  choiceSelected: { backgroundColor: "#2563EB", borderColor: "#2563EB" },
+  choiceText: { color: "#0F172A", fontSize: 14 },
+  choiceTextSelected: { color: "#EFF6FF", fontWeight: "700" },
 });

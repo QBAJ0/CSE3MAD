@@ -130,11 +130,11 @@ export function SoundMeterRecorder({
 
   const getRiskLevel = (db: number): { label: string; color: string; icon: IoniconName } => {
     if (db < 40)
-      return { label: "Quiet", color: "#2F80ED", icon: "volume-mute" };
+      return { label: "Quiet", color: "#2563EB", icon: "volume-mute" };
     if (db < 60)
-      return { label: "Conversation", color: "#F28C28", icon: "people" };
+      return { label: "Conversation", color: "#F97316", icon: "people" };
     if (db < 75)
-      return { label: "Busy", color: "#F6B84A", icon: "megaphone" };
+      return { label: "Busy", color: "#F59E0B", icon: "megaphone" };
     if (db < 90) return { label: "Loud", color: "#F97316", icon: "warning" };
     if (db < 110)
       return { label: "Very Loud", color: "#EF4444", icon: "volume-high" };
@@ -273,18 +273,18 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   permissionText: {
-    color: "#12343B",
+    color: "#0F172A",
     textAlign: "center",
     marginBottom: 12,
   },
   permissionButton: {
-    backgroundColor: "#2F80ED",
+    backgroundColor: "#2563EB",
     padding: 12,
     borderRadius: 10,
     alignItems: "center",
   },
   permissionButtonText: {
-    color: "#F0F6FF",
+    color: "#EFF6FF",
     fontWeight: "700",
   },
   meterContainer: {
@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 20,
     padding: 10,
-    backgroundColor: "#F0F6FF",
+    backgroundColor: "#EFF6FF",
     borderRadius: 12,
   },
   peakLabel: {
@@ -360,7 +360,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
   },
   recordButton: {
-    backgroundColor: "#2F80ED",
+    backgroundColor: "#2563EB",
     padding: 16,
     borderRadius: 12,
     alignItems: "center",
@@ -384,7 +384,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   savedText: {
-    color: "#2F80ED",
+    color: "#2563EB",
     fontSize: 24,
     fontWeight: "700",
   },
@@ -398,7 +398,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   retakeButton: {
-    backgroundColor: "#3B82F6",
+    backgroundColor: "#2563EB",
     padding: 10,
     borderRadius: 8,
     paddingHorizontal: 20,

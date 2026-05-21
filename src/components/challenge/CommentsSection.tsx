@@ -13,7 +13,7 @@ import {
   View,
 } from "react-native";
 import { timeAgo } from "../../utils/formatting";
-import { isFirebaseConfigured as isConfigured } from "@/src/firebase";
+import { isFirebaseConfigured } from "@/src/firebase";
 import {
   CloudSyncError,
   fetchComments,
@@ -35,7 +35,7 @@ export function CommentsSection({ challengeId, teamName, discriminator }: Props)
   const [posting, setPosting] = useState(false);
 
   useEffect(() => {
-    if (!isConfigured) {
+      if (!isFirebaseConfigured) {
       setLoading(false);
       return;
     }
@@ -79,11 +79,11 @@ export function CommentsSection({ challengeId, teamName, discriminator }: Props)
     setPosting(false);
   };
 
-  if (!isConfigured) {
+  if (!isFirebaseConfigured) {
     return (
       <View style={styles.card}>
         <View style={styles.titleRow}>
-          <Ionicons name="chatbubbles-outline" size={16} color="#12343B" />
+          <Ionicons name="chatbubbles-outline" size={16} color="#0F172A" />
           <Text style={styles.title}>Team Comments</Text>
         </View>
         <View style={styles.offlineBox}>
@@ -102,7 +102,7 @@ export function CommentsSection({ challengeId, teamName, discriminator }: Props)
     >
       <View style={styles.card}>
         <View style={styles.titleRow}>
-          <Ionicons name="chatbubbles-outline" size={16} color="#12343B" />
+          <Ionicons name="chatbubbles-outline" size={16} color="#0F172A" />
           <Text style={styles.title}>Team Comments</Text>
           {comments.length > 0 && (
             <View style={styles.countBadge}>
@@ -139,7 +139,7 @@ export function CommentsSection({ challengeId, teamName, discriminator }: Props)
         {loading ? (
           <ActivityIndicator
             size="small"
-            color="#2F80ED"
+            color="#2563EB"
             style={{ marginTop: 12 }}
           />
         ) : fetchError ? (
@@ -192,9 +192,9 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 14,
   },
-  title: { fontSize: 16, fontWeight: "800", color: "#12343B", flex: 1 },
+  title: { fontSize: 16, fontWeight: "800", color: "#0F172A", flex: 1 },
   countBadge: {
-    backgroundColor: "#2F80ED",
+    backgroundColor: "#2563EB",
     borderRadius: 10,
     paddingHorizontal: 8,
     paddingVertical: 2,
@@ -222,13 +222,13 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 10,
     fontSize: 14,
-    color: "#12343B",
+    color: "#0F172A",
     backgroundColor: "#F8FAFC",
     minHeight: 44,
     maxHeight: 100,
   },
   postBtn: {
-    backgroundColor: "#2F80ED",
+    backgroundColor: "#2563EB",
     width: 44,
     height: 44,
     borderRadius: 12,
@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 4,
   },
-  commentTeam: { fontSize: 13, fontWeight: "700", color: "#12343B" },
+  commentTeam: { fontSize: 13, fontWeight: "700", color: "#0F172A" },
   commentDisc: { color: "#94A3B8", fontWeight: "400" },
   commentTime: { fontSize: 11, color: "#94A3B8" },
   commentText: { fontSize: 14, color: "#334155", lineHeight: 20 },

@@ -47,12 +47,12 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 22,
   },
-  saved: { color: "#2F80ED", fontSize: 14, fontWeight: "700" },
+  saved: { color: "#2563EB", fontSize: 14, fontWeight: "700" },
   button: {
     backgroundColor: "#E2E8F0",
     paddingVertical: 10,
     paddingHorizontal: 24,
     borderRadius: 10,
   },
-  buttonText: { color: "#12343B", fontWeight: "600" },
+  buttonText: { color: "#0F172A", fontWeight: "600" },
 });

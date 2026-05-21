@@ -9,12 +9,13 @@ export const CHALLENGES: Challenge[] = [
     title: "Parachute Drop",
     category: "Engineering + Physics",
     icon: "arrow-down-circle-outline",
-    color: "#F28C28",
+    color: "#F97316",
     shortDescription:
       "Design and test a parachute for the slowest, safest landing.",
     overview:
       "Design, build, and test a parachute for a small toy to reduce landing speed and impact force.",
     equipment: [
+      "Mobile phone with STEMM Lab app",
       "Small toy",
       "Paper/plastic",
       "String",
@@ -23,11 +24,12 @@ export const CHALLENGES: Challenge[] = [
       "Table",
     ],
     instructions: [
-      "Drop without parachute (baseline)",
-      "Build parachute",
-      "Record fall time",
-      "📹 Record a slow-motion video of the landing",
-      "Redesign and test up to 3 prototypes",
+      "Drop the toy without a parachute and record the fall as a baseline test",
+      "Build a parachute using paper or plastic, string, scissors, and tape",
+      "Drop the toy from the same height and record fall time",
+      "Record a slow-motion video of the landing",
+      "Review speed, landing safety, and accuracy results in the app",
+      "Redesign and test up to 3 prototypes within 20 minutes",
     ],
     features: ["predictionRequired", "video", "gps", "multiplePrototypes"],
     maxPrototypes: 3,
@@ -75,6 +77,14 @@ export const CHALLENGES: Challenge[] = [
         label: "Did the toy bounce?",
         recorder: "manualChoice",
         choices: ["No", "Yes"],
+        difficulty: "highSchool",
+      },
+      {
+        key: "timeToMaxHeightSeconds",
+        label: "Time to bounce peak",
+        unit: "s",
+        recorder: "manualNumber",
+        placeholder: "Only if it bounced",
         difficulty: "highSchool",
       },
       {
@@ -127,7 +137,7 @@ export const CHALLENGES: Challenge[] = [
     thingsToKnow: [
       {
         heading: "What is drag?",
-        color: "#3B82F6",
+        color: "#2563EB",
         bullets: [
           "Drag is a force that opposes movement through air.",
           "A bigger canopy catches more air = more drag = slower fall.",
@@ -136,7 +146,7 @@ export const CHALLENGES: Challenge[] = [
       },
       {
         heading: "Materials matter!",
-        color: "#2F80ED",
+        color: "#2563EB",
         bullets: [
           "Lighter, larger canopies create more drag.",
           "Thin plastic is better than paper — it doesn't crumple.",
@@ -156,6 +166,7 @@ export const CHALLENGES: Challenge[] = [
     observationQuestions: [
       "Were you correct about which design would fall slowest?",
       "Which prototype performed best, and why do you think that is?",
+      "Which design was the easiest to make?",
       "What would you change to improve your best design?",
       "Did anything surprise you about the results?",
     ],
@@ -166,19 +177,20 @@ export const CHALLENGES: Challenge[] = [
     title: "Sound Pollution Hunter",
     category: "Environmental Science",
     icon: "volume-high-outline",
-    color: "#2F80ED",
+    color: "#2563EB",
     shortDescription:
       "Measure classroom sounds and compare loud and quiet zones.",
     overview:
       "Measure sound levels in different activities and map noise pollution zones.",
-    equipment: ["Mobile phone with microphone"],
+    equipment: ["Mobile phone with STEMM Lab app and microphone"],
     instructions: [
-      'Tap "Start Measuring"',
-      "Hold phone near the sound source",
-      "Wait 5-10 seconds for measurement",
-      "Record the peak dB level",
+      "Predict which classroom action will create the loudest sound",
+      "Measure actions such as dropping objects, talking, walking, and stamping",
+      "Record peak dB levels and GPS-tagged locations",
+      "Map loud and quiet zones",
+      "Upload evidence and team reflections",
     ],
-    features: ["predictionRequired", "gps", "sensors"],
+    features: ["predictionRequired", "video", "gps", "sensors"],
     maxPrototypes: 3,
     estimatedMinutes: 15,
     difficultyLevels: ["primary", "highSchool"],
@@ -215,7 +227,7 @@ export const CHALLENGES: Challenge[] = [
     thingsToKnow: [
       {
         heading: "What is a decibel?",
-        color: "#3B82F6",
+        color: "#2563EB",
         bullets: [
           "Sound is measured in decibels (dB).",
           "A whisper is ~30 dB; normal conversation is ~60 dB.",
@@ -224,7 +236,7 @@ export const CHALLENGES: Challenge[] = [
       },
       {
         heading: "How sound travels",
-        color: "#2F80ED",
+        color: "#2563EB",
         bullets: [
           "Sound travels as vibrations (pressure waves) through air.",
           "Hard surfaces reflect sound; soft surfaces absorb it.",
@@ -254,20 +266,27 @@ export const CHALLENGES: Challenge[] = [
     title: "Hand Fan Challenge",
     category: "Physics",
     icon: "thermometer-outline",
-    color: "#F6B84A",
+    color: "#F59E0B",
     shortDescription: "Test how air movement affects flexible materials.",
     overview:
       "Test how air movement affects materials by building different fan designs.",
-    equipment: ["Paper", "Cardboard", "Scissors", "Tape"],
+    equipment: [
+      "Mobile phone with STEMM Lab app",
+      "Paper",
+      "Cardboard",
+      "Scissors",
+      "Sticky tape",
+    ],
     instructions: [
       "Stand paper upright",
       "Place phone flat on the paper strip",
-      "Fan air from 30cm",
+      "Fan air from 30cm away",
       "Measure bend angle with a protractor",
       "Check tilt sensor reading",
       "Try different distances (15cm, 30cm, 45cm)",
+      "Upload a photo or video of each fan design",
     ],
-    features: ["predictionRequired", "multiplePrototypes"],
+    features: ["predictionRequired", "video", "gps", "multiplePrototypes"],
     maxPrototypes: 3,
     estimatedMinutes: 15,
     difficultyLevels: ["primary", "highSchool"],
@@ -314,6 +333,11 @@ export const CHALLENGES: Challenge[] = [
         label: "Fan Photo",
         recorder: "photo",
       },
+      {
+        key: "videoUri",
+        label: "Fan Test Video",
+        recorder: "video",
+      },
       { key: "location", label: "GPS Location", recorder: "gps" },
     ],
     curriculumLinks: ["ACSSU076 - Forces and motion"],
@@ -322,7 +346,7 @@ export const CHALLENGES: Challenge[] = [
     thingsToKnow: [
       {
         heading: "Air pressure",
-        color: "#3B82F6",
+        color: "#2563EB",
         bullets: [
           "Fanning creates moving air (wind).",
           "Moving air has lower pressure than still air.",
@@ -340,7 +364,7 @@ export const CHALLENGES: Challenge[] = [
       },
       {
         heading: "Material properties",
-        color: "#2F80ED",
+        color: "#2563EB",
         bullets: [
           "Lighter, thinner materials bend more easily.",
           "Corrugated cardboard is stiffer due to its structure.",
@@ -361,19 +385,27 @@ export const CHALLENGES: Challenge[] = [
     title: "Earthquake Structure",
     category: "Engineering",
     icon: "construct-outline",
-    color: "#007C7A",
+    color: "#0F766E",
     shortDescription: "Build a structure that resists vibration.",
     overview:
       "Design structures that withstand vibration, simulating earthquakes.",
-    equipment: ["Cardboard", "Paper", "Scissors", "Tape", "Cups"],
+    equipment: [
+      "Mobile phone with STEMM Lab app",
+      "Cardboard",
+      "Paper",
+      "Scissors",
+      "Sticky tape",
+      "Plastic or paper cups",
+    ],
     instructions: [
       "Build anti-vibration layer",
       "Place phone on platform",
       "Activate vibration",
       "Measure movement",
       "Modify structure and retest",
+      "Upload a photo or video of the structure",
     ],
-    features: ["predictionRequired", "multiplePrototypes", "sensors"],
+    features: ["predictionRequired", "video", "gps", "multiplePrototypes", "sensors"],
     maxPrototypes: 3,
     estimatedMinutes: 25,
     difficultyLevels: ["primary", "highSchool"],
@@ -396,11 +428,17 @@ export const CHALLENGES: Challenge[] = [
         label: "Vibration",
         unit: "g",
         recorder: "accelerometer",
+        vibrate: true,
       },
       {
         key: "photoUri",
         label: "Structure Photo",
         recorder: "photo",
+      },
+      {
+        key: "videoUri",
+        label: "Structure Test Video",
+        recorder: "video",
       },
       { key: "location", label: "GPS Location", recorder: "gps" },
     ],
@@ -419,7 +457,7 @@ export const CHALLENGES: Challenge[] = [
       },
       {
         heading: "Vibration damping",
-        color: "#3B82F6",
+        color: "#2563EB",
         bullets: [
           "Anti-vibration layers absorb and spread energy.",
           "Soft materials (foam, rubber) dampen vibrations better than hard materials.",
@@ -428,7 +466,7 @@ export const CHALLENGES: Challenge[] = [
       },
       {
         heading: "Engineering solutions",
-        color: "#2F80ED",
+        color: "#2563EB",
         bullets: [
           "Real buildings use base isolators and tuned mass dampers.",
           "Flexible structures absorb energy better than rigid ones.",
@@ -449,7 +487,7 @@ export const CHALLENGES: Challenge[] = [
     title: "Human Performance Lab",
     category: "Medical Science + Biomechanics",
     icon: "body-outline",
-    color: "#F6D7A8",
+    color: "#7C3AED",
     shortDescription: "Measure speed, smoothness, and control during movement.",
     overview:
       "Measure speed, smoothness, and coordination using phone sensors.",
@@ -457,11 +495,12 @@ export const CHALLENGES: Challenge[] = [
     instructions: [
       "Hold phone firmly",
       "Perform guided movements",
+      "Repeat the activity with vibration feedback enabled",
       "Record time to complete",
-      "Review smoothness",
+      "Review speed, smoothness, and range-of-motion data",
     ],
-    features: ["predictionRequired", "sensors"],
-    maxPrototypes: 1,
+    features: ["predictionRequired", "video", "gps", "sensors"],
+    maxPrototypes: 3,
     estimatedMinutes: 12,
     difficultyLevels: ["primary", "highSchool"],
     measurements: [
@@ -476,6 +515,12 @@ export const CHALLENGES: Challenge[] = [
         label: "Smoothness",
         unit: "%",
         recorder: "gyroscope",
+      },
+      {
+        key: "vibrationData",
+        label: "Phone vibration",
+        unit: "g",
+        recorder: "accelerometer",
       },
       {
         key: "timeSeconds",
@@ -497,7 +542,7 @@ export const CHALLENGES: Challenge[] = [
     thingsToKnow: [
       {
         heading: "What is biomechanics?",
-        color: "#3B82F6",
+        color: "#2563EB",
         bullets: [
           "Biomechanics is the study of how living things move using physics.",
           "Muscles, bones, and joints all work together to create movement.",
@@ -506,7 +551,7 @@ export const CHALLENGES: Challenge[] = [
       },
       {
         heading: "Muscle control",
-        color: "#2F80ED",
+        color: "#2563EB",
         bullets: [
           "Smooth movement requires many muscles coordinating together.",
           "Your brain sends signals through nerves 100s of times per second.",
@@ -536,27 +581,24 @@ export const CHALLENGES: Challenge[] = [
     title: "Reaction Board",
     category: "Neuroscience",
     icon: "pulse-outline",
-    color: "#8E3D59",
+    color: "#A855F7",
     shortDescription: "Test reaction time and coordination.",
     overview:
       "Measure reaction time and coordination through digital challenges.",
-    equipment: ["Mobile phone"],
+    equipment: ["Mobile phone with STEMM Lab app", "Clear working space"],
     instructions: [
       "Tap when button appears (5 trials)",
       "Record fastest time",
       "Repeat with non-dominant hand",
+      "Trace a moving shape on the screen",
+      "Rotate through each team member",
     ],
-    features: ["predictionRequired"],
+    features: ["predictionRequired", "video", "gps"],
     maxPrototypes: 1,
     estimatedMinutes: 15,
     difficultyLevels: ["primary", "highSchool"],
     measurements: [
       { key: "teamResults", label: "Team Results", recorder: "teamReaction" },
-      {
-        key: "tracingResult",
-        label: "Tracing Test",
-        recorder: "tracing",
-      },
       {
         key: "videoUri",
         label: "Team Test Video",
@@ -570,7 +612,7 @@ export const CHALLENGES: Challenge[] = [
     thingsToKnow: [
       {
         heading: "How fast is reaction time?",
-        color: "#3B82F6",
+        color: "#2563EB",
         bullets: [
           "Average human reaction time is 200–300 milliseconds.",
           "Elite athletes can react in as little as 100 ms.",
@@ -588,7 +630,7 @@ export const CHALLENGES: Challenge[] = [
       },
       {
         heading: "Dominant hand advantage",
-        color: "#2F80ED",
+        color: "#2563EB",
         bullets: [
           "Your dominant hand is usually faster due to better-trained pathways.",
           "This gap narrows with deliberate practice of the non-dominant hand.",
@@ -609,11 +651,11 @@ export const CHALLENGES: Challenge[] = [
     title: "Breathing Trainer",
     category: "Medical Science",
     icon: "heart-outline",
-    color: "#78A6F5",
+    color: "#0F766E",
     shortDescription: "Analyse breathing patterns before and after exercise.",
     overview:
       "Analyse breathing patterns using phone sensors to measure chest movement.",
-    equipment: ["Mobile phone", "Flat surface"],
+    equipment: ["Mobile phone with STEMM Lab app", "Flat surface or mat"],
     instructions: [
       "Place phone on chest",
       "Record breathing for 1 minute",
@@ -662,7 +704,7 @@ export const CHALLENGES: Challenge[] = [
     thingsToKnow: [
       {
         heading: "Why do we breathe?",
-        color: "#3B82F6",
+        color: "#2563EB",
         bullets: [
           "Breathing delivers oxygen to your blood and removes CO₂.",
           "Every cell in your body needs oxygen to produce energy.",
@@ -671,7 +713,7 @@ export const CHALLENGES: Challenge[] = [
       },
       {
         heading: "Breathing rate",
-        color: "#2F80ED",
+        color: "#2563EB",
         bullets: [
           "Normal resting breathing rate: 12–20 breaths per minute.",
           "Exercise can double or triple your breathing rate.",

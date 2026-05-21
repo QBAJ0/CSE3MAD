@@ -80,7 +80,7 @@ export default function JoinTeamScreen() {
       >
         {/* ── Header ── */}
         <View style={styles.header}>
-          <Ionicons name="enter-outline" size={32} color="#2F80ED" style={styles.headerIcon} />
+          <Ionicons name="enter-outline" size={32} color="#2563EB" style={styles.headerIcon} />
           <Text style={styles.headerTitle}>Join a Team</Text>
           <Text style={styles.headerSubtitle}>
             Enter the team name and the ID your team leader shared with you.
@@ -91,7 +91,7 @@ export default function JoinTeamScreen() {
         <View style={styles.card}>
           {/* Hint box */}
           <View style={styles.hintBox}>
-            <Ionicons name="bulb-outline" size={16} color="#007C7A" />
+            <Ionicons name="bulb-outline" size={16} color="#0F766E" />
             <Text style={styles.hintText}>
               Ask your team leader for the Team ID — it looks like{" "}
               <Text style={styles.hintBold}>#4821</Text>
@@ -161,7 +161,7 @@ export default function JoinTeamScreen() {
             onPress={() => router.replace("/(onboarding)/register")}
           >
             <View style={styles.createBtnRow}>
-              <Ionicons name="rocket-outline" size={17} color="#007C7A" />
+              <Ionicons name="rocket-outline" size={17} color="#0F766E" />
               <Text style={styles.createBtnText}>Create a New Team</Text>
             </View>
           </Pressable>
@@ -182,14 +182,14 @@ export default function JoinTeamScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#FFF5E8",
+    backgroundColor: "#FFF7ED",
   },
   content: {
     paddingBottom: 48,
   },
 
   header: {
-    backgroundColor: "#007C7A",
+    backgroundColor: "#0F766E",
     paddingTop: 56,
     paddingBottom: 32,
     paddingHorizontal: 24,
@@ -219,23 +219,23 @@ const styles = StyleSheet.create({
     padding: 24,
     gap: 16,
     borderWidth: 1,
-    borderColor: "#FFF5E8",
+    borderColor: "#FFF7ED",
   },
 
   hintBox: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 10,
-    backgroundColor: "#FFF5E8",
+    backgroundColor: "#FFF7ED",
     borderRadius: 12,
     padding: 14,
     borderWidth: 1.5,
-    borderColor: "#2F80ED",
+    borderColor: "#2563EB",
   },
   hintText: {
     flex: 1,
     fontSize: 13,
-    color: "#007C7A",
+    color: "#0F766E",
     lineHeight: 20,
   },
   hintBold: {
@@ -253,21 +253,21 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1.5,
-    borderColor: "#FFF5E8",
+    borderColor: "#FFF7ED",
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
-    color: "#007C7A",
+    color: "#0F766E",
     backgroundColor: "#FFFFFF",
   },
   inputFilled: {
-    borderColor: "#2F80ED",
+    borderColor: "#2563EB",
     backgroundColor: "#FFFFFF",
   },
 
   joinBtn: {
-    backgroundColor: "#F28C28",
+    backgroundColor: "#F97316",
     paddingVertical: 18,
     borderRadius: 16,
     alignItems: "center",
@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: "#FFF5E8",
+    backgroundColor: "#FFF7ED",
   },
   dividerText: {
     fontSize: 13,
@@ -313,11 +313,11 @@ const styles = StyleSheet.create({
   createBtn: {
     width: "100%",
     borderWidth: 2,
-    borderColor: "#007C7A",
+    borderColor: "#0F766E",
     paddingVertical: 16,
     borderRadius: 16,
     alignItems: "center",
-    backgroundColor: "#FFF5E8",
+    backgroundColor: "#FFF7ED",
   },
   createBtnRow: {
     flexDirection: "row",
@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   createBtnText: {
-    color: "#007C7A",
+    color: "#0F766E",
     fontSize: 16,
     fontWeight: "700",
   },

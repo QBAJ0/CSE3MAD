@@ -13,6 +13,7 @@ import {
   View,
 } from "react-native";
 import { CHALLENGES } from "../../src/data/challenges";
+import { SCORING } from "../../src/config/constants";
 import { useActivityCompletion } from "../../src/hooks/useActivityCompletion";
 
 const ALL_CATEGORIES = [
@@ -21,9 +22,9 @@ const ALL_CATEGORIES = [
 ];
 
 function baseXP(maxPrototypes: number): number {
-  let xp = 100;
-  if (maxPrototypes >= 2) xp += 30;
-  if (maxPrototypes >= 3) xp += 50;
+  let xp = SCORING.BASE_XP + SCORING.PREDICTION_BONUS;
+  if (maxPrototypes >= 2) xp += SCORING.MULTI_DESIGN_2;
+  if (maxPrototypes >= 3) xp += SCORING.MULTI_DESIGN_3;
   return xp;
 }
 
@@ -53,7 +54,7 @@ export default function ActivityScreen() {
       {/* ── Header ── */}
       <View style={styles.header}>
         <View style={styles.titleRow}>
-          <Ionicons name="flash" size={26} color="#007C7A" />
+          <Ionicons name="flash" size={26} color="#0F766E" />
           <Text style={styles.title}>Challenges</Text>
         </View>
         <View style={styles.progressPill}>
@@ -65,7 +66,7 @@ export default function ActivityScreen() {
 
       {/* ── Overall progress bar ── */}
       {loading ? (
-        <ActivityIndicator size="small" color="#2F80ED" style={styles.progressLoading} />
+        <ActivityIndicator size="small" color="#2563EB" style={styles.progressLoading} />
       ) : (
         <>
           <View style={styles.progressTrack}>
@@ -190,10 +191,19 @@ export default function ActivityScreen() {
                   </Text>
                 </View>
                 <View style={styles.xpPill}>
-                  <Ionicons name="flash" size={11} color="#F28C28" />
-                  <Text style={styles.xpPillText}>{xp}+ XP</Text>
+                  <Ionicons name="flash" size={11} color="#F97316" />
+                  <Text style={styles.xpPillText}>Earn {xp}+ XP</Text>
                 </View>
               </View>
+
+              {!isDone && (
+                <View style={styles.rewardHint}>
+                  <Ionicons name="sparkles-outline" size={12} color="#2563EB" />
+                  <Text style={styles.rewardHintText}>
+                    Bonus XP for evidence and teamwork
+                  </Text>
+                </View>
+              )}
             </View>
           </TouchableOpacity>
         );
@@ -214,7 +224,7 @@ export default function ActivityScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#FFF5E8",
+    backgroundColor: "#FFF7ED",
   },
   content: {
     padding: 20,
@@ -235,20 +245,20 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 30,
     fontWeight: "800",
-    color: "#007C7A",
+    color: "#0F766E",
   },
   progressPill: {
-    backgroundColor: "#F6D7A8",
+    backgroundColor: "#FED7AA",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#F28C28",
+    borderColor: "#F97316",
   },
   progressPillText: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#007C7A",
+    color: "#0F766E",
   },
 
   progressTrack: {
@@ -260,7 +270,7 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: "100%",
-    backgroundColor: "#2F80ED",
+    backgroundColor: "#2563EB",
     borderRadius: 4,
   },
   progressLabel: {
@@ -288,16 +298,16 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: "#FFFFFF",
     borderWidth: 1.5,
-    borderColor: "#FFF5E8",
+    borderColor: "#FFF7ED",
   },
   chipActive: {
-    backgroundColor: "#F28C28",
-    borderColor: "#F28C28",
+    backgroundColor: "#F97316",
+    borderColor: "#F97316",
   },
   chipText: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#007C7A",
+    color: "#0F766E",
   },
   chipTextActive: {
     color: "#FFFFFF",
@@ -313,12 +323,12 @@ const styles = StyleSheet.create({
     borderColor: "transparent",
   },
   cardDone: {
-    backgroundColor: "#FFF5E8",
-    borderColor: "#2F80ED",
+    backgroundColor: "#FFF7ED",
+    borderColor: "#2563EB",
   },
   cardNext: {
-    backgroundColor: "#FFF4EC",
-    borderColor: "#F28C28",
+    backgroundColor: "#FFEDD5",
+    borderColor: "#F97316",
   },
 
   startBadge: {
@@ -328,7 +338,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 3,
-    backgroundColor: "#F28C28",
+    backgroundColor: "#F97316",
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 8,
@@ -357,7 +367,7 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: "#2F80ED",
+    backgroundColor: "#2563EB",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
@@ -374,21 +384,21 @@ const styles = StyleSheet.create({
   challengeTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#007C7A",
+    color: "#0F766E",
     flex: 1,
   },
   challengeTitleDone: {
-    color: "#007C7A",
+    color: "#0F766E",
     opacity: 0.7,
   },
   challengeTitleNext: {
-    color: "#007C7A",
+    color: "#0F766E",
   },
   doneBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 3,
-    backgroundColor: "#2F80ED",
+    backgroundColor: "#2563EB",
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 8,
@@ -401,7 +411,7 @@ const styles = StyleSheet.create({
   category: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#2F80ED",
+    color: "#2563EB",
     marginBottom: 4,
     textTransform: "uppercase",
     letterSpacing: 0.5,
@@ -410,7 +420,7 @@ const styles = StyleSheet.create({
     color: "#94A3B8",
   },
   categoryNext: {
-    color: "#F28C28",
+    color: "#F97316",
   },
   description: {
     fontSize: 13,
@@ -438,7 +448,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 3,
-    backgroundColor: "#F6D7A8",
+    backgroundColor: "#FED7AA",
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 8,
@@ -447,7 +457,18 @@ const styles = StyleSheet.create({
   xpPillText: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#F28C28",
+    color: "#F97316",
+  },
+  rewardHint: {
+    marginTop: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  rewardHintText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#2563EB",
   },
 
   emptyState: {

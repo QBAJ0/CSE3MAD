@@ -12,9 +12,9 @@ import {
 } from "react-native";
 
 const SUBJECT_TILES = [
-  { icon: "flask-outline" as const, label: "Science", color: "#2F80ED" },
-  { icon: "construct-outline" as const, label: "Engineering", color: "#F28C28" },
-  { icon: "heart-outline" as const, label: "Health", color: "#F6D7A8" },
+  { icon: "flask-outline" as const, label: "Science", color: "#2563EB" },
+  { icon: "construct-outline" as const, label: "Engineering", color: "#F97316" },
+  { icon: "heart-outline" as const, label: "Health", color: "#FED7AA" },
 ];
 
 const FEATURE_TAGS = [
@@ -61,7 +61,7 @@ export default function WelcomeScreen() {
         <View style={styles.tagsRow}>
           {FEATURE_TAGS.map(({ icon, label }) => (
             <View key={label} style={styles.tag}>
-              <Ionicons name={icon} size={12} color="#007C7A" />
+              <Ionicons name={icon} size={12} color="#0F766E" />
               <Text style={styles.tagText}>{label}</Text>
             </View>
           ))}
@@ -97,7 +97,7 @@ export default function WelcomeScreen() {
           onPress={() => router.push("/(onboarding)/join-team")}
         >
           <View style={styles.btnRow}>
-            <Ionicons name="people" size={18} color="#007C7A" />
+            <Ionicons name="people" size={18} color="#0F766E" />
             <Text style={styles.secondaryBtnText}>Join Existing Team</Text>
           </View>
           <Text style={styles.secondaryBtnSub}>Enter a team code from your group</Text>
@@ -111,7 +111,7 @@ export default function WelcomeScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#007C7A",
+    backgroundColor: "#0F766E",
   },
   content: {
     flexGrow: 1,
@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
   // Hero (top branded section)
   hero: {
     flex: 1,
-    backgroundColor: "#007C7A",
+    backgroundColor: "#0F766E",
     alignItems: "center",
     justifyContent: "center",
     paddingTop: 60,
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
   logoLab: {
     fontSize: 72,
     fontWeight: "900",
-    color: "#F6D7A8",
+    color: "#FED7AA",
     lineHeight: 72,
     letterSpacing: -2,
     marginTop: -8,
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
   logoDivider: {
     width: 56,
     height: 4,
-    backgroundColor: "#2F80ED",
+    backgroundColor: "#2563EB",
     borderRadius: 2,
     marginVertical: 16,
   },
@@ -214,23 +214,23 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
-    backgroundColor: "#F6D7A8",
+    backgroundColor: "#FED7AA",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#F28C28",
+    borderColor: "#F97316",
   },
   tagText: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#007C7A",
+    color: "#0F766E",
   },
 
   heading: {
     fontSize: 26,
     fontWeight: "800",
-    color: "#007C7A",
+    color: "#0F766E",
     marginBottom: 10,
   },
   body: {
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
 
   // Create Team — Ochre solid
   primaryBtn: {
-    backgroundColor: "#F28C28",
+    backgroundColor: "#F97316",
     paddingVertical: 18,
     borderRadius: 16,
     alignItems: "center",
@@ -269,20 +269,20 @@ const styles = StyleSheet.create({
   // Join Team — Payne Gray outlined
   secondaryBtn: {
     borderWidth: 2,
-    borderColor: "#007C7A",
+    borderColor: "#0F766E",
     paddingVertical: 16,
     borderRadius: 16,
     alignItems: "center",
-    backgroundColor: "#FFF5E8",
+    backgroundColor: "#FFF7ED",
     gap: 4,
   },
   secondaryBtnText: {
-    color: "#007C7A",
+    color: "#0F766E",
     fontSize: 17,
     fontWeight: "700",
   },
   secondaryBtnSub: {
-    color: "#007C7A",
+    color: "#0F766E",
     fontSize: 13,
     marginTop: 2,
     opacity: 0.7,

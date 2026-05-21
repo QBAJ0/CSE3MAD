@@ -112,7 +112,7 @@ export function ChallengeTimer({
     if (timeLeft <= 30) return "#EF4444";
     if (timeLeft <= 60) return "#F97316";
     if (timeLeft <= 120) return "#FBBF24";
-    return "#2F80ED";
+    return "#2563EB";
   };
 
   const toggleTimer = () => {
@@ -137,7 +137,7 @@ export function ChallengeTimer({
           <Ionicons
             name={isActive ? "pause" : "play"}
             size={20}
-            color="#12343B"
+            color="#0F172A"
           />
         </TouchableOpacity>
       </View>

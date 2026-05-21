@@ -111,6 +111,8 @@ export function TracingRecorder({
   const animationRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef<number>(0);
   const lastTraceTimeRef = useRef<number>(0);
+  // Ref mirrors isTracing state so the PanResponder (created once) always reads the current value
+  const isTracingRef = useRef(false);
 
   // Generate target path based on shape
   useEffect(() => {
@@ -130,6 +132,7 @@ export function TracingRecorder({
 
   // Animate the target dot along the path
   const startTracing = () => {
+    isTracingRef.current = true;
     setIsTracing(true);
     setTracePoints([]);
     setCurrentTargetIndex(0);
@@ -153,6 +156,7 @@ export function TracingRecorder({
       clearInterval(animationRef.current);
       animationRef.current = null;
     }
+    isTracingRef.current = false;
     setIsTracing(false);
     calculateScore();
   };
@@ -219,8 +223,8 @@ export function TracingRecorder({
   // PanResponder for tracing
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => isTracing,
-      onMoveShouldSetPanResponder: () => isTracing,
+      onStartShouldSetPanResponder: () => isTracingRef.current,
+      onMoveShouldSetPanResponder: () => isTracingRef.current,
       onPanResponderGrant: (e) => {
         const { locationX, locationY } = e.nativeEvent;
         const newPoint = { x: locationX, y: locationY };
@@ -246,9 +250,9 @@ export function TracingRecorder({
   const getScoreFeedback = () => {
     if (score === null) return null;
     if (score >= 90)
-      return { text: "Excellent tracer!", color: "#2F80ED" };
-    if (score >= 70) return { text: "Good job!", color: "#F28C28" };
-    if (score >= 50) return { text: "Keep practicing!", color: "#F6B84A" };
+      return { text: "Excellent tracer!", color: "#2563EB" };
+    if (score >= 70) return { text: "Good job!", color: "#F97316" };
+    if (score >= 50) return { text: "Keep practicing!", color: "#F59E0B" };
     return { text: "Try again to improve!", color: "#F97316" };
   };
 
@@ -261,6 +265,7 @@ export function TracingRecorder({
     setScore(null);
     setAccuracy(null);
     setDelay(null);
+    isTracingRef.current = false;
     setIsTracing(false);
     if (animationRef.current) {
       clearInterval(animationRef.current);
@@ -297,7 +302,7 @@ export function TracingRecorder({
       <View style={styles.container}>
         <View style={styles.resultContainer}>
           <View style={styles.resultTitleRow}>
-            <Ionicons name="analytics-outline" size={20} color="#12343B" />
+            <Ionicons name="analytics-outline" size={20} color="#0F172A" />
             <Text style={styles.resultTitle}>Tracing Results</Text>
           </View>
           <View style={styles.resultStats}>
@@ -331,7 +336,7 @@ export function TracingRecorder({
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.titleRow}>
-          <Ionicons name="pencil-outline" size={20} color="#12343B" />
+          <Ionicons name="pencil-outline" size={20} color="#0F172A" />
           <Text style={styles.title}>Tracing Challenge</Text>
         </View>
         <Text style={styles.subtitle}>
@@ -376,14 +381,14 @@ export function TracingRecorder({
                 cx={currentTarget.x}
                 cy={currentTarget.y}
                 r={14}
-                fill="#2F80ED"
+                fill="#2563EB"
                 opacity={0.3}
               />
               <Circle
                 cx={currentTarget.x}
                 cy={currentTarget.y}
                 r={8}
-                fill="#2F80ED"
+                fill="#2563EB"
               />
               <Circle
                 cx={currentTarget.x}
@@ -449,7 +454,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#12343B",
+    color: "#0F172A",
     marginBottom: 4,
   },
   subtitle: {
@@ -457,7 +462,7 @@ const styles = StyleSheet.create({
     color: "#64748B",
   },
   canvas: {
-    backgroundColor: "#F0F6FF",
+    backgroundColor: "#EFF6FF",
     borderRadius: 12,
     marginBottom: 16,
     overflow: "hidden",
@@ -490,7 +495,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: "#2F80ED",
+    backgroundColor: "#2563EB",
     paddingVertical: 14,
     paddingHorizontal: 32,
     borderRadius: 12,
@@ -518,7 +523,7 @@ const styles = StyleSheet.create({
   resultTitle: {
     fontSize: 20,
     fontWeight: "800",
-    color: "#12343B",
+    color: "#0F172A",
     marginBottom: 16,
   },
   resultStats: {
@@ -546,7 +551,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   retakeButton: {
-    backgroundColor: "#3B82F6",
+    backgroundColor: "#2563EB",
     paddingVertical: 12,
     paddingHorizontal: 28,
     borderRadius: 10,

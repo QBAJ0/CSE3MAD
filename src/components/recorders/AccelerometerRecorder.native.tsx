@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  Vibration,
   View,
 } from "react-native";
 import Svg, { Line, Path } from "react-native-svg";
@@ -16,16 +17,21 @@ const { width } = Dimensions.get("window");
 const CHART_WIDTH = width - 80;
 const CHART_HEIGHT = 120;
 
+// Repeating tremor pattern: on/off bursts that simulate ground shaking
+const EARTHQUAKE_PATTERN = [0, 80, 40, 100, 30, 80, 50, 120, 20, 80];
+
 interface AccelerometerRecorderProps {
   onCapture: (data: { peak: number; average: number; samples: number }) => void;
   duration?: number;
   existingValue?: { peak: number; average: number };
+  vibrateMode?: boolean;
 }
 
 export function AccelerometerRecorder({
   onCapture,
   duration = 5,
   existingValue,
+  vibrateMode = false,
 }: AccelerometerRecorderProps) {
   const [recording, setRecording] = useState(false);
   const [permissionGranted, setPermissionGranted] = useState(false);
@@ -46,6 +52,8 @@ export function AccelerometerRecorder({
   const sumMagnitudeRef = useRef<number>(0);
   const countRef = useRef<number>(0);
   const chartAnim = useRef(new Animated.Value(0)).current;
+  // Ref mirrors recording state so the auto-stop setTimeout always reads the current value
+  const recordingRef = useRef(false);
 
   useEffect(() => {
     requestPermissions();
@@ -68,6 +76,8 @@ export function AccelerometerRecorder({
     }
 
     haptic("medium");
+    if (vibrateMode) Vibration.vibrate(EARTHQUAKE_PATTERN, true);
+    recordingRef.current = true;
     setRecording(true);
     setPeakMagnitude(0);
     setAverageMagnitude(0);
@@ -106,9 +116,7 @@ export function AccelerometerRecorder({
 
     // Auto-stop after duration
     setTimeout(() => {
-      if (recording) {
-        stopRecording();
-      }
+      if (recordingRef.current) stopRecording();
     }, duration * 1000);
   };
 
@@ -117,6 +125,9 @@ export function AccelerometerRecorder({
       subscriptionRef.current.remove();
       subscriptionRef.current = null;
     }
+
+    if (vibrateMode) Vibration.cancel();
+    recordingRef.current = false;
 
     const avg =
       countRef.current > 0 ? sumMagnitudeRef.current / countRef.current : 0;
@@ -134,9 +145,9 @@ export function AccelerometerRecorder({
 
   const getStabilityLevel = (peak: number) => {
     if (peak < 0.05)
-      return { label: "Rock Solid", color: "#2F80ED" };
-    if (peak < 0.1) return { label: "Stable", color: "#F28C28" };
-    if (peak < 0.2) return { label: "Wobbly", color: "#F6B84A" };
+      return { label: "Rock Solid", color: "#2563EB" };
+    if (peak < 0.1) return { label: "Stable", color: "#F97316" };
+    if (peak < 0.2) return { label: "Wobbly", color: "#F59E0B" };
     if (peak < 0.35)
       return { label: "Unstable", color: "#F97316" };
     return { label: "Collapse Risk", color: "#EF4444" };
@@ -222,7 +233,7 @@ export function AccelerometerRecorder({
         <Svg width={CHART_WIDTH} height={CHART_HEIGHT}>
           <Path
             d={getChartPath()}
-            stroke="#2F80ED"
+            stroke="#2563EB"
             strokeWidth={2}
             fill="none"
           />
@@ -232,7 +243,7 @@ export function AccelerometerRecorder({
             x2={CHART_WIDTH}
             y1={CHART_HEIGHT * 0.2}
             y2={CHART_HEIGHT * 0.2}
-            stroke="#F6B84A"
+            stroke="#F59E0B"
             strokeWidth={1}
             strokeDasharray="4,4"
             opacity={0.5}
@@ -305,7 +316,11 @@ export function AccelerometerRecorder({
         onPress={recording ? stopRecording : startRecording}
       >
         <Text style={styles.recordButtonText}>
-          {recording ? "⏹️ Stop Measurement" : `📳 Start ({duration}s)`}
+          {recording
+            ? "⏹️ Stop & Cancel Vibration"
+            : vibrateMode
+              ? `🌍 Start Earthquake Simulation (${duration}s)`
+              : `📳 Start (${duration}s)`}
         </Text>
       </TouchableOpacity>
 
@@ -333,24 +348,24 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   permissionText: {
-    color: "#12343B",
+    color: "#0F172A",
     textAlign: "center",
     marginBottom: 12,
   },
   permissionButton: {
-    backgroundColor: "#2F80ED",
+    backgroundColor: "#2563EB",
     padding: 12,
     borderRadius: 10,
     alignItems: "center",
   },
   permissionButtonText: {
-    color: "#F0F6FF",
+    color: "#EFF6FF",
     fontWeight: "700",
   },
   chartContainer: {
     alignItems: "center",
     marginBottom: 16,
-    backgroundColor: "#F0F6FF",
+    backgroundColor: "#EFF6FF",
     borderRadius: 12,
     padding: 8,
   },
@@ -368,10 +383,10 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   magnitudeLabel: {
-    color: "#2F80ED",
+    color: "#2563EB",
   },
   valueText: {
-    color: "#12343B",
+    color: "#0F172A",
     fontSize: 16,
     fontWeight: "700",
     fontVariant: ["tabular-nums"],
@@ -382,11 +397,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 16,
     padding: 12,
-    backgroundColor: "#F0F6FF",
+    backgroundColor: "#EFF6FF",
     borderRadius: 12,
   },
   peakLabel: {
-    color: "#12343B",
+    color: "#0F172A",
     fontSize: 14,
     fontWeight: "600",
   },
@@ -400,7 +415,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   recordButton: {
-    backgroundColor: "#2F80ED",
+    backgroundColor: "#2563EB",
     padding: 16,
     borderRadius: 12,
     alignItems: "center",
@@ -424,7 +439,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   savedTitle: {
-    color: "#2F80ED",
+    color: "#2563EB",
     fontSize: 16,
     fontWeight: "700",
   },
@@ -436,7 +451,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   savedStatValue: {
-    color: "#12343B",
+    color: "#0F172A",
     fontSize: 24,
     fontWeight: "800",
     fontVariant: ["tabular-nums"],
@@ -455,7 +470,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   retakeButton: {
-    backgroundColor: "#3B82F6",
+    backgroundColor: "#2563EB",
     padding: 10,
     borderRadius: 8,
     paddingHorizontal: 20,

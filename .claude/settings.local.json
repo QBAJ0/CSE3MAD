@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir app\\\\challenge /s /b)",
+      "Bash(npx tsc *)",
+      "Bash(echo \"Exit: $?\")"
+    ]
+  }
+}

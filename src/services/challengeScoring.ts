@@ -131,7 +131,10 @@ export function calculateChallengePoints(input: ChallengePointsInput): number {
   if (input.prototypeCount >= 3) points += SCORING.MULTI_DESIGN_3;
   if (input.hasCompleteData) points += SCORING.DATA_QUALITY;
   if (input.reflectionChars > GAMIFICATION.REFLECTION_THRESHOLD_1) {
-    points += SCORING.REFLECTION_BONUS;
+    points += SCORING.REFLECTION_BONUS_1;
+  }
+  if (input.reflectionChars > GAMIFICATION.REFLECTION_THRESHOLD_2) {
+    points += SCORING.REFLECTION_BONUS_2;
   }
   if (input.hasEvidence) points += SCORING.EVIDENCE_BONUS;
   if (input.hasTeamwork) points += SCORING.TEAMWORK_BONUS;
@@ -172,10 +175,18 @@ export function buildChallengePointsBreakdown(
   }
 
   if (input.reflectionChars > GAMIFICATION.REFLECTION_THRESHOLD_1) {
-    pts += SCORING.REFLECTION_BONUS;
+    pts += SCORING.REFLECTION_BONUS_1;
     items.push({
       label: "Detailed observations",
-      value: `+${SCORING.REFLECTION_BONUS}`,
+      value: `+${SCORING.REFLECTION_BONUS_1}`,
+    });
+  }
+
+  if (input.reflectionChars > GAMIFICATION.REFLECTION_THRESHOLD_2) {
+    pts += SCORING.REFLECTION_BONUS_2;
+    items.push({
+      label: "Thoughtful reflection",
+      value: `+${SCORING.REFLECTION_BONUS_2}`,
     });
   }
 

@@ -1,37 +1,22 @@
-import { router, Stack } from "expo-router";
+import { Stack } from "expo-router";
 import { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { ErrorBoundary } from "../src/components/ui/ErrorBoundary";
 import { ActivityProvider } from "../src/context/ActivityContext";
 import { TeamProvider } from "../src/context/TeamContext";
-import { initializeMobileAds } from "../src/utils/mobileAds";
-import {
-  addNotificationUrlListener,
-  requestNotificationPermissions,
-} from "../src/utils/notifications";
+import { initializeAdMob } from "../src/utils/adMob";
+import { requestNotificationPermissions } from "../src/utils/notifications";
 // Import at top level so TaskManager.defineTask runs before any registration attempt
 import { registerStreakReminderTask } from "../src/tasks/streakReminderTask";
 
 export default function RootLayout() {
   useEffect(() => {
     const setup = async () => {
-      await Promise.all([
-        requestNotificationPermissions(),
-        registerStreakReminderTask(),
-        initializeMobileAds(),
-      ]);
+      await requestNotificationPermissions();
+      await registerStreakReminderTask();
+      await initializeAdMob();
     };
     setup().catch(console.error);
-  }, []);
-
-  useEffect(() => {
-    const subscription = addNotificationUrlListener((url) => {
-      if (url.startsWith("/challenge/")) {
-        router.push(url as any);
-      }
-    });
-
-    return () => subscription.remove();
   }, []);
 
   return (
@@ -44,30 +29,7 @@ export default function RootLayout() {
               <Stack.Screen name="(onboarding)" />
               <Stack.Screen name="(tabs)" />
               <Stack.Screen name="activity" options={{ headerShown: false }} />
-              <Stack.Screen
-                name="challenge/[id]/index"
-                options={{
-                  headerShown: true,
-                  title: "Challenge",
-                  headerBackTitle: "Back",
-                }}
-              />
-              <Stack.Screen
-                name="challenge/[id]/record"
-                options={{
-                  headerShown: true,
-                  title: "Record Data",
-                  headerBackTitle: "Back",
-                }}
-              />
-              <Stack.Screen
-                name="challenge/[id]/results"
-                options={{
-                  headerShown: true,
-                  title: "Review & Submit",
-                  headerBackTitle: "Back",
-                }}
-              />
+              <Stack.Screen name="challenge" options={{ headerShown: false }} />
             </Stack>
           </ActivityProvider>
         </TeamProvider>

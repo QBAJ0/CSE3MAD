@@ -31,33 +31,25 @@
     "plugins": [
       "expo-router",
       [
-        "expo-build-properties",
+        "expo-splash-screen",
         {
-          "ios": {
-            "useFrameworks": "static"
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 300,
+          "resizeMode": "contain",
+          "backgroundColor": "#FFF7ED",
+          "dark": {
+            "backgroundColor": "#0F766E"
           }
         }
       ],
+      "expo-sqlite",
       [
         "react-native-google-mobile-ads",
         {
           "androidAppId": "ca-app-pub-3940256099942544~3347511713",
           "iosAppId": "ca-app-pub-3940256099942544~1458002511"
         }
-      ],
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 220,
-          "resizeMode": "contain",
-          "backgroundColor": "#FFF5E8",
-          "dark": {
-            "backgroundColor": "#007C7A"
-          }
-        }
-      ],
-      "expo-sqlite"
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

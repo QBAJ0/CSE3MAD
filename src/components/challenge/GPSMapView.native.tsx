@@ -5,13 +5,12 @@ import MapView, { Marker } from "react-native-maps";
 interface GPSMapViewProps {
   lat: number;
   lng: number;
-  height?: number;
 }
 
-export function GPSMapView({ lat, lng, height = 200 }: GPSMapViewProps) {
+export function GPSMapView({ lat, lng }: GPSMapViewProps) {
   return (
     <MapView
-      style={[styles.map, { height }]}
+      style={styles.map}
       initialRegion={{
         latitude: lat,
         longitude: lng,
@@ -30,6 +29,7 @@ export function GPSMapView({ lat, lng, height = 200 }: GPSMapViewProps) {
 const styles = StyleSheet.create({
   map: {
     width: "100%",
+    height: 200,
     borderRadius: 12,
     overflow: "hidden",
   },

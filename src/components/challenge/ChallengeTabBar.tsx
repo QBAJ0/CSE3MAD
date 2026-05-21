@@ -100,13 +100,13 @@ const styles = StyleSheet.create({
   },
   disabledTab: { opacity: 0.4 },
   label: { fontSize: 14, fontWeight: "600", color: "#64748B" },
-  activeLabel: { color: "#12343B", fontWeight: "700" },
+  activeLabel: { color: "#0F172A", fontWeight: "700" },
   disabledLabel: { color: "#94A3B8" },
   dot: {
     width: 5,
     height: 5,
     borderRadius: 3,
-    backgroundColor: "#2F80ED",
+    backgroundColor: "#2563EB",
     marginTop: 4,
   },
 });

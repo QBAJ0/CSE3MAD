@@ -2,7 +2,6 @@
 
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router, useFocusEffect } from "expo-router";
-import { asHref } from "@/src/utils/expoHref";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -20,27 +19,20 @@ import {
   RARITY_BORDER,
   RARITY_COLOR,
 } from "../../src/config/badges";
+import { BatteryStatusCard } from "../../src/components/BatteryStatusCard";
 import { useTeam } from "../../src/context/TeamContext";
 import { getChallengeById } from "../../src/data/challenges";
 import { ActivityResult } from "../../src/types";
-import {
-  getNextDailyChallenge,
-  getTeamActivities,
-  hasCompletedActivityToday,
-} from "../../src/utils/dailyChallenge";
-import {
-  cancelChallengeNotifications,
-  scheduleStreakReminderNotification,
-} from "../../src/utils/notifications";
+import { scheduleStreakReminder, cancelStreakReminder } from "../../src/utils/notifications";
 import { DEFAULT_REMINDER_HOUR, DEFAULT_REMINDER_MINUTE, storage } from "../../src/utils/storage";
 
 const AVATAR_COLORS = [
-  "#007C7A",
-  "#2F80ED",
-  "#F6D7A8",
-  "#F28C28",
-  "#007C7A",
-  "#2F80ED",
+  "#0F766E",
+  "#2563EB",
+  "#FED7AA",
+  "#F97316",
+  "#0F766E",
+  "#2563EB",
 ];
 
 export default function ProfileScreen() {
@@ -93,24 +85,11 @@ export default function ProfileScreen() {
       storage.saveReminderHour(hour),
       storage.saveReminderMinute(minute),
     ]);
-    const [activities, streak] = await Promise.all([
-      storage.getCompletedActivities(),
-      storage.getStreak(),
-    ]);
-    const teamActivities = getTeamActivities(activities, team);
-    const nextChallenge = getNextDailyChallenge(teamActivities);
-
-    const completedToday = hasCompletedActivityToday(teamActivities);
-
-    if (streak > 0 && !completedToday) {
-      scheduleStreakReminderNotification({
-        streak,
-        hour,
-        minute,
-        challenge: nextChallenge,
-      }).catch(console.error);
+    const streak = await storage.getStreak();
+    if (streak > 0) {
+      scheduleStreakReminder(streak, hour, minute).catch(console.error);
     } else {
-      cancelChallengeNotifications().catch(console.error);
+      cancelStreakReminder().catch(console.error);
     }
   };
 
@@ -135,7 +114,7 @@ export default function ProfileScreen() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2F80ED" />
+        <ActivityIndicator size="large" color="#2563EB" />
       </View>
     );
   }
@@ -148,7 +127,7 @@ export default function ProfileScreen() {
     >
       <View style={styles.header}>
         <View style={styles.avatarCircle}>
-          <Ionicons name="flask" size={40} color="#F6D7A8" />
+          <Ionicons name="flask" size={40} color="#FED7AA" />
         </View>
 
         <Text style={styles.teamName}>{team?.teamName ?? "My Team"}</Text>
@@ -187,7 +166,7 @@ export default function ProfileScreen() {
 
         <Pressable
           style={({ pressed }) => [styles.toolRow, pressed && styles.pressed]}
-          onPress={() => router.push(asHref("/(tabs)/activities"))}
+          onPress={() => router.push("/(tabs)/activities")}
         >
           <Ionicons name="flask-outline" size={20} color="#0F172A" />
           <Text style={styles.toolLabel}>Lab activities</Text>
@@ -196,7 +175,7 @@ export default function ProfileScreen() {
 
         <Pressable
           style={({ pressed }) => [styles.toolRow, pressed && styles.pressed]}
-          onPress={() => router.push(asHref("/(tabs)/results"))}
+          onPress={() => router.push("/(tabs)/results")}
         >
           <Ionicons name="document-text-outline" size={20} color="#0F172A" />
           <Text style={styles.toolLabel}>Lab results (SQLite)</Text>
@@ -205,7 +184,7 @@ export default function ProfileScreen() {
 
         <Pressable
           style={({ pressed }) => [styles.toolRow, pressed && styles.pressed]}
-          onPress={() => router.push(asHref("/(tabs)/sqlite-test"))}
+          onPress={() => router.push("/(tabs)/sqlite-test")}
         >
           <Ionicons name="hardware-chip-outline" size={20} color="#0F172A" />
           <Text style={styles.toolLabel}>SQLite check</Text>
@@ -214,7 +193,7 @@ export default function ProfileScreen() {
 
         <Pressable
           style={({ pressed }) => [styles.toolRow, pressed && styles.pressed]}
-          onPress={() => router.push(asHref("/(tabs)/auth"))}
+          onPress={() => router.push("/(tabs)/auth")}
         >
           <Ionicons name="log-in-outline" size={20} color="#0F172A" />
           <Text style={styles.toolLabel}>Email sign-in</Text>
@@ -222,10 +201,12 @@ export default function ProfileScreen() {
         </Pressable>
       </View>
 
+      <BatteryStatusCard />
+
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <View style={styles.cardTitleRow}>
-            <Ionicons name="ribbon-outline" size={16} color="#007C7A" />
+            <Ionicons name="ribbon-outline" size={16} color="#0F766E" />
             <Text style={styles.cardTitle}>Badge Collection</Text>
           </View>
 
@@ -246,10 +227,10 @@ export default function ProfileScreen() {
                   {
                     backgroundColor: isEarned
                       ? RARITY_BG[badge.rarity]
-                      : "#FFF5E8",
+                      : "#FFF7ED",
                     borderColor: isEarned
                       ? RARITY_BORDER[badge.rarity]
-                      : "#FFF5E8",
+                      : "#FFF7ED",
                     opacity: isEarned ? 1 : 0.5,
                   },
                 ]}
@@ -288,7 +269,7 @@ export default function ProfileScreen() {
 
       <View style={styles.card}>
         <View style={styles.cardTitleRow}>
-          <Ionicons name="people-outline" size={16} color="#007C7A" />
+          <Ionicons name="people-outline" size={16} color="#0F766E" />
           <Text style={styles.cardTitle}>Team Members</Text>
         </View>
 
@@ -319,7 +300,7 @@ export default function ProfileScreen() {
 
       <View style={styles.card}>
         <View style={styles.cardTitleRow}>
-          <Ionicons name="time-outline" size={16} color="#007C7A" />
+          <Ionicons name="time-outline" size={16} color="#0F766E" />
           <Text style={styles.cardTitle}>Results History</Text>
         </View>
 
@@ -362,7 +343,7 @@ export default function ProfileScreen() {
                     <Ionicons
                       name={challenge.icon as any}
                       size={22}
-                      color="#2F80ED"
+                      color="#2563EB"
                     />
                   </View>
 
@@ -386,7 +367,7 @@ export default function ProfileScreen() {
 
                 <View style={styles.historyDetailsRow}>
                   <View style={styles.historyBadge}>
-                    <Ionicons name="star" size={13} color="#F28C28" />
+                    <Ionicons name="star" size={13} color="#F97316" />
                     <Text style={styles.historyBadgeText}>
                       {activity.rating}/5
                     </Text>
@@ -406,14 +387,14 @@ export default function ProfileScreen() {
 
                   {videoAttached && (
                     <View style={styles.videoBadge}>
-                      <Ionicons name="videocam" size={13} color="#007C7A" />
+                      <Ionicons name="videocam" size={13} color="#0F766E" />
                       <Text style={styles.videoBadgeText}>Video saved</Text>
                     </View>
                   )}
 
                   {gpsAttached && (
                     <View style={styles.gpsBadge}>
-                      <Ionicons name="location" size={13} color="#007C7A" />
+                      <Ionicons name="location" size={13} color="#0F766E" />
                       <Text style={styles.gpsBadgeText}>GPS</Text>
                     </View>
                   )}
@@ -502,7 +483,7 @@ function NotificationTimeCard({
   return (
     <View style={styles.card}>
       <View style={styles.cardTitleRow}>
-        <Ionicons name="notifications-outline" size={16} color="#007C7A" />
+        <Ionicons name="notifications-outline" size={16} color="#0F766E" />
         <Text style={styles.cardTitle}>Streak Reminder Time</Text>
       </View>
 
@@ -533,11 +514,11 @@ function NotificationTimeCard({
           {/* Hour */}
           <View style={styles.spinnerCol}>
             <TouchableOpacity onPress={() => stepHour(1)} style={styles.spinnerBtn}>
-              <Ionicons name="chevron-up" size={20} color="#007C7A" />
+              <Ionicons name="chevron-up" size={20} color="#0F766E" />
             </TouchableOpacity>
             <Text style={styles.spinnerValue}>{hour12.toString().padStart(2, "0")}</Text>
             <TouchableOpacity onPress={() => stepHour(-1)} style={styles.spinnerBtn}>
-              <Ionicons name="chevron-down" size={20} color="#007C7A" />
+              <Ionicons name="chevron-down" size={20} color="#0F766E" />
             </TouchableOpacity>
           </View>
 
@@ -546,11 +527,11 @@ function NotificationTimeCard({
           {/* Minute */}
           <View style={styles.spinnerCol}>
             <TouchableOpacity onPress={() => stepMinute(1)} style={styles.spinnerBtn}>
-              <Ionicons name="chevron-up" size={20} color="#007C7A" />
+              <Ionicons name="chevron-up" size={20} color="#0F766E" />
             </TouchableOpacity>
             <Text style={styles.spinnerValue}>{minute.toString().padStart(2, "0")}</Text>
             <TouchableOpacity onPress={() => stepMinute(-1)} style={styles.spinnerBtn}>
-              <Ionicons name="chevron-down" size={20} color="#007C7A" />
+              <Ionicons name="chevron-down" size={20} color="#0F766E" />
             </TouchableOpacity>
           </View>
 
@@ -568,11 +549,11 @@ function NotificationTimeCard({
           <Text style={styles.durationLabel}>Remind me in</Text>
           <View style={styles.durationStepper}>
             <TouchableOpacity onPress={() => stepDuration(-1)} style={styles.stepBtn}>
-              <Ionicons name="remove" size={20} color="#007C7A" />
+              <Ionicons name="remove" size={20} color="#0F766E" />
             </TouchableOpacity>
             <Text style={styles.stepValue}>{durationHrs}h</Text>
             <TouchableOpacity onPress={() => stepDuration(1)} style={styles.stepBtn}>
-              <Ionicons name="add" size={20} color="#007C7A" />
+              <Ionicons name="add" size={20} color="#0F766E" />
             </TouchableOpacity>
           </View>
           <Text style={styles.durationResult}>
@@ -592,7 +573,7 @@ function NotificationTimeCard({
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#FFF5E8",
+    backgroundColor: "#FFF7ED",
   },
 
   content: {
@@ -603,11 +584,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#FFF5E8",
+    backgroundColor: "#FFF7ED",
   },
 
   header: {
-    backgroundColor: "#007C7A",
+    backgroundColor: "#0F766E",
     paddingTop: 58,
     paddingBottom: 28,
     paddingHorizontal: 24,
@@ -624,7 +605,7 @@ const styles = StyleSheet.create({
     borderRadius: 42,
     backgroundColor: "rgba(255,202,167,0.2)",
     borderWidth: 3,
-    borderColor: "#F6D7A8",
+    borderColor: "#FED7AA",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 10,
@@ -639,7 +620,7 @@ const styles = StyleSheet.create({
   teamId: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#F6D7A8",
+    color: "#FED7AA",
     marginBottom: 18,
   },
 
@@ -684,7 +665,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: "#FFF5E8",
+    borderColor: "#FFF7ED",
   },
 
   cardHeader: {
@@ -704,7 +685,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 16,
     fontWeight: "800",
-    color: "#007C7A",
+    color: "#0F766E",
   },
 
   cardSubtitle: {
@@ -772,7 +753,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: "#FFF5E8",
+    borderBottomColor: "#FFF7ED",
     gap: 12,
   },
 
@@ -797,7 +778,7 @@ const styles = StyleSheet.create({
   memberName: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#007C7A",
+    color: "#0F766E",
   },
 
   memberGrade: {
@@ -807,12 +788,12 @@ const styles = StyleSheet.create({
   },
 
   historyCard: {
-    backgroundColor: "#FFF5E8",
+    backgroundColor: "#FFF7ED",
     borderRadius: 16,
     padding: 14,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: "#FFF5E8",
+    borderColor: "#FFF7ED",
   },
 
   historyTopRow: {
@@ -837,7 +818,7 @@ const styles = StyleSheet.create({
   historyName: {
     fontSize: 14,
     fontWeight: "800",
-    color: "#007C7A",
+    color: "#0F766E",
   },
 
   historyMeta: {
@@ -853,7 +834,7 @@ const styles = StyleSheet.create({
   historyXPValue: {
     fontSize: 17,
     fontWeight: "800",
-    color: "#F28C28",
+    color: "#F97316",
   },
 
   historyXPLabel: {
@@ -878,12 +859,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 9,
     paddingVertical: 5,
     borderWidth: 1,
-    borderColor: "#FFF5E8",
+    borderColor: "#FFF7ED",
   },
 
   historyBadgeText: {
     fontSize: 11,
-    color: "#007C7A",
+    color: "#0F766E",
     fontWeight: "700",
   },
 
@@ -896,12 +877,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 9,
     paddingVertical: 5,
     borderWidth: 1,
-    borderColor: "#2F80ED",
+    borderColor: "#2563EB",
   },
 
   videoBadgeText: {
     fontSize: 11,
-    color: "#007C7A",
+    color: "#0F766E",
     fontWeight: "800",
   },
 
@@ -914,12 +895,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 9,
     paddingVertical: 5,
     borderWidth: 1,
-    borderColor: "#2F80ED",
+    borderColor: "#2563EB",
   },
 
   gpsBadgeText: {
     fontSize: 11,
-    color: "#007C7A",
+    color: "#0F766E",
     fontWeight: "800",
   },
 
@@ -977,7 +958,7 @@ const styles = StyleSheet.create({
 
   modeToggle: {
     flexDirection: "row",
-    backgroundColor: "#FFF5E8",
+    backgroundColor: "#FFF7ED",
     borderRadius: 12,
     padding: 3,
     marginBottom: 16,
@@ -1001,7 +982,7 @@ const styles = StyleSheet.create({
     color: "#94A3B8",
   },
   modeBtnTextActive: {
-    color: "#007C7A",
+    color: "#0F766E",
     fontWeight: "700",
   },
   pickerRow: {
@@ -1021,18 +1002,18 @@ const styles = StyleSheet.create({
   spinnerValue: {
     fontSize: 36,
     fontWeight: "800",
-    color: "#007C7A",
+    color: "#0F766E",
     minWidth: 54,
     textAlign: "center",
   },
   timeSeparator: {
     fontSize: 32,
     fontWeight: "800",
-    color: "#007C7A",
+    color: "#0F766E",
     marginBottom: 4,
   },
   ampmBtn: {
-    backgroundColor: "#FFF5E8",
+    backgroundColor: "#FFF7ED",
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 10,
@@ -1041,7 +1022,7 @@ const styles = StyleSheet.create({
   ampmText: {
     fontSize: 16,
     fontWeight: "800",
-    color: "#007C7A",
+    color: "#0F766E",
   },
   durationRow: {
     alignItems: "center",
@@ -1062,22 +1043,22 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: "#FFF5E8",
+    backgroundColor: "#FFF7ED",
     borderWidth: 1.5,
-    borderColor: "#007C7A",
+    borderColor: "#0F766E",
     alignItems: "center",
     justifyContent: "center",
   },
   stepValue: {
     fontSize: 28,
     fontWeight: "800",
-    color: "#007C7A",
+    color: "#0F766E",
     minWidth: 56,
     textAlign: "center",
   },
   durationResult: {
     fontSize: 13,
-    color: "#F28C28",
+    color: "#F97316",
     fontWeight: "700",
   },
   saveReminderBtn: {
@@ -1085,7 +1066,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
-    backgroundColor: "#F28C28",
+    backgroundColor: "#F97316",
     borderRadius: 12,
     paddingVertical: 12,
   },
