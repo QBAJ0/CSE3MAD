@@ -5,10 +5,11 @@ export const SCORING = {
   BASE_XP: 100,
   MULTI_DESIGN_2: 30,     // +XP for testing 2+ prototypes
   MULTI_DESIGN_3: 50,     // +XP for testing 3+ prototypes
-  HIGH_RATING_4: 50,
-  HIGH_RATING_5: 25,      // stacked bonus on top of HIGH_RATING_4
-  REFLECTION_BONUS: 25,   // applied once at >50 chars, stacked again at >100 chars
-  GPS_TAGGED: 20,
+  DATA_QUALITY: 25,       // +XP for completing the required measurements
+  REFLECTION_BONUS: 25,   // +XP for thoughtful observations/reflection
+  EVIDENCE_BONUS: 20,     // +XP for GPS, photo, video, or analysis evidence
+  TEAMWORK_BONUS: 20,     // +XP for team participation evidence
+  GPS_TAGGED: 20,         // Legacy alias kept for older references
   HIGH_SCHOOL_MULTIPLIER: 1.5,
   TIME_PENALTY_MULTIPLIER: 0.8,
 } as const;
@@ -28,14 +29,42 @@ export const TIMING = {
   ONE_DAY_MS: 86_400_000,
 } as const;
 
-// App-specific brand palette (separate from the light/dark theme in constants/theme.ts)
+export const SOUND_DB_TIERS = [
+  { max: 60, color: "#2F80ED", label: "< 60 dB  Safe" },
+  { max: 85, color: "#F6B84A", label: "60–85 dB  Moderate" },
+  { max: 100, color: "#F97316", label: "85–100 dB  Loud" },
+  { max: Infinity, color: "#EF4444", label: "> 100 dB  Dangerous" },
+] as const;
+
+// App-specific brand palette
 export const BRAND = {
-  primary: "#22C55E",
-  primaryLight: "#DCFCE7",
-  primaryDark: "#166534",
-  primaryText: "#16A34A",
-  ecofccb: "#ECFCCB",
-  slate900: "#0F172A",
+  // Core palette requested for a warmer, kid-friendly look
+  orangeLuster: "#F28C28",   // CTAs, active states, energy moments
+  aspiringBlue: "#2F80ED",   // progress, information, completion states
+  jewelTeal: "#007C7A",      // headers, primary headings, navigation
+  caramelPowder: "#F6D7A8",  // warm highlights and friendly surfaces
+  warmCream: "#FFF5E8",      // screen backgrounds
+  deepInk: "#12343B",        // main body text and dark surfaces
+
+  // Backward-compatible alias from the earlier palette iteration
+  persianPlum: "#007C7A",
+
+  // Legacy aliases kept so existing imports stay stable
+  payneGray: "#007C7A",
+  skyBlue: "#2F80ED",
+  ghostWhite: "#FFF5E8",
+  peach: "#F6D7A8",
+  ochre: "#F28C28",
+
+  // Semantic aliases
+  primary: "#F28C28",
+  primaryLight: "#F6D7A8",
+  primaryDark: "#007C7A",
+  primaryText: "#007C7A",
+  bg: "#FFF5E8",
+
+  // Neutral grays (kept for subtle text / borders)
+  slate900: "#12343B",
   slate700: "#334155",
   slate600: "#475569",
   slate500: "#64748B",
@@ -44,11 +73,10 @@ export const BRAND = {
   slate200: "#E2E8F0",
   slate100: "#F1F5F9",
   slate50: "#F8FAFC",
+
+  // Utility
   white: "#FFFFFF",
   error: "#DC2626",
   errorLight: "#FEE2E2",
-  splash: "#0F172A",
-  blue100: "#DBEAFE",
-  bbf7d0: "#BBF7D0",
-  f0fdf4: "#F0FDF4",
+  splash: "#007C7A",
 } as const;

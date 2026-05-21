@@ -1,13 +1,13 @@
-// components/VideoFrameAnalyzer.tsx
+import Ionicons from "@expo/vector-icons/Ionicons";
 import Slider from "@react-native-community/slider";
 import { ResizeMode, Video } from "expo-av";
 import { useRef, useState } from "react";
 import {
-    Alert,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  Alert,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { useHaptic } from "../../hooks/useHaptic";
 
@@ -19,7 +19,7 @@ interface FrameMarkers {
 
 interface VideoFrameAnalyzerProps {
   videoUri: string;
-  slowMoFactor?: number; // e.g., 4 for 120fps played at 30fps
+  slowMoFactor?: number;
   onComplete: (marks: {
     contactTime: number;
     bounced: boolean;
@@ -52,8 +52,26 @@ export function VideoFrameAnalyzer({
     return `${mins}:${secs.toFixed(2).padStart(5, "0")}`;
   };
 
-  const getRealTime = (videoTime: number): number => {
-    return videoTime / slowMoFactor;
+  const getRealTime = (videoTime: number): number => videoTime / slowMoFactor;
+
+  const calculateResults = () => {
+    if (marks.firstContact === null || marks.atRest === null) {
+      Alert.alert("Error", "Please mark both first contact and at rest");
+      return;
+    }
+
+    const contactTimeVideo = marks.atRest - marks.firstContact;
+    const contactTimeReal = getRealTime(contactTimeVideo);
+    const bounced = marks.bouncePeak !== null;
+    const timeToBouncePeak = bounced
+      ? getRealTime(marks.bouncePeak! - marks.firstContact)
+      : undefined;
+
+    onComplete({
+      contactTime: contactTimeReal,
+      bounced,
+      timeToBouncePeak,
+    });
   };
 
   const handleMarkCurrentFrame = () => {
@@ -63,50 +81,16 @@ export function VideoFrameAnalyzer({
       [activeMark]: currentTime,
     }));
 
-    // Move to next mark
     if (activeMark === "firstContact") {
       setActiveMark("atRest");
-      Alert.alert(
-        "✅ First Contact Marked",
-        "Now mark when the toy stops moving",
-      );
+      Alert.alert("First Contact Marked", "Now mark when the toy stops moving");
     } else if (activeMark === "atRest") {
       setActiveMark("bouncePeak");
       Alert.alert(
-        "✅ At Rest Marked",
+        "At Rest Marked",
         "If it bounced, mark the highest bounce point. Otherwise tap Skip.",
       );
     }
-  };
-
-  const skipBounceMark = () => {
-    haptic("light");
-    calculateResults();
-  };
-
-  const calculateResults = () => {
-    if (!marks.firstContact || !marks.atRest) {
-      Alert.alert("Error", "Please mark both first contact and at rest");
-      return;
-    }
-
-    const contactTimeVideo = marks.atRest - marks.firstContact;
-    const contactTimeReal = getRealTime(contactTimeVideo);
-
-    let bounced = false;
-    let timeToBouncePeakReal: number | undefined;
-
-    if (marks.bouncePeak) {
-      bounced = true;
-      const timeToPeakVideo = marks.bouncePeak - marks.firstContact;
-      timeToBouncePeakReal = getRealTime(timeToPeakVideo);
-    }
-
-    onComplete({
-      contactTime: contactTimeReal,
-      bounced,
-      timeToBouncePeak: timeToBouncePeakReal,
-    });
   };
 
   const resetMarks = () => {
@@ -115,31 +99,32 @@ export function VideoFrameAnalyzer({
     setActiveMark("firstContact");
   };
 
-  const getProgress = () => {
-    if (duration === 0) return 0;
-    return (currentTime / duration) * 100;
-  };
-
   const getMarkStatus = () => {
-    if (marks.firstContact && marks.atRest && marks.bouncePeak)
+    if (marks.firstContact !== null && marks.atRest !== null && marks.bouncePeak !== null)
       return "complete";
-    if (marks.firstContact && marks.atRest) return "partial";
-    if (marks.firstContact) return "started";
+    if (marks.firstContact !== null && marks.atRest !== null) return "partial";
+    if (marks.firstContact !== null) return "started";
     return "waiting";
   };
 
   const markStatus = getMarkStatus();
 
+  const renderMarkValue = (value: number | null, fallback: string) =>
+    value === null ? fallback : `${getRealTime(value).toFixed(3)}s`;
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>🎬 Frame-by-Frame Analysis</Text>
+      <View style={styles.titleRow}>
+        <Ionicons name="film-outline" size={18} color="#F8FAFC" />
+        <Text style={styles.title}>Frame-by-Frame Analysis</Text>
+      </View>
       <Text style={styles.subtitle}>
         {markStatus === "waiting" &&
           "Step 1: Mark when toy first hits the ground"}
         {markStatus === "started" && "Step 2: Mark when toy stops moving"}
         {markStatus === "partial" &&
           "Step 3: If it bounced, mark the highest bounce point"}
-        {markStatus === "complete" && "✅ All marks complete! Tap Continue"}
+        {markStatus === "complete" && "All marks complete. Tap Continue"}
       </Text>
 
       <Video
@@ -151,8 +136,7 @@ export function VideoFrameAnalyzer({
         onPlaybackStatusUpdate={(status) => {
           if (status.isLoaded) {
             setCurrentTime(status.positionMillis / 1000);
-            if (status.durationMillis)
-              setDuration(status.durationMillis / 1000);
+            if (status.durationMillis) setDuration(status.durationMillis / 1000);
           }
         }}
         useNativeControls
@@ -166,7 +150,7 @@ export function VideoFrameAnalyzer({
             setIsPlaying(!isPlaying);
           }}
         >
-          <Text style={styles.playButtonText}>{isPlaying ? "⏸️" : "▶️"}</Text>
+          <Ionicons name={isPlaying ? "pause" : "play"} size={20} color="#FFF" />
         </TouchableOpacity>
 
         <View style={styles.sliderContainer}>
@@ -181,7 +165,7 @@ export function VideoFrameAnalyzer({
                 setCurrentTime(value);
               }
             }}
-            minimumTrackTintColor="#22C55E"
+            minimumTrackTintColor="#2F80ED"
             maximumTrackTintColor="#334155"
           />
           <Text style={styles.timeText}>{formatTime(currentTime)}</Text>
@@ -191,7 +175,7 @@ export function VideoFrameAnalyzer({
           style={styles.stepButton}
           onPress={() => {
             haptic("light");
-            const frameTime = 1 / 30; // ~33ms per frame at 30fps
+            const frameTime = 1 / 30;
             const newTime = currentTime + frameTime;
             if (videoRef.current && newTime <= duration) {
               videoRef.current.setPositionAsync(newTime * 1000);
@@ -199,7 +183,8 @@ export function VideoFrameAnalyzer({
             }
           }}
         >
-          <Text style={styles.stepButtonText}>⏩ Frame</Text>
+          <Ionicons name="play-forward" size={14} color="#FFF" />
+          <Text style={styles.stepButtonText}>Frame</Text>
         </TouchableOpacity>
       </View>
 
@@ -210,21 +195,17 @@ export function VideoFrameAnalyzer({
             marks.firstContact !== null && styles.markBadgeComplete,
           ]}
         >
+          <Ionicons name="locate-outline" size={14} color="#FFF" />
           <Text style={styles.markBadgeText}>
-            🎯 First Contact{" "}
-            {marks.firstContact
-              ? `✅ ${getRealTime(marks.firstContact).toFixed(3)}s`
-              : "⏳"}
+            First Contact {renderMarkValue(marks.firstContact, "Waiting")}
           </Text>
         </View>
         <View
           style={[styles.markBadge, marks.atRest !== null && styles.markBadgeComplete]}
         >
+          <Ionicons name="hand-left-outline" size={14} color="#FFF" />
           <Text style={styles.markBadgeText}>
-            🛑 At Rest{" "}
-            {marks.atRest
-              ? `✅ ${getRealTime(marks.atRest).toFixed(3)}s`
-              : "⏳"}
+            At Rest {renderMarkValue(marks.atRest, "Waiting")}
           </Text>
         </View>
         <View
@@ -233,13 +214,14 @@ export function VideoFrameAnalyzer({
             marks.bouncePeak !== null && styles.markBadgeComplete,
           ]}
         >
+          <Ionicons name="trending-up-outline" size={14} color="#FFF" />
           <Text style={styles.markBadgeText}>
-            📈 Bounce Peak{" "}
-            {marks.bouncePeak
-              ? `✅ ${getRealTime(marks.bouncePeak).toFixed(3)}s`
-              : marks.atRest
-                ? "⚡ Optional"
-                : "⏳"}
+            Bounce Peak{" "}
+            {marks.bouncePeak !== null
+              ? renderMarkValue(marks.bouncePeak, "")
+              : marks.atRest !== null
+                ? "Optional"
+                : "Waiting"}
           </Text>
         </View>
       </View>
@@ -250,8 +232,9 @@ export function VideoFrameAnalyzer({
             style={styles.markButton}
             onPress={handleMarkCurrentFrame}
           >
+            <Ionicons name="pin-outline" size={16} color="#FFF" />
             <Text style={styles.markButtonText}>
-              📍 Mark{" "}
+              Mark{" "}
               {activeMark === "firstContact"
                 ? "First Contact"
                 : activeMark === "atRest"
@@ -261,15 +244,17 @@ export function VideoFrameAnalyzer({
           </TouchableOpacity>
         )}
 
-        {activeMark === "bouncePeak" && !marks.bouncePeak && (
-          <TouchableOpacity style={styles.skipButton} onPress={skipBounceMark}>
-            <Text style={styles.skipButtonText}>⏭️ No Bounce (Skip)</Text>
+        {activeMark === "bouncePeak" && marks.bouncePeak === null && (
+          <TouchableOpacity style={styles.skipButton} onPress={calculateResults}>
+            <Ionicons name="play-skip-forward-outline" size={16} color="#FFF" />
+            <Text style={styles.skipButtonText}>No Bounce</Text>
           </TouchableOpacity>
         )}
 
         {markStatus !== "waiting" && (
           <TouchableOpacity style={styles.resetButton} onPress={resetMarks}>
-            <Text style={styles.resetButtonText}>↺ Reset Marks</Text>
+            <Ionicons name="refresh" size={16} color="#FFF" />
+            <Text style={styles.resetButtonText}>Reset Marks</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -279,9 +264,8 @@ export function VideoFrameAnalyzer({
           style={styles.completeButton}
           onPress={calculateResults}
         >
-          <Text style={styles.completeButtonText}>
-            ✅ Continue with Results
-          </Text>
+          <Ionicons name="checkmark-circle-outline" size={18} color="#FFF" />
+          <Text style={styles.completeButtonText}>Continue with Results</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -296,12 +280,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#334155",
   },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginBottom: 4,
+  },
   title: {
     fontSize: 18,
     fontWeight: "800",
     color: "#F8FAFC",
     textAlign: "center",
-    marginBottom: 4,
   },
   subtitle: {
     fontSize: 12,
@@ -326,11 +316,10 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "#22C55E",
+    backgroundColor: "#2F80ED",
     alignItems: "center",
     justifyContent: "center",
   },
-  playButtonText: { fontSize: 20 },
   sliderContainer: { flex: 1 },
   slider: { width: "100%", height: 40 },
   timeText: {
@@ -340,6 +329,9 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   stepButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 8,
     backgroundColor: "#3B82F6",
@@ -358,13 +350,17 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: "#334155",
     alignItems: "center",
+    gap: 4,
   },
-  markBadgeComplete: { backgroundColor: "#22C55E" },
+  markBadgeComplete: { backgroundColor: "#2F80ED" },
   markBadgeText: { color: "#FFF", fontSize: 11, fontWeight: "600" },
   actionButtons: { flexDirection: "row", gap: 12 },
   markButton: {
     flex: 2,
-    backgroundColor: "#22C55E",
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 6,
+    backgroundColor: "#2F80ED",
     paddingVertical: 12,
     borderRadius: 10,
     alignItems: "center",
@@ -372,6 +368,9 @@ const styles = StyleSheet.create({
   markButtonText: { color: "#FFF", fontWeight: "700" },
   skipButton: {
     flex: 1,
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 6,
     backgroundColor: "#F97316",
     paddingVertical: 12,
     borderRadius: 10,
@@ -380,6 +379,9 @@ const styles = StyleSheet.create({
   skipButtonText: { color: "#FFF", fontWeight: "700" },
   resetButton: {
     flex: 1,
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 6,
     backgroundColor: "#475569",
     paddingVertical: 12,
     borderRadius: 10,
@@ -387,7 +389,10 @@ const styles = StyleSheet.create({
   },
   resetButtonText: { color: "#FFF", fontWeight: "700" },
   completeButton: {
-    backgroundColor: "#10B981",
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: "#2F80ED",
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: "center",

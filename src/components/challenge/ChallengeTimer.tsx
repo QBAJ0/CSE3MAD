@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Alert,
   Animated,
@@ -30,6 +31,26 @@ export function ChallengeTimer({
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
+  const handleTimeout = useCallback(() => {
+    setIsActive(false);
+    Vibration.vibrate([1000, 500, 1000, 500, 1000]);
+    Alert.alert(
+      "Time's Up!",
+      `Your ${minutes}-minute challenge has ended.\n\nPoints will be reduced by 20%.`,
+      [
+        { text: "Submit Results", onPress: onTimeout, style: "default" },
+        {
+          text: "Continue (Penalty Applied)",
+          onPress: () => {
+            setIsActive(true);
+            onTimeout();
+          },
+          style: "cancel",
+        },
+      ],
+    );
+  }, [minutes, onTimeout]);
+
   useEffect(() => {
     if (isActive && timeLeft > 0) {
       intervalRef.current = setInterval(() => {
@@ -57,7 +78,7 @@ export function ChallengeTimer({
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [isActive, timeLeft]);
+  }, [handleTimeout, haptic, isActive, isWarning, onTimeUpdate, timeLeft]);
 
   useEffect(() => {
     if (isWarning) {
@@ -78,27 +99,7 @@ export function ChallengeTimer({
     } else {
       pulseAnim.setValue(1);
     }
-  }, [isWarning]);
-
-  const handleTimeout = () => {
-    setIsActive(false);
-    Vibration.vibrate([1000, 500, 1000, 500, 1000]);
-    Alert.alert(
-      "⏰ Time's Up!",
-      `Your ${minutes}-minute challenge has ended.\n\nPoints will be reduced by 20%.`,
-      [
-        { text: "Submit Results", onPress: onTimeout, style: "default" },
-        {
-          text: "Continue (Penalty Applied)",
-          onPress: () => {
-            setIsActive(true);
-            onTimeout();
-          },
-          style: "cancel",
-        },
-      ],
-    );
-  };
+  }, [isWarning, pulseAnim]);
 
   const formatTime = () => {
     const mins = Math.floor(timeLeft / 60);
@@ -111,7 +112,7 @@ export function ChallengeTimer({
     if (timeLeft <= 30) return "#EF4444";
     if (timeLeft <= 60) return "#F97316";
     if (timeLeft <= 120) return "#FBBF24";
-    return "#22C55E";
+    return "#2F80ED";
   };
 
   const toggleTimer = () => {
@@ -129,11 +130,15 @@ export function ChallengeTimer({
     >
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Text style={styles.timerIcon}>⏱️</Text>
+          <Ionicons name="timer-outline" size={20} color="#64748B" />
           <Text style={styles.timerLabel}>Challenge Timer</Text>
         </View>
         <TouchableOpacity onPress={toggleTimer} style={styles.timerControl}>
-          <Text style={styles.timerControlText}>{isActive ? "⏸️" : "▶️"}</Text>
+          <Ionicons
+            name={isActive ? "pause" : "play"}
+            size={20}
+            color="#12343B"
+          />
         </TouchableOpacity>
       </View>
       <View style={styles.timerCircle}>
@@ -142,7 +147,7 @@ export function ChallengeTimer({
         </Text>
         <Text style={styles.timerMessage}>
           {timeLeft <= 60
-            ? "⚠️ Hurry! Time running out!"
+            ? "Hurry! Time running out!"
             : "Take your time, but watch the clock!"}
         </Text>
       </View>
@@ -184,10 +189,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   headerLeft: { flexDirection: "row", alignItems: "center", gap: 8 },
-  timerIcon: { fontSize: 20 },
   timerLabel: { fontSize: 14, fontWeight: "600", color: "#64748B" },
   timerControl: { padding: 8 },
-  timerControlText: { fontSize: 20 },
   timerCircle: { alignItems: "center", marginVertical: 12 },
   timerText: {
     fontSize: 52,

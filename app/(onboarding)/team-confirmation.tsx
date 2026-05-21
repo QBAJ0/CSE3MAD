@@ -1,6 +1,5 @@
 // app/(onboarding)/team-confirmation.tsx
 // Shown after a team is successfully created.
-// Displays team name, ID, and member list, then lets students go to the home screen.
 
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
@@ -14,7 +13,7 @@ import {
 import { useTeam } from "../../src/context/TeamContext";
 
 const AVATAR_COLORS = [
-  "#22C55E", "#3B82F6", "#F59E0B", "#EF4444", "#8B5CF6", "#06B6D4",
+  "#007C7A", "#2F80ED", "#F6D7A8", "#F28C28", "#007C7A", "#2F80ED",
 ];
 
 export default function TeamConfirmationScreen() {
@@ -32,11 +31,11 @@ export default function TeamConfirmationScreen() {
         </View>
 
         <View style={styles.successBadge}>
-          <Ionicons name="checkmark-circle" size={14} color="#166534" />
+          <Ionicons name="checkmark-circle" size={14} color="#007C7A" />
           <Text style={styles.successBadgeText}>Team Ready!</Text>
         </View>
 
-        <Text style={styles.title}>You're all set!</Text>
+        <Text style={styles.title}>{"You're all set!"}</Text>
         <Text style={styles.subtitle}>
           Your team has been created. Let the science begin!
         </Text>
@@ -79,7 +78,7 @@ export default function TeamConfirmationScreen() {
 
       {/* ── Tip box ── */}
       <View style={styles.tipBox}>
-        <Ionicons name="bulb-outline" size={15} color="#94A3B8" />
+        <Ionicons name="bulb-outline" size={15} color="#2F80ED" />
         <Text style={styles.tipText}>
           Complete challenges to earn XP and climb the leaderboard!
         </Text>
@@ -92,7 +91,7 @@ export default function TeamConfirmationScreen() {
       >
         <View style={styles.goBtnRow}>
           <Ionicons name="flash" size={20} color="#FFFFFF" />
-          <Text style={styles.goBtnText}>Let's Go!</Text>
+          <Text style={styles.goBtnText}>{"Let's Go!"}</Text>
         </View>
       </Pressable>
     </ScrollView>
@@ -103,7 +102,7 @@ export default function TeamConfirmationScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#0F172A",
+    backgroundColor: "#FFF5E8",
   },
   content: {
     padding: 24,
@@ -120,7 +119,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: "#22C55E",
+    backgroundColor: "#F28C28",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 16,
@@ -129,53 +128,53 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "#F0FDF4",
-    borderWidth: 1,
-    borderColor: "#22C55E",
+    backgroundColor: "#F6D7A8",
+    borderWidth: 1.5,
+    borderColor: "#F28C28",
     paddingHorizontal: 14,
     paddingVertical: 6,
-    borderRadius: 999,
+    borderRadius: 12,
     marginBottom: 14,
   },
   successBadgeText: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#166534",
+    color: "#007C7A",
   },
   title: {
     fontSize: 28,
     fontWeight: "800",
-    color: "#FFFFFF",
+    color: "#007C7A",
     marginBottom: 6,
     textAlign: "center",
   },
   subtitle: {
     fontSize: 15,
-    color: "#94A3B8",
+    color: "#64748B",
     textAlign: "center",
     lineHeight: 22,
   },
 
   identityBlock: {
     width: "100%",
-    backgroundColor: "#1E293B",
+    backgroundColor: "#FFFFFF",
     borderRadius: 16,
     padding: 16,
     alignItems: "center",
     marginBottom: 20,
-    borderWidth: 1,
-    borderColor: "#334155",
+    borderWidth: 2,
+    borderColor: "#007C7A",
   },
   teamName: {
     fontSize: 22,
     fontWeight: "800",
-    color: "#FFFFFF",
+    color: "#007C7A",
     marginBottom: 4,
   },
   teamId: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#22C55E",
+    color: "#F28C28",
   },
 
   memberSection: {
@@ -185,7 +184,7 @@ const styles = StyleSheet.create({
   memberSectionTitle: {
     fontSize: 14,
     fontWeight: "800",
-    color: "#CBD5E1",
+    color: "#94A3B8",
     marginBottom: 10,
     textTransform: "uppercase",
     letterSpacing: 0.8,
@@ -197,9 +196,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    backgroundColor: "#1E293B",
+    backgroundColor: "#FFFFFF",
     borderRadius: 12,
     padding: 12,
+    borderWidth: 1,
+    borderColor: "#FFF5E8",
   },
   memberAvatar: {
     width: 36,
@@ -216,11 +217,11 @@ const styles = StyleSheet.create({
   memberName: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: "#007C7A",
   },
   memberGrade: {
     fontSize: 11,
-    color: "#64748B",
+    color: "#94A3B8",
     marginTop: 1,
   },
 
@@ -229,21 +230,23 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     gap: 10,
     width: "100%",
-    backgroundColor: "#1E293B",
+    backgroundColor: "#FFFFFF",
     borderRadius: 12,
     padding: 14,
     marginBottom: 28,
+    borderWidth: 1.5,
+    borderColor: "#2F80ED",
   },
   tipText: {
     flex: 1,
     fontSize: 13,
-    color: "#94A3B8",
+    color: "#007C7A",
     lineHeight: 19,
   },
 
   goBtn: {
     width: "100%",
-    backgroundColor: "#22C55E",
+    backgroundColor: "#F28C28",
     paddingVertical: 18,
     borderRadius: 16,
     alignItems: "center",

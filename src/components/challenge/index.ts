@@ -1,4 +1,3 @@
-export { ChallengeCard } from "./ChallengeCard";
 export type { ChallengeTab } from "./ChallengeTabBar";
 export { ChallengeTabBar } from "./ChallengeTabBar";
 export { ChallengeTimer } from "./ChallengeTimer";

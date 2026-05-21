@@ -1,10 +1,39 @@
-import { Stack } from "expo-router";
+import { router, Stack } from "expo-router";
+import { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { ErrorBoundary } from "../src/components/ui/ErrorBoundary";
 import { ActivityProvider } from "../src/context/ActivityContext";
 import { TeamProvider } from "../src/context/TeamContext";
+import { initializeMobileAds } from "../src/utils/mobileAds";
+import {
+  addNotificationUrlListener,
+  requestNotificationPermissions,
+} from "../src/utils/notifications";
+// Import at top level so TaskManager.defineTask runs before any registration attempt
+import { registerStreakReminderTask } from "../src/tasks/streakReminderTask";
 
 export default function RootLayout() {
+  useEffect(() => {
+    const setup = async () => {
+      await Promise.all([
+        requestNotificationPermissions(),
+        registerStreakReminderTask(),
+        initializeMobileAds(),
+      ]);
+    };
+    setup().catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    const subscription = addNotificationUrlListener((url) => {
+      if (url.startsWith("/challenge/")) {
+        router.push(url as any);
+      }
+    });
+
+    return () => subscription.remove();
+  }, []);
+
   return (
     <ErrorBoundary>
       <GestureHandlerRootView style={{ flex: 1 }}>

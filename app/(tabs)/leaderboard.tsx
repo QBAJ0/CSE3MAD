@@ -1,6 +1,5 @@
 // app/(tabs)/leaderboard.tsx
-// Shows all teams ranked by XP. Students can filter by week, month, or all time.
-// The top 3 teams get a podium display, the rest appear in a ranked list.
+// Shows all teams ranked by XP. Filter by week, month, or all time.
 
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useFocusEffect } from "@react-navigation/native";
@@ -19,17 +18,14 @@ import { fetchLeaderboard } from "../../src/services/resultDb";
 import type { LeaderboardEntry } from "../../src/types";
 import type { LeaderboardRow } from "../../src/types/db";
 
-// Text labels for top 3 ranks
 const RANK_LABEL: Record<number, string> = { 1: "1st", 2: "2nd", 3: "3rd" };
 
-// Background colour for each podium position
 const PODIUM_COLORS: Record<1 | 2 | 3, string> = {
-  1: "#F59E0B",   // gold
-  2: "#94A3B8",   // silver
-  3: "#D97706",   // bronze
+  1: "#F28C28",   // Ochre — bold first place
+  2: "#2F80ED",   // Sky Blue — cool second place
+  3: "#F6D7A8",   // Peach — warm third place
 };
 
-// Height of each podium column (1st is tallest)
 const PODIUM_HEIGHTS: Record<1 | 2 | 3, number> = {
   1: 148,
   2: 110,
@@ -38,8 +34,6 @@ const PODIUM_HEIGHTS: Record<1 | 2 | 3, number> = {
 
 export default function LeaderboardScreen() {
   const { team } = useTeam();
-
-  // Which time filter is active: this week, this month, or all time
   const [timeFrame, setTimeFrame] = useState<LeaderboardTimeFrame>("all");
 
   const [sqlRows, setSqlRows] = useState<LeaderboardRow[]>([]);
@@ -62,19 +56,16 @@ export default function LeaderboardScreen() {
     }, [loadSqlLeaderboard]),
   );
 
-  // Load leaderboard data for the selected time frame
   const { entries: leaderboard, loading } = useLeaderboard(timeFrame);
 
-  // Show a spinner while data loads
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#22C55E" />
+        <ActivityIndicator size="large" color="#2F80ED" />
       </View>
     );
   }
 
-  // Find this team's entry and split the list into podium vs. the rest
   const yourEntry = leaderboard.find(
     (e) => e.discriminator === team?.discriminator
   );
@@ -89,7 +80,7 @@ export default function LeaderboardScreen() {
     >
       {/* ── Title ── */}
       <View style={styles.titleRow}>
-        <Ionicons name="trophy" size={26} color="#0F172A" />
+        <Ionicons name="trophy" size={26} color="#007C7A" />
         <View style={styles.titleBlock}>
           <Text style={styles.title}>Leaderboard</Text>
           <Text style={styles.subtitle}>Experience points</Text>
@@ -131,13 +122,11 @@ export default function LeaderboardScreen() {
         <View style={styles.podiumWrapper}>
           <Text style={styles.podiumLabel}>Top Performers</Text>
 
-          {/* Order: 2nd left · 1st centre · 3rd right */}
           <View style={styles.podiumRow}>
             {([top3[1], top3[0], top3[2]] as (LeaderboardEntry | undefined)[]).map(
               (entry, colIdx) => {
                 const rank = ([2, 1, 3] as const)[colIdx];
 
-                // Empty slot (fewer than 3 teams exist yet)
                 if (!entry) {
                   return (
                     <View key={colIdx} style={styles.podiumSlot}>
@@ -157,14 +146,12 @@ export default function LeaderboardScreen() {
 
                 return (
                   <View key={entry.discriminator} style={styles.podiumSlot}>
-                    {/* "YOU" bubble above the card */}
                     {isYou && (
                       <View style={styles.youBubble}>
                         <Text style={styles.youBubbleText}>YOU</Text>
                       </View>
                     )}
 
-                    {/* Coloured podium card */}
                     <View
                       style={[
                         styles.podiumCard,
@@ -213,18 +200,19 @@ export default function LeaderboardScreen() {
                 key={entry.discriminator}
                 style={[styles.row, isYou && styles.rowYou]}
               >
-                {/* Rank number */}
                 <View style={styles.rowRank}>
-                  <Text style={styles.rowRankText}>#{entry.rank}</Text>
+                  <Text style={[styles.rowRankText, isYou && styles.rowRankTextYou]}>
+                    #{entry.rank}
+                  </Text>
                 </View>
 
-                {/* Team name + ID */}
                 <View style={styles.rowInfo}>
-                  <Text style={styles.rowName}>{entry.teamName}</Text>
+                  <Text style={[styles.rowName, isYou && styles.rowNameYou]}>
+                    {entry.teamName}
+                  </Text>
                   <Text style={styles.rowId}>{entry.discriminator}</Text>
                 </View>
 
-                {/* XP */}
                 <View style={styles.rowRight}>
                   <Text style={styles.rowXP}>{entry.totalPoints}</Text>
                   <Text style={styles.rowXPLabel}>XP</Text>
@@ -307,7 +295,7 @@ export default function LeaderboardScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#FFF5E8",
   },
   content: {
     padding: 20,
@@ -317,6 +305,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "#FFF5E8",
   },
 
   titleRow: {
@@ -332,7 +321,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 30,
     fontWeight: "800",
-    color: "#0F172A",
+    color: "#007C7A",
   },
   subtitle: {
     fontSize: 14,
@@ -340,7 +329,7 @@ const styles = StyleSheet.create({
     color: "#64748B",
   },
 
-  // Time frame filter
+  // Time frame filter — full box, rectangular
   filterRow: {
     flexDirection: "row",
     gap: 10,
@@ -348,51 +337,51 @@ const styles = StyleSheet.create({
   },
   filterBtn: {
     flex: 1,
-    paddingVertical: 10,
-    borderRadius: 999,
+    paddingVertical: 11,
+    borderRadius: 12,
     backgroundColor: "#FFFFFF",
     alignItems: "center",
     borderWidth: 1.5,
-    borderColor: "#E2E8F0",
+    borderColor: "#FFF5E8",
   },
   filterBtnActive: {
-    backgroundColor: "#22C55E",
-    borderColor: "#22C55E",
+    backgroundColor: "#F28C28",
+    borderColor: "#F28C28",
   },
   filterBtnText: {
     fontSize: 13,
-    fontWeight: "600",
-    color: "#64748B",
+    fontWeight: "700",
+    color: "#007C7A",
   },
   filterBtnTextActive: { color: "#FFFFFF" },
 
   // Your rank spotlight (rank > 3)
   yourSpotlight: {
-    backgroundColor: "#1E293B",
+    backgroundColor: "#FFF4EC",
     borderRadius: 16,
     padding: 16,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 16,
-    borderWidth: 1.5,
-    borderColor: "#22C55E",
+    borderWidth: 2,
+    borderColor: "#F28C28",
   },
   yourSpotlightLabel: {
     fontSize: 11,
     fontWeight: "800",
-    color: "#22C55E",
+    color: "#F28C28",
     letterSpacing: 1,
   },
   yourSpotlightRank: {
     fontSize: 28,
     fontWeight: "800",
-    color: "#FFFFFF",
+    color: "#007C7A",
   },
   yourSpotlightPoints: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#22C55E",
+    color: "#F28C28",
   },
 
   // Podium
@@ -424,11 +413,11 @@ const styles = StyleSheet.create({
   },
   podiumEmptyCard: {
     borderRadius: 16,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
-    borderColor: "#E2E8F0",
+    borderColor: "#FFF5E8",
     borderStyle: "dashed",
   },
   podiumEmptyText: { fontSize: 24, color: "#94A3B8" },
@@ -436,7 +425,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: "rgba(255,255,255,0.25)",
+    backgroundColor: "rgba(255,255,255,0.3)",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 2,
@@ -457,14 +446,14 @@ const styles = StyleSheet.create({
   podiumXPLabel: {
     fontSize: 9,
     fontWeight: "700",
-    color: "rgba(255,255,255,0.75)",
+    color: "rgba(255,255,255,0.8)",
   },
   youBubble: {
     alignSelf: "center",
-    backgroundColor: "#22C55E",
+    backgroundColor: "#007C7A",
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 999,
+    borderRadius: 8,
     marginBottom: 4,
   },
   youBubbleText: {
@@ -479,7 +468,7 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 20,
     fontWeight: "800",
-    color: "#0F172A",
+    color: "#007C7A",
     marginBottom: 6,
   },
   emptySubtitle: {
@@ -505,25 +494,27 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: "#F1F5F9",
+    borderColor: "#FFF5E8",
   },
   rowYou: {
-    backgroundColor: "#F0FDF4",
-    borderWidth: 1.5,
-    borderColor: "#22C55E",
+    backgroundColor: "#FFF4EC",
+    borderWidth: 2,
+    borderColor: "#F28C28",
   },
   rowRank: { width: 44, alignItems: "center" },
   rowRankText: { fontSize: 16, fontWeight: "800", color: "#94A3B8" },
+  rowRankTextYou: { color: "#F28C28" },
   rowInfo: { flex: 1, marginLeft: 10 },
-  rowName: { fontSize: 15, fontWeight: "700", color: "#0F172A" },
+  rowName: { fontSize: 15, fontWeight: "700", color: "#007C7A" },
+  rowNameYou: { color: "#007C7A", fontWeight: "800" },
   rowId: { fontSize: 11, color: "#94A3B8", marginTop: 2 },
   rowRight: { alignItems: "flex-end" },
-  rowXP: { fontSize: 18, fontWeight: "800", color: "#22C55E" },
+  rowXP: { fontSize: 18, fontWeight: "800", color: "#F28C28" },
   rowXPLabel: { fontSize: 10, color: "#94A3B8" },
 
   // Your team card (when in top 3)
   yourCard: {
-    backgroundColor: "#22C55E",
+    backgroundColor: "#007C7A",
     borderRadius: 20,
     padding: 20,
     marginTop: 16,

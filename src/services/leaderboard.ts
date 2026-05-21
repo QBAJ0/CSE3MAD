@@ -1,12 +1,35 @@
 import {
+  addDoc,
   collection,
   doc,
   getDoc,
   getDocs,
+  orderBy,
+  query,
   setDoc,
+  where,
 } from "firebase/firestore";
 import { db } from "@/src/firebase";
-import { ActivityResult, LeaderboardEntry } from "../types";
+import { ActivityResult, Comment, LeaderboardEntry } from "../types";
+
+export type SyncFailReason = "offline" | "permission" | "unknown";
+
+export class CloudSyncError extends Error {
+  constructor(public readonly reason: SyncFailReason, cause?: unknown) {
+    super(`Cloud sync failed: ${reason}`);
+    this.name = "CloudSyncError";
+    if (cause instanceof Error) this.stack = cause.stack;
+  }
+}
+
+function classifyError(e: unknown): SyncFailReason {
+  if (e && typeof e === "object" && "code" in e) {
+    const code = (e as { code: string }).code;
+    if (code === "unavailable" || code === "deadline-exceeded") return "offline";
+    if (code === "permission-denied" || code === "unauthenticated") return "permission";
+  }
+  return "unknown";
+}
 
 export function buildLocalLeaderboard(
   activities: ActivityResult[],
@@ -68,8 +91,8 @@ export function buildLocalLeaderboard(
 
 const COLLECTION = "leaderboard";
 
-export async function pushResultToCloud(result: ActivityResult): Promise<void> {
-  if (!db) return;
+export async function pushResultToCloud(result: ActivityResult): Promise<boolean> {
+  if (!db) return false;
   try {
     const teamRef = doc(db, COLLECTION, result.teamId);
     const snap = await getDoc(teamRef);
@@ -96,15 +119,17 @@ export async function pushResultToCloud(result: ActivityResult): Promise<void> {
         lastActive: result.createdAt,
       });
     }
+    return true;
   } catch (e) {
-    console.warn("Leaderboard cloud sync failed (offline?):", e);
+    console.warn(`[leaderboard] pushResultToCloud (${classifyError(e)}):`, e);
+    return false;
   }
 }
 
 // Saves the full activity result (including GPS location) to the
 // "activities" collection so teachers can query per-submission data.
-export async function pushActivityToCloud(result: ActivityResult): Promise<void> {
-  if (!db) return;
+export async function pushActivityToCloud(result: ActivityResult): Promise<boolean> {
+  if (!db) return false;
   try {
     await setDoc(doc(db, "activities", result.id), {
       id: result.id,
@@ -118,8 +143,65 @@ export async function pushActivityToCloud(result: ActivityResult): Promise<void>
       location: result.location ?? null,
       createdAt: result.createdAt,
     });
+    return true;
   } catch (e) {
-    console.warn("Activity cloud sync failed (offline?):", e);
+    console.warn(`[leaderboard] pushActivityToCloud (${classifyError(e)}):`, e);
+    return false;
+  }
+}
+
+export async function fetchActivitiesByChallenge(
+  challengeId: number,
+): Promise<Pick<ActivityResult, "id" | "teamName" | "teamId" | "rating" | "reflection" | "createdAt">[]> {
+  if (!db) return [];
+  try {
+    const q = query(
+      collection(db, "activities"),
+      where("challengeId", "==", challengeId),
+      orderBy("createdAt", "desc"),
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => {
+      const data = d.data();
+      return {
+        id: data.id,
+        teamName: data.teamName,
+        teamId: data.teamId,
+        rating: data.rating ?? 0,
+        reflection: data.reflection ?? "",
+        createdAt: data.createdAt,
+      };
+    });
+  } catch (e) {
+    throw new CloudSyncError(classifyError(e), e);
+  }
+}
+
+export async function postComment(
+  comment: Omit<Comment, "id">,
+): Promise<boolean> {
+  if (!db) return false;
+  try {
+    await addDoc(collection(db, "comments"), comment);
+    return true;
+  } catch (e) {
+    console.warn(`[leaderboard] postComment (${classifyError(e)}):`, e);
+    return false;
+  }
+}
+
+export async function fetchComments(challengeId: number): Promise<Comment[]> {
+  if (!db) return [];
+  try {
+    const q = query(
+      collection(db, "comments"),
+      where("challengeId", "==", challengeId),
+      orderBy("createdAt", "desc"),
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() } as Comment));
+  } catch (e) {
+    throw new CloudSyncError(classifyError(e), e);
   }
 }
 
@@ -145,7 +227,6 @@ export async function fetchCloudLeaderboard(): Promise<LeaderboardEntry[]> {
       .sort((a, b) => b.totalPoints - a.totalPoints)
       .map((e, i) => ({ ...e, rank: i + 1 }));
   } catch (e) {
-    console.warn("Leaderboard cloud fetch failed (offline?):", e);
-    return [];
+    throw new CloudSyncError(classifyError(e), e);
   }
 }

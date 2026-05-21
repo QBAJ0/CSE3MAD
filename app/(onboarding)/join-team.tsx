@@ -1,6 +1,5 @@
 // app/(onboarding)/join-team.tsx
 // Screen for students who are joining a team that already exists.
-// They enter the team name and the 4-digit ID their team leader shared.
 
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
@@ -23,7 +22,6 @@ import { storage } from "../../src/utils/storage";
 export default function JoinTeamScreen() {
   const { setTeamData } = useTeam();
 
-  // Form fields
   const [teamName, setTeamName] = useState("");
   const [teamId, setTeamId] = useState("");
   const [isJoining, setIsJoining] = useState(false);
@@ -32,7 +30,6 @@ export default function JoinTeamScreen() {
     const name = teamName.trim();
     const id = teamId.trim();
 
-    // Validate both fields are filled
     if (!name || !id) {
       Alert.alert("Missing Info", "Please enter both your team name and team ID.");
       return;
@@ -40,7 +37,6 @@ export default function JoinTeamScreen() {
 
     setIsJoining(true);
 
-    // Look up the team from local storage
     const savedTeam = await storage.getTeam();
 
     if (
@@ -48,7 +44,6 @@ export default function JoinTeamScreen() {
       savedTeam.teamName === name &&
       savedTeam.discriminator === id
     ) {
-      // Team found — load it into context and show confirmation
       await setTeamData({
         teamName: savedTeam.teamName,
         discriminator: savedTeam.discriminator,
@@ -56,7 +51,6 @@ export default function JoinTeamScreen() {
       });
       router.push("/(onboarding)/team-confirmation");
     } else {
-      // No match found
       setIsJoining(false);
       Alert.alert(
         "Team Not Found",
@@ -72,7 +66,6 @@ export default function JoinTeamScreen() {
     }
   };
 
-  // Join button is only active when both fields have text
   const canJoin = teamName.trim().length > 0 && teamId.trim().length > 0;
 
   return (
@@ -87,7 +80,7 @@ export default function JoinTeamScreen() {
       >
         {/* ── Header ── */}
         <View style={styles.header}>
-          <Ionicons name="enter-outline" size={32} color="#22C55E" style={styles.headerIcon} />
+          <Ionicons name="enter-outline" size={32} color="#2F80ED" style={styles.headerIcon} />
           <Text style={styles.headerTitle}>Join a Team</Text>
           <Text style={styles.headerSubtitle}>
             Enter the team name and the ID your team leader shared with you.
@@ -98,7 +91,7 @@ export default function JoinTeamScreen() {
         <View style={styles.card}>
           {/* Hint box */}
           <View style={styles.hintBox}>
-            <Ionicons name="bulb-outline" size={16} color="#1E40AF" />
+            <Ionicons name="bulb-outline" size={16} color="#007C7A" />
             <Text style={styles.hintText}>
               Ask your team leader for the Team ID — it looks like{" "}
               <Text style={styles.hintBold}>#4821</Text>
@@ -144,7 +137,7 @@ export default function JoinTeamScreen() {
             disabled={!canJoin || isJoining}
           >
             <Text style={styles.joinBtnText}>
-              {isJoining ? "Joining..." : "Join Team →"}
+              {isJoining ? "Joining..." : "Join Team"}
             </Text>
           </Pressable>
         </View>
@@ -158,7 +151,7 @@ export default function JoinTeamScreen() {
 
         {/* ── Create instead ── */}
         <View style={styles.footer}>
-          <Text style={styles.footerHint}>Don't have a team yet?</Text>
+          <Text style={styles.footerHint}>{"Don't have a team yet?"}</Text>
 
           <Pressable
             style={({ pressed }) => [
@@ -168,7 +161,7 @@ export default function JoinTeamScreen() {
             onPress={() => router.replace("/(onboarding)/register")}
           >
             <View style={styles.createBtnRow}>
-              <Ionicons name="rocket-outline" size={17} color="#166634" />
+              <Ionicons name="rocket-outline" size={17} color="#007C7A" />
               <Text style={styles.createBtnText}>Create a New Team</Text>
             </View>
           </Pressable>
@@ -177,7 +170,7 @@ export default function JoinTeamScreen() {
             style={styles.backLink}
             onPress={() => router.back()}
           >
-            <Text style={styles.backLinkText}>← Back to Welcome</Text>
+            <Text style={styles.backLinkText}>Back to Welcome</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -189,15 +182,14 @@ export default function JoinTeamScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#FFF5E8",
   },
   content: {
     paddingBottom: 48,
   },
 
-  // Header
   header: {
-    backgroundColor: "#0F172A",
+    backgroundColor: "#007C7A",
     paddingTop: 56,
     paddingBottom: 32,
     paddingHorizontal: 24,
@@ -216,11 +208,10 @@ const styles = StyleSheet.create({
   },
   headerSubtitle: {
     fontSize: 15,
-    color: "#94A3B8",
+    color: "rgba(255,255,255,0.85)",
     lineHeight: 22,
   },
 
-  // Form card
   card: {
     marginHorizontal: 20,
     backgroundColor: "#FFFFFF",
@@ -228,58 +219,55 @@ const styles = StyleSheet.create({
     padding: 24,
     gap: 16,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: "#FFF5E8",
   },
 
-  // Hint box
   hintBox: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 10,
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#FFF5E8",
     borderRadius: 12,
     padding: 14,
-    borderWidth: 1,
-    borderColor: "#BFDBFE",
+    borderWidth: 1.5,
+    borderColor: "#2F80ED",
   },
   hintText: {
     flex: 1,
     fontSize: 13,
-    color: "#1E40AF",
+    color: "#007C7A",
     lineHeight: 20,
   },
   hintBold: {
     fontWeight: "800",
   },
 
-  // Field groups
   fieldGroup: {
     gap: 8,
   },
   fieldLabel: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#64748B",
+    color: "#94A3B8",
     letterSpacing: 1,
   },
   input: {
     borderWidth: 1.5,
-    borderColor: "#E2E8F0",
+    borderColor: "#FFF5E8",
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
-    color: "#0F172A",
-    backgroundColor: "#F8FAFC",
+    color: "#007C7A",
+    backgroundColor: "#FFFFFF",
   },
   inputFilled: {
-    borderColor: "#22C55E",
-    backgroundColor: "#F0FDF4",
+    borderColor: "#2F80ED",
+    backgroundColor: "#FFFFFF",
   },
 
-  // Join button
   joinBtn: {
-    backgroundColor: "#22C55E",
+    backgroundColor: "#F28C28",
     paddingVertical: 18,
     borderRadius: 16,
     alignItems: "center",
@@ -294,7 +282,6 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
 
-  // Divider
   divider: {
     flexDirection: "row",
     alignItems: "center",
@@ -305,7 +292,7 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: "#E2E8F0",
+    backgroundColor: "#FFF5E8",
   },
   dividerText: {
     fontSize: 13,
@@ -313,7 +300,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 
-  // Footer
   footer: {
     paddingHorizontal: 20,
     alignItems: "center",
@@ -327,11 +313,11 @@ const styles = StyleSheet.create({
   createBtn: {
     width: "100%",
     borderWidth: 2,
-    borderColor: "#22C55E",
+    borderColor: "#007C7A",
     paddingVertical: 16,
     borderRadius: 16,
     alignItems: "center",
-    backgroundColor: "#F0FDF4",
+    backgroundColor: "#FFF5E8",
   },
   createBtnRow: {
     flexDirection: "row",
@@ -339,7 +325,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   createBtnText: {
-    color: "#166534",
+    color: "#007C7A",
     fontSize: 16,
     fontWeight: "700",
   },

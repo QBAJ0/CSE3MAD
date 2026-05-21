@@ -35,6 +35,7 @@ export type Measurement = {
     | "videoAnalyzer"
     | "soundMeter"
     | "accelerometer"
+    | "breathing"
     | "tapReaction"
     | "teamReaction"
     | "gyroscope"
@@ -102,6 +103,16 @@ export type ActivityResult = {
 
 export type CompletedActivity = ActivityResult;
 
+export type Comment = {
+  id: string;
+  activityId: string;
+  challengeId: number;
+  teamName: string;
+  discriminator: string;
+  text: string;
+  createdAt: string;
+};
+
 export type LeaderboardEntry = {
   teamName: string;
   discriminator: string;
@@ -110,4 +121,12 @@ export type LeaderboardEntry = {
   averageRating: number;
   lastActive: string;
   rank: number;
+};
+
+export type SoundMapPoint = {
+  id: string;
+  label: string;
+  db: number;
+  latitude: number;
+  longitude: number;
 };

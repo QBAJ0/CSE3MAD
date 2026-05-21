@@ -1,8 +1,9 @@
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 interface GyroscopeRecorderProps {
-  onCapture: (data: { smoothness: number; range: number }) => void;
+  onCapture: (data: { smoothness: number; range: number; samples: number }) => void;
   duration?: number;
+  existingValue?: { smoothness: number; range?: number };
 }
 
 export function GyroscopeRecorder({ onCapture }: GyroscopeRecorderProps) {
@@ -15,7 +16,7 @@ export function GyroscopeRecorder({ onCapture }: GyroscopeRecorderProps) {
       </Text>
       <TouchableOpacity
         style={styles.button}
-        onPress={() => onCapture({ smoothness: 0, range: 0 })}
+        onPress={() => onCapture({ smoothness: 0, range: 0, samples: 0 })}
       >
         <Text style={styles.buttonText}>Skip (record 0)</Text>
       </TouchableOpacity>
@@ -25,26 +26,26 @@ export function GyroscopeRecorder({ onCapture }: GyroscopeRecorderProps) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#1E293B",
+    backgroundColor: "#FFFFFF",
     borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
     padding: 20,
     alignItems: "center",
     gap: 12,
-    borderWidth: 1,
-    borderColor: "#334155",
   },
   icon: { fontSize: 32 },
   message: {
-    color: "#94A3B8",
+    color: "#64748B",
     fontSize: 14,
     textAlign: "center",
     lineHeight: 22,
   },
   button: {
-    backgroundColor: "#334155",
+    backgroundColor: "#E2E8F0",
     paddingVertical: 10,
     paddingHorizontal: 24,
     borderRadius: 10,
   },
-  buttonText: { color: "#F8FAFC", fontWeight: "600" },
+  buttonText: { color: "#12343B", fontWeight: "600" },
 });

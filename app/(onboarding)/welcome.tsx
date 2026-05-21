@@ -1,6 +1,5 @@
 // app/(onboarding)/welcome.tsx
 // The first screen students see when they open the app for the first time.
-// Two options: Create a new team OR join an existing one.
 
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
@@ -13,9 +12,9 @@ import {
 } from "react-native";
 
 const SUBJECT_TILES = [
-  { icon: "flask-outline" as const, label: "Science", color: "#22C55E" },
-  { icon: "construct-outline" as const, label: "Engineering", color: "#3B82F6" },
-  { icon: "heart-outline" as const, label: "Health", color: "#F59E0B" },
+  { icon: "flask-outline" as const, label: "Science", color: "#2F80ED" },
+  { icon: "construct-outline" as const, label: "Engineering", color: "#F28C28" },
+  { icon: "heart-outline" as const, label: "Health", color: "#F6D7A8" },
 ];
 
 const FEATURE_TAGS = [
@@ -35,8 +34,8 @@ export default function WelcomeScreen() {
         {/* Subject tiles */}
         <View style={styles.subjectRow}>
           {SUBJECT_TILES.map(({ icon, label, color }) => (
-            <View key={label} style={[styles.subjectTile, { borderColor: color + "33" }]}>
-              <View style={[styles.subjectIconCircle, { backgroundColor: color + "22" }]}>
+            <View key={label} style={[styles.subjectTile, { borderColor: color + "66" }]}>
+              <View style={[styles.subjectIconCircle, { backgroundColor: color + "33" }]}>
                 <Ionicons name={icon} size={22} color={color} />
               </View>
               <Text style={[styles.subjectLabel, { color }]}>{label}</Text>
@@ -62,7 +61,7 @@ export default function WelcomeScreen() {
         <View style={styles.tagsRow}>
           {FEATURE_TAGS.map(({ icon, label }) => (
             <View key={label} style={styles.tag}>
-              <Ionicons name={icon} size={12} color="#166534" />
+              <Ionicons name={icon} size={12} color="#007C7A" />
               <Text style={styles.tagText}>{label}</Text>
             </View>
           ))}
@@ -74,7 +73,7 @@ export default function WelcomeScreen() {
           battle for the top of the leaderboard.
         </Text>
 
-        {/* Create Team button — green solid */}
+        {/* Create Team button — Ochre solid */}
         <Pressable
           style={({ pressed }) => [
             styles.primaryBtn,
@@ -89,7 +88,7 @@ export default function WelcomeScreen() {
           <Text style={styles.primaryBtnSub}>Start a new STEMM squad</Text>
         </Pressable>
 
-        {/* Join Team button — outlined */}
+        {/* Join Team button — Payne Gray outlined */}
         <Pressable
           style={({ pressed }) => [
             styles.secondaryBtn,
@@ -98,7 +97,7 @@ export default function WelcomeScreen() {
           onPress={() => router.push("/(onboarding)/join-team")}
         >
           <View style={styles.btnRow}>
-            <Ionicons name="people" size={18} color="#166534" />
+            <Ionicons name="people" size={18} color="#007C7A" />
             <Text style={styles.secondaryBtnText}>Join Existing Team</Text>
           </View>
           <Text style={styles.secondaryBtnSub}>Enter a team code from your group</Text>
@@ -112,16 +111,16 @@ export default function WelcomeScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#0F172A",
+    backgroundColor: "#007C7A",
   },
   content: {
     flexGrow: 1,
   },
 
-  // Hero (top dark section)
+  // Hero (top branded section)
   hero: {
     flex: 1,
-    backgroundColor: "#0F172A",
+    backgroundColor: "#007C7A",
     alignItems: "center",
     justifyContent: "center",
     paddingTop: 60,
@@ -138,8 +137,8 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     gap: 6,
-    backgroundColor: "rgba(255,255,255,0.05)",
-    borderWidth: 1,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1.5,
     borderRadius: 16,
     paddingVertical: 14,
     paddingHorizontal: 8,
@@ -163,7 +162,7 @@ const styles = StyleSheet.create({
   logoTop: {
     fontSize: 11,
     letterSpacing: 5,
-    color: "#22C55E",
+    color: "rgba(255,255,255,0.7)",
     fontWeight: "700",
     marginBottom: 4,
   },
@@ -177,7 +176,7 @@ const styles = StyleSheet.create({
   logoLab: {
     fontSize: 72,
     fontWeight: "900",
-    color: "#22C55E",
+    color: "#F6D7A8",
     lineHeight: 72,
     letterSpacing: -2,
     marginTop: -8,
@@ -185,13 +184,13 @@ const styles = StyleSheet.create({
   logoDivider: {
     width: 56,
     height: 4,
-    backgroundColor: "#22C55E",
+    backgroundColor: "#2F80ED",
     borderRadius: 2,
     marginVertical: 16,
   },
   logoTagline: {
     fontSize: 15,
-    color: "#64748B",
+    color: "rgba(255,255,255,0.8)",
     fontStyle: "italic",
     textAlign: "center",
   },
@@ -215,23 +214,23 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
-    backgroundColor: "#F0FDF4",
+    backgroundColor: "#F6D7A8",
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 999,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#BBF7D0",
+    borderColor: "#F28C28",
   },
   tagText: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#166534",
+    color: "#007C7A",
   },
 
   heading: {
     fontSize: 26,
     fontWeight: "800",
-    color: "#0F172A",
+    color: "#007C7A",
     marginBottom: 10,
   },
   body: {
@@ -241,16 +240,15 @@ const styles = StyleSheet.create({
     marginBottom: 28,
   },
 
-  // Icon + label row inside a button
   btnRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
   },
 
-  // Create Team — green solid
+  // Create Team — Ochre solid
   primaryBtn: {
-    backgroundColor: "#22C55E",
+    backgroundColor: "#F28C28",
     paddingVertical: 18,
     borderRadius: 16,
     alignItems: "center",
@@ -263,34 +261,33 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   primaryBtnSub: {
-    color: "rgba(255,255,255,0.8)",
+    color: "rgba(255,255,255,0.85)",
     fontSize: 13,
     marginTop: 2,
   },
 
-  // Join Team — outlined
+  // Join Team — Payne Gray outlined
   secondaryBtn: {
     borderWidth: 2,
-    borderColor: "#22C55E",
+    borderColor: "#007C7A",
     paddingVertical: 16,
     borderRadius: 16,
     alignItems: "center",
-    backgroundColor: "#F0FDF4",
+    backgroundColor: "#FFF5E8",
     gap: 4,
   },
   secondaryBtnText: {
-    color: "#166534",
+    color: "#007C7A",
     fontSize: 17,
     fontWeight: "700",
   },
   secondaryBtnSub: {
-    color: "#166534",
+    color: "#007C7A",
     fontSize: 13,
     marginTop: 2,
     opacity: 0.7,
   },
 
-  // Slight shrink when pressed
   pressed: {
     opacity: 0.85,
   },

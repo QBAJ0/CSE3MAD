@@ -272,7 +272,7 @@ export default function ChallengeBriefScreen() {
             {/* Equipment list */}
             <View style={styles.section}>
               <View style={styles.sectionTitleRow}>
-                <Ionicons name="build-outline" size={17} color="#0F172A" />
+                <Ionicons name="build-outline" size={17} color="#12343B" />
                 <Text style={styles.sectionTitle}>You will need</Text>
               </View>
               <View style={styles.equipRow}>
@@ -288,7 +288,7 @@ export default function ChallengeBriefScreen() {
             {challenge.thingsToKnow && challenge.thingsToKnow.length > 0 && (
               <View style={styles.section}>
                 <View style={styles.sectionTitleRow}>
-                  <Ionicons name="bulb-outline" size={17} color="#0F172A" />
+                  <Ionicons name="bulb-outline" size={17} color="#12343B" />
                   <Text style={styles.sectionTitle}>Things to Know</Text>
                 </View>
                 {challenge.thingsToKnow.map((card, i) => (
@@ -339,7 +339,7 @@ export default function ChallengeBriefScreen() {
         <View style={styles.section}>
           <View style={styles.predictionHeader}>
             <View style={styles.sectionTitleRow}>
-              <Ionicons name="help-circle-outline" size={17} color="#0F172A" />
+              <Ionicons name="help-circle-outline" size={17} color="#12343B" />
               <Text style={styles.sectionTitle}>Your Prediction</Text>
             </View>
             <View style={styles.optionalPill}>
@@ -473,7 +473,7 @@ const styles = StyleSheet.create({
   heroTitle: {
     fontSize: 26,
     fontWeight: "800",
-    color: "#0F172A",
+    color: "#12343B",
     textAlign: "center",
     marginBottom: 14,
     lineHeight: 32,
@@ -513,7 +513,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 17,
     fontWeight: "800",
-    color: "#0F172A",
+    color: "#12343B",
   },
 
   // Difficulty cards
@@ -533,8 +533,8 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   diffCardActive: {
-    borderColor: "#22C55E",
-    backgroundColor: "#F0FDF4",
+    borderColor: "#2F80ED",
+    backgroundColor: "#EEF5FF",
   },
   diffEmoji: { marginBottom: 4 },
   diffLabel: {
@@ -543,7 +543,7 @@ const styles = StyleSheet.create({
     color: "#64748B",
     textAlign: "center",
   },
-  diffLabelActive: { color: "#166534" },
+  diffLabelActive: { color: "#007C7A" },
   diffSub: {
     fontSize: 11,
     color: "#94A3B8",
@@ -557,7 +557,7 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: "#22C55E",
+    backgroundColor: "#2F80ED",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -608,7 +608,7 @@ const styles = StyleSheet.create({
   showMoreText: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#22C55E",
+    color: "#2F80ED",
   },
 
   // Details toggle button
@@ -744,14 +744,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 14,
     fontSize: 14,
-    color: "#0F172A",
+    color: "#12343B",
     minHeight: 80,
     backgroundColor: "#FFFFFF",
     lineHeight: 21,
   },
   predictionInputFilled: {
-    borderColor: "#22C55E",
-    backgroundColor: "#F0FDF4",
+    borderColor: "#2F80ED",
+    backgroundColor: "#EEF5FF",
   },
 
   // CTA
@@ -760,7 +760,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   startBtn: {
-    backgroundColor: "#22C55E",
+    backgroundColor: "#2F80ED",
     paddingVertical: 18,
     borderRadius: 16,
     alignItems: "center",

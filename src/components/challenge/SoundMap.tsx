@@ -1,31 +1,24 @@
 import { StyleSheet, Text, View } from "react-native";
-
-interface SoundReading {
-  id: string;
-  action: string;
-  db: number;
-  location: { latitude: number; longitude: number };
-  timestamp: string;
-  teamName: string;
-}
+import { SoundMapPoint } from "../../types";
 
 interface SoundMapProps {
-  readings: SoundReading[];
-  onSelect?: (reading: SoundReading) => void;
+  points: SoundMapPoint[];
 }
 
-export function SoundMap({ readings }: SoundMapProps) {
+export type { SoundMapPoint };
+
+export function SoundMap({ points }: SoundMapProps) {
   return (
     <View style={styles.container}>
       <Text style={styles.message}>Map view is not available on web.</Text>
-      <Text style={styles.count}>{readings.length} reading(s) recorded.</Text>
+      <Text style={styles.count}>{points.length} reading(s) recorded.</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    height: 300,
+    height: 200,
     backgroundColor: "#1E293B",
     borderRadius: 12,
     alignItems: "center",

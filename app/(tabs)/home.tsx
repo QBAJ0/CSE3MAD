@@ -1,7 +1,4 @@
 // app/(tabs)/home.tsx
-// The main home screen shown after a team is set up.
-// Shows team greeting, XP progress, stats, next challenge, and quick nav links.
-
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import {
@@ -15,11 +12,12 @@ import { useTeam } from "../../src/context/TeamContext";
 import { CHALLENGES } from "../../src/data/challenges";
 import { useActivityCompletion } from "../../src/hooks/useActivityCompletion";
 import { useHomeStats } from "../../src/hooks/useHomeStats";
+import { useStreakReminder } from "../../src/hooks/useStreakReminder";
 
 const XP_PER_LEVEL = 500;
 
 const AVATAR_COLORS = [
-  "#22C55E", "#3B82F6", "#F59E0B", "#EF4444", "#8B5CF6", "#06B6D4",
+  "#007C7A", "#2F80ED", "#F6D7A8", "#F28C28", "#007C7A", "#2F80ED",
 ];
 
 type IoniconName = React.ComponentProps<typeof Ionicons>["name"];
@@ -28,6 +26,7 @@ export default function HomeScreen() {
   const { team } = useTeam();
   const { totalPoints, completedCount, streak, loading: statsLoading } = useHomeStats();
   const { completedIds, loading: activityLoading } = useActivityCompletion();
+  const { showReminder, streak: reminderStreak } = useStreakReminder();
   const dataLoading = statsLoading || activityLoading;
 
   const nextChallenge = CHALLENGES.find((c) => !completedIds.has(c.id));
@@ -45,9 +44,8 @@ export default function HomeScreen() {
     >
       {/* ── Header ── */}
       <View style={styles.header}>
-        {/* Level badge */}
         <View style={styles.levelBadge}>
-          <Ionicons name="star" size={11} color="#22C55E" />
+          <Ionicons name="star" size={11} color="#F6D7A8" />
           <Text style={styles.levelBadgeText}>Level {level}</Text>
         </View>
 
@@ -64,7 +62,7 @@ export default function HomeScreen() {
 
         {streak > 0 && (
           <View style={styles.streakRow}>
-            <Ionicons name="flame" size={14} color="#F59E0B" />
+            <Ionicons name="flame" size={14} color="#F6D7A8" />
             <Text style={styles.streakText}>{streak}-day streak</Text>
           </View>
         )}
@@ -87,29 +85,60 @@ export default function HomeScreen() {
       <View style={styles.statsRow}>
         <StatCard
           iconName="checkmark-circle"
-          iconColor="#22C55E"
+          iconColor="#2F80ED"
           value={`${completedCount}/${CHALLENGES.length}`}
           label="Challenges"
-          valueColor="#22C55E"
+          valueColor="#2F80ED"
           loading={dataLoading}
         />
         <StatCard
           iconName="flash"
-          iconColor="#F59E0B"
+          iconColor="#F28C28"
           value={String(totalPoints)}
           label="Total XP"
-          valueColor="#F59E0B"
+          valueColor="#F28C28"
           loading={dataLoading}
         />
         <StatCard
           iconName="people"
-          iconColor="#3B82F6"
+          iconColor="#F6D7A8"
           value={String(team?.members.length ?? 0)}
           label="Members"
-          valueColor="#3B82F6"
+          valueColor="#007C7A"
           loading={dataLoading}
         />
       </View>
+
+      {/* ── Streak reminder ── */}
+      {showReminder && (
+        <View style={styles.streakReminderCard}>
+          <View style={styles.reminderContent}>
+            <View style={styles.reminderLeft}>
+              <Ionicons name="alert-circle" size={24} color="#DC2626" />
+            </View>
+            <View style={styles.reminderMiddle}>
+              <View style={styles.reminderTitleRow}>
+                <Text style={styles.reminderTitle}>Streak at Risk!</Text>
+                <Ionicons name="flame" size={16} color="#F6D7A8" />
+              </View>
+              <Text style={styles.reminderText}>
+                Complete a challenge today to keep your {reminderStreak}-day streak alive.
+              </Text>
+            </View>
+          </View>
+          {nextChallenge && (
+            <TouchableOpacity
+              style={styles.reminderButton}
+              onPress={() => router.push(`/challenge/${nextChallenge.id}`)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="flash" size={14} color="#FFFFFF" />
+              <Text style={styles.reminderButtonText}>Go Now</Text>
+              <Ionicons name="chevron-forward" size={14} color="#FFFFFF" />
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
 
       {/* ── Next challenge card ── */}
       {nextChallenge && !allDone && (
@@ -139,7 +168,7 @@ export default function HomeScreen() {
       {/* ── All done celebration ── */}
       {allDone && (
         <View style={styles.allDoneCard}>
-          <Ionicons name="trophy" size={40} color="#22C55E" />
+          <Ionicons name="trophy" size={40} color="#F28C28" />
           <Text style={styles.allDoneTitle}>All challenges complete!</Text>
           <Text style={styles.allDoneSub}>
             Your team is unstoppable. Check the leaderboard!
@@ -150,7 +179,7 @@ export default function HomeScreen() {
       {/* ── Your squad ── */}
       <View style={styles.squadCard}>
         <View style={styles.squadTitleRow}>
-          <Ionicons name="people" size={16} color="#0F172A" />
+          <Ionicons name="people" size={16} color="#007C7A" />
           <Text style={styles.squadTitle}>Your Squad</Text>
         </View>
         <View style={styles.memberList}>
@@ -238,7 +267,7 @@ function QuickBtn({
 }) {
   return (
     <TouchableOpacity style={quickStyles.btn} onPress={onPress} activeOpacity={0.8}>
-      <Ionicons name={iconName} size={24} color="#64748B" />
+      <Ionicons name={iconName} size={24} color="#007C7A" />
       <Text style={quickStyles.label}>{label}</Text>
     </TouchableOpacity>
   );
@@ -248,14 +277,14 @@ function QuickBtn({
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#FFF5E8",
   },
   content: {
     paddingBottom: 40,
   },
 
   header: {
-    backgroundColor: "#0F172A",
+    backgroundColor: "#007C7A",
     paddingTop: 58,
     paddingBottom: 24,
     paddingHorizontal: 20,
@@ -269,9 +298,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 5,
     alignSelf: "flex-start",
-    backgroundColor: "rgba(34,197,94,0.18)",
+    backgroundColor: "rgba(255,255,255,0.15)",
     borderWidth: 1,
-    borderColor: "rgba(34,197,94,0.35)",
+    borderColor: "rgba(255,255,255,0.3)",
     paddingHorizontal: 12,
     paddingVertical: 5,
     borderRadius: 999,
@@ -280,7 +309,7 @@ const styles = StyleSheet.create({
   levelBadgeText: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#22C55E",
+    color: "#FFFFFF",
   },
   greeting: {
     fontSize: 26,
@@ -289,7 +318,7 @@ const styles = StyleSheet.create({
   },
   subGreeting: {
     fontSize: 14,
-    color: "#94A3B8",
+    color: "rgba(255,255,255,0.8)",
   },
   streakRow: {
     flexDirection: "row",
@@ -300,7 +329,7 @@ const styles = StyleSheet.create({
   streakText: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#F59E0B",
+    color: "#F6D7A8",
   },
 
   xpSection: {
@@ -319,13 +348,13 @@ const styles = StyleSheet.create({
   },
   xpTrack: {
     height: 10,
-    backgroundColor: "#E2E8F0",
+    backgroundColor: "#FFFFFF",
     borderRadius: 999,
     overflow: "hidden",
   },
   xpFill: {
     height: "100%",
-    backgroundColor: "#22C55E",
+    backgroundColor: "#2F80ED",
     borderRadius: 999,
   },
 
@@ -340,7 +369,7 @@ const styles = StyleSheet.create({
   nextCard: {
     marginHorizontal: 16,
     marginBottom: 16,
-    backgroundColor: "#22C55E",
+    backgroundColor: "#F28C28",
     borderRadius: 20,
     overflow: "hidden",
   },
@@ -386,21 +415,76 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
 
+  streakReminderCard: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+    backgroundColor: "#FEE2E2",
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: "#FECACA",
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 12,
+  },
+  reminderContent: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+  },
+  reminderLeft: {
+    paddingTop: 2,
+  },
+  reminderMiddle: {
+    flex: 1,
+    gap: 2,
+  },
+  reminderTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  reminderTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#DC2626",
+  },
+  reminderText: {
+    fontSize: 12,
+    color: "#991B1B",
+    lineHeight: 18,
+  },
+  reminderButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#DC2626",
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    gap: 4,
+    alignSelf: "flex-start",
+  },
+  reminderButtonText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
+
   allDoneCard: {
     marginHorizontal: 16,
     marginBottom: 16,
-    backgroundColor: "#F0FDF4",
+    backgroundColor: "#FFF5E8",
     borderRadius: 20,
     padding: 22,
     alignItems: "center",
     gap: 8,
-    borderWidth: 1.5,
-    borderColor: "#22C55E",
+    borderWidth: 2,
+    borderColor: "#007C7A",
   },
   allDoneTitle: {
     fontSize: 18,
     fontWeight: "800",
-    color: "#166534",
+    color: "#007C7A",
   },
   allDoneSub: {
     fontSize: 13,
@@ -415,7 +499,7 @@ const styles = StyleSheet.create({
     padding: 20,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: "#FFF5E8",
   },
   squadTitleRow: {
     flexDirection: "row",
@@ -426,7 +510,7 @@ const styles = StyleSheet.create({
   squadTitle: {
     fontSize: 16,
     fontWeight: "800",
-    color: "#0F172A",
+    color: "#007C7A",
   },
   memberList: {
     flexDirection: "row",
@@ -453,7 +537,7 @@ const styles = StyleSheet.create({
   memberName: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#64748B",
+    color: "#007C7A",
     maxWidth: 60,
     textAlign: "center",
   },
@@ -480,7 +564,7 @@ const statStyles = StyleSheet.create({
     alignItems: "center",
     gap: 4,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: "#FFF5E8",
   },
   value: {
     fontSize: 22,
@@ -502,11 +586,11 @@ const quickStyles = StyleSheet.create({
     alignItems: "center",
     gap: 4,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: "#FFF5E8",
   },
   label: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#64748B",
+    color: "#007C7A",
   },
 });
