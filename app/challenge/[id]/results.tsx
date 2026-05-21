@@ -23,16 +23,14 @@ import { useActivity } from "../../../src/context/ActivityContext";
 import { useTeam } from "../../../src/context/TeamContext";
 import { getChallengeById } from "../../../src/data/challenges";
 import {
+  buildChallengePointsBreakdown,
+  buildPointsInputFromDraft,
+} from "../../../src/services/challengeScoring";
+import {
   ParachuteDerived,
   deriveParachute,
   gForceRiskCategory,
 } from "../../../src/services/physics";
-import {
-  Challenge,
-  DifficultyMode,
-  Measurement,
-  Prototype,
-} from "../../../src/types";
 import { storage } from "../../../src/utils/storage";
 
 const MATERIAL_STIFFNESS: Record<string, number> = {
@@ -59,145 +57,6 @@ const G_FORCE_LABELS: Record<
   severe: "High injury risk",
   lifeThreatening: "Life-threatening",
 };
-
-type BreakdownItem = { label: string; value: string; isPenalty?: boolean };
-
-const EVIDENCE_RECORDERS = new Set<Measurement["recorder"]>([
-  "gps",
-  "video",
-  "videoAnalyzer",
-  "slowMotion",
-  "photo",
-]);
-
-const hasMeasurementValue = (value: unknown) =>
-  value !== undefined && value !== null && String(value).trim().length > 0;
-
-const getActiveMeasurements = (
-  challenge: Challenge | undefined,
-  difficulty: DifficultyMode,
-) =>
-  challenge?.measurements.filter(
-    (measurement) =>
-      !measurement.difficulty || measurement.difficulty === difficulty,
-  ) ?? [];
-
-const hasCompleteRequiredData = (
-  challenge: Challenge | undefined,
-  prototypes: Prototype[],
-  difficulty: DifficultyMode,
-) => {
-  const requiredMeasurements = getActiveMeasurements(challenge, difficulty).filter(
-    (measurement) => !EVIDENCE_RECORDERS.has(measurement.recorder),
-  );
-
-  if (prototypes.length === 0 || requiredMeasurements.length === 0) {
-    return false;
-  }
-
-  return prototypes.every((prototype) =>
-    requiredMeasurements.every((measurement) =>
-      hasMeasurementValue(prototype.measurements[measurement.key]),
-    ),
-  );
-};
-
-const hasEvidenceAttached = (
-  challenge: Challenge | undefined,
-  prototypes: Prototype[],
-  difficulty: DifficultyMode,
-  hasLocation: boolean,
-) => {
-  if (hasLocation) return true;
-
-  const evidenceKeys = getActiveMeasurements(challenge, difficulty)
-    .filter((measurement) => EVIDENCE_RECORDERS.has(measurement.recorder))
-    .map((measurement) => measurement.key);
-
-  return prototypes.some((prototype) =>
-    evidenceKeys.some((key) => hasMeasurementValue(prototype.measurements[key])),
-  );
-};
-
-const hasTeamworkEvidence = (prototypes: Prototype[]) =>
-  prototypes.some((prototype) => {
-    const rawTeamResults = prototype.measurements.teamResults;
-    if (!hasMeasurementValue(rawTeamResults)) return false;
-
-    if (typeof rawTeamResults !== "string") return true;
-
-    try {
-      const parsed = JSON.parse(rawTeamResults);
-      return Array.isArray(parsed) && parsed.length > 1;
-    } catch {
-      return true;
-    }
-  });
-
-function buildPointsBreakdown(
-  prototypeCount: number,
-  reflectionChars: number,
-  hasCompleteData: boolean,
-  hasEvidence: boolean,
-  hasTeamwork: boolean,
-  difficulty: string,
-  hasTimeExpired: boolean,
-): { items: BreakdownItem[]; total: number } {
-  const items: BreakdownItem[] = [];
-  let pts: number = SCORING.BASE_XP;
-  items.push({ label: "Base completion", value: `+${SCORING.BASE_XP}` });
-
-  if (prototypeCount >= 2) {
-    const bonus =
-      SCORING.MULTI_DESIGN_2 + (prototypeCount >= 3 ? SCORING.MULTI_DESIGN_3 : 0);
-    pts += bonus;
-    items.push({ label: `Multiple designs (×${prototypeCount})`, value: `+${bonus}` });
-  }
-
-  if (hasCompleteData) {
-    pts += SCORING.DATA_QUALITY;
-    items.push({
-      label: "Complete data set",
-      value: `+${SCORING.DATA_QUALITY}`,
-    });
-  }
-
-  if (reflectionChars > GAMIFICATION.REFLECTION_THRESHOLD_1) {
-    pts += SCORING.REFLECTION_BONUS;
-    items.push({
-      label: "Detailed observations",
-      value: `+${SCORING.REFLECTION_BONUS}`,
-    });
-  }
-
-  if (hasEvidence) {
-    pts += SCORING.EVIDENCE_BONUS;
-    items.push({
-      label: "Evidence attached",
-      value: `+${SCORING.EVIDENCE_BONUS}`,
-    });
-  }
-
-  if (hasTeamwork) {
-    pts += SCORING.TEAMWORK_BONUS;
-    items.push({
-      label: "Teamwork evidence",
-      value: `+${SCORING.TEAMWORK_BONUS}`,
-    });
-  }
-
-  if (difficulty === "highSchool") {
-    pts = Math.floor(pts * SCORING.HIGH_SCHOOL_MULTIPLIER);
-    items.push({ label: "High school multiplier", value: "×1.5" });
-  }
-
-  if (hasTimeExpired) {
-    pts = Math.floor(pts * SCORING.TIME_PENALTY_MULTIPLIER);
-    items.push({ label: "Time penalty", value: "-20%", isPenalty: true });
-  }
-
-  return { items, total: pts };
-}
 
 export default function ResultsScreen() {
   const { id, timeExpired } = useLocalSearchParams<{
@@ -227,40 +86,26 @@ export default function ResultsScreen() {
   const totalReflectionChars = combinedReflection.length;
 
   const scoringDifficulty = draft.difficulty ?? "primary";
-  const hasCompleteData = hasCompleteRequiredData(
-    challenge,
-    draft.prototypes,
-    scoringDifficulty,
-  );
-  const hasEvidence = hasEvidenceAttached(
-    challenge,
-    draft.prototypes,
-    scoringDifficulty,
-    !!draft.location,
-  );
-  const hasTeamwork = hasTeamworkEvidence(draft.prototypes);
 
-  const { items: breakdownItems, total: predictedPoints } = useMemo(
-    () =>
-      buildPointsBreakdown(
-        draft.prototypes.length,
-        totalReflectionChars,
-        hasCompleteData,
-        hasEvidence,
-        hasTeamwork,
-        scoringDifficulty,
-        hasTimeExpired,
-      ),
-    [
-      draft.prototypes.length,
-      totalReflectionChars,
-      hasCompleteData,
-      hasEvidence,
-      hasTeamwork,
-      scoringDifficulty,
-      hasTimeExpired,
-    ],
-  );
+  const { items: breakdownItems, total: predictedPoints } = useMemo(() => {
+    const input = buildPointsInputFromDraft({
+      challengeId: challenge?.id ?? Number(id),
+      difficulty: scoringDifficulty,
+      prototypes: draft.prototypes,
+      reflectionChars: totalReflectionChars,
+      draftLocation: draft.location,
+      completedInTime: !hasTimeExpired,
+    });
+    return buildChallengePointsBreakdown(input);
+  }, [
+    challenge?.id,
+    id,
+    draft.prototypes,
+    draft.location,
+    totalReflectionChars,
+    scoringDifficulty,
+    hasTimeExpired,
+  ]);
 
   if (!challenge || !team) {
     return (
