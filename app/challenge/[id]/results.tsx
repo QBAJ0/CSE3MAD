@@ -296,12 +296,13 @@ export default function ResultsScreen() {
     });
 
     if (result) {
-      await updateTeamPoints(predictedPoints);
+      const earnedPoints = result.points ?? 0;
+      await updateTeamPoints(earnedPoints);
       await storage.updateStreak();
 
       Alert.alert(
         "Challenge Complete!",
-        `+${predictedPoints} XP earned!\n\nGreat science, team!`,
+        `+${earnedPoints} XP earned!\n\nGreat science, team!`,
         [
           {
             text: "Awesome!",
