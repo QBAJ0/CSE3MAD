@@ -8,16 +8,20 @@ import {
   View,
 } from "react-native";
 import Svg, { Line, Path } from "react-native-svg";
+import {
+  MOTION_SAMPLE_INTERVAL_MS,
+  RECORDER_UI_TICK_MS,
+} from "../../config/sensorSampling";
 import { useHaptic } from "../../hooks/useHaptic";
 
 const { width } = Dimensions.get("window");
 const CHART_WIDTH = width - 80;
 const CHART_HEIGHT = 100;
 const DURATION_S = 30;
-const MIN_BREATH_INTERVAL_MS = 1500; // caps at 40 breaths/min
-const RISE_THRESHOLD = 0.012;        // g — gentle chest rise
-const FALL_THRESHOLD = -0.005;       // g — chest falls back
-const MEAN_WINDOW = 60;              // 3 s rolling mean at 20 Hz
+const MIN_BREATH_INTERVAL_MS = 1500;
+const RISE_THRESHOLD = 0.012;
+const FALL_THRESHOLD = -0.005;
+const MEAN_WINDOW = 30;
 
 interface Props {
   onCapture: (bpm: number) => void;
@@ -32,13 +36,27 @@ export function BreathingRecorder({ onCapture, existingValue }: Props) {
   const [waveform, setWaveform] = useState<number[]>([]);
   const { haptic } = useHaptic();
 
-  const subscriptionRef = useRef<ReturnType<typeof Accelerometer.addListener> | null>(null);
+  const subscriptionRef = useRef<ReturnType<typeof Accelerometer.addListener> | null>(
+    null,
+  );
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const recordingRef = useRef(false);
   const startTimeRef = useRef(0);
   const zHistoryRef = useRef<number[]>([]);
   const aboveThresholdRef = useRef(false);
   const lastBreathTimeRef = useRef(0);
   const breathCountRef = useRef(0);
+  const waveformRef = useRef<number[]>([]);
+
+  const cleanup = () => {
+    subscriptionRef.current?.remove();
+    subscriptionRef.current = null;
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    recordingRef.current = false;
+  };
 
   useEffect(() => {
     Accelerometer.requestPermissionsAsync().then(({ status }) =>
@@ -47,26 +65,37 @@ export function BreathingRecorder({ onCapture, existingValue }: Props) {
     return cleanup;
   }, []);
 
-  const cleanup = () => {
-    subscriptionRef.current?.remove();
-    if (timerRef.current) clearInterval(timerRef.current);
+  const stopRecording = () => {
+    if (!recordingRef.current) return;
+    cleanup();
+    setRecording(false);
+    setWaveform([...waveformRef.current]);
+    const durationSeconds = Math.max(
+      1,
+      (Date.now() - startTimeRef.current) / 1000,
+    );
+    const bpm = Math.round((breathCountRef.current / durationSeconds) * 60);
+    haptic("success");
+    onCapture(Math.max(0, bpm));
   };
 
   const startRecording = () => {
+    cleanup();
     haptic("medium");
+    recordingRef.current = true;
     setRecording(true);
     setBreathCount(0);
     setElapsed(0);
     setWaveform([]);
     zHistoryRef.current = [];
+    waveformRef.current = [];
     aboveThresholdRef.current = false;
     lastBreathTimeRef.current = 0;
     breathCountRef.current = 0;
     startTimeRef.current = Date.now();
 
-    Accelerometer.setUpdateInterval(50); // 20 Hz
+    Accelerometer.setUpdateInterval(MOTION_SAMPLE_INTERVAL_MS);
     subscriptionRef.current = Accelerometer.addListener(({ z }) => {
-      // Rolling mean subtraction removes gravity offset
       zHistoryRef.current.push(z);
       if (zHistoryRef.current.length > MEAN_WINDOW) zHistoryRef.current.shift();
       const mean =
@@ -74,12 +103,10 @@ export function BreathingRecorder({ onCapture, existingValue }: Props) {
         zHistoryRef.current.length;
       const signal = z - mean;
 
-      // Hysteresis threshold crossing counts one breath per rise
       if (!aboveThresholdRef.current && signal > RISE_THRESHOLD) {
         const now = Date.now();
         if (now - lastBreathTimeRef.current > MIN_BREATH_INTERVAL_MS) {
           breathCountRef.current++;
-          setBreathCount(breathCountRef.current);
           lastBreathTimeRef.current = now;
         }
         aboveThresholdRef.current = true;
@@ -87,26 +114,19 @@ export function BreathingRecorder({ onCapture, existingValue }: Props) {
         aboveThresholdRef.current = false;
       }
 
-      setWaveform((prev) => [
-        ...prev.slice(-(Math.floor(CHART_WIDTH / 3))),
+      waveformRef.current = [
+        ...waveformRef.current.slice(-Math.floor(CHART_WIDTH / 3)),
         Math.max(-0.1, Math.min(0.1, signal)),
-      ]);
+      ];
     });
 
     timerRef.current = setInterval(() => {
       const secs = Math.floor((Date.now() - startTimeRef.current) / 1000);
       setElapsed(secs);
+      setBreathCount(breathCountRef.current);
+      setWaveform([...waveformRef.current]);
       if (secs >= DURATION_S) stopRecording();
-    }, 500);
-  };
-
-  const stopRecording = () => {
-    cleanup();
-    setRecording(false);
-    const durationSeconds = Math.max(1, (Date.now() - startTimeRef.current) / 1000);
-    const bpm = Math.round((breathCountRef.current / durationSeconds) * 60);
-    haptic("success");
-    onCapture(Math.max(0, bpm));
+    }, RECORDER_UI_TICK_MS);
   };
 
   const getChartPath = () => {

@@ -145,7 +145,7 @@ export function TracingRecorder({
         // Tracing complete
         stopTracing();
       }
-    }, 50); // Move every 50ms (20 steps per second)
+    }, 100);
   };
 
   const stopTracing = () => {

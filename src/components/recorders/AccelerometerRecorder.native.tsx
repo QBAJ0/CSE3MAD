@@ -1,8 +1,7 @@
 // components/recorders/AccelerometerRecorder.tsx
 import { Accelerometer } from "expo-sensors";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  Animated,
   Dimensions,
   StyleSheet,
   Text,
@@ -10,6 +9,10 @@ import {
   View,
 } from "react-native";
 import Svg, { Line, Path } from "react-native-svg";
+import {
+  MOTION_SAMPLE_INTERVAL_MS,
+  RECORDER_UI_TICK_MS,
+} from "../../config/sensorSampling";
 import { useHaptic } from "../../hooks/useHaptic";
 
 const { width } = Dimensions.get("window");
@@ -41,96 +44,127 @@ export function AccelerometerRecorder({
   );
   const [samples, setSamples] = useState<number[]>([]);
   const { haptic } = useHaptic();
-  const subscriptionRef = useRef<any>(null);
-  const startTimeRef = useRef<number>(0);
-  const sumMagnitudeRef = useRef<number>(0);
-  const countRef = useRef<number>(0);
-  const chartAnim = useRef(new Animated.Value(0)).current;
+  const subscriptionRef = useRef<ReturnType<
+    typeof Accelerometer.addListener
+  > | null>(null);
+  const autoStopRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const uiTickRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const recordingRef = useRef(false);
+  const startTimeRef = useRef(0);
+  const sumMagnitudeRef = useRef(0);
+  const countRef = useRef(0);
+  const peakRef = useRef(0);
+  const currentValuesRef = useRef({ x: 0, y: 0, z: 0, magnitude: 0 });
+  const samplesRef = useRef<number[]>([]);
 
-  useEffect(() => {
-    requestPermissions();
-    return () => {
-      if (subscriptionRef.current) {
-        subscriptionRef.current.remove();
-      }
-    };
+  const clearTimers = useCallback(() => {
+    if (autoStopRef.current) {
+      clearTimeout(autoStopRef.current);
+      autoStopRef.current = null;
+    }
+    if (uiTickRef.current) {
+      clearInterval(uiTickRef.current);
+      uiTickRef.current = null;
+    }
   }, []);
 
-  const requestPermissions = async () => {
+  const clearSubscription = useCallback(() => {
+    subscriptionRef.current?.remove();
+    subscriptionRef.current = null;
+  }, []);
+
+  const cleanup = useCallback(() => {
+    clearSubscription();
+    clearTimers();
+    recordingRef.current = false;
+  }, [clearSubscription, clearTimers]);
+
+  const ensurePermission = useCallback(async () => {
     const { status } = await Accelerometer.requestPermissionsAsync();
-    setPermissionGranted(status === "granted");
-  };
+    const granted = status === "granted";
+    setPermissionGranted(granted);
+    return granted;
+  }, []);
 
-  const startRecording = async () => {
-    if (!permissionGranted) {
-      await requestPermissions();
-      if (!permissionGranted) return;
-    }
+  useEffect(() => {
+    void ensurePermission();
+    return cleanup;
+  }, [cleanup, ensurePermission]);
 
+  const stopRecording = useCallback(() => {
+    if (!recordingRef.current) return;
+
+    cleanup();
+    setRecording(false);
+
+    const avg =
+      countRef.current > 0 ? sumMagnitudeRef.current / countRef.current : 0;
+    const peak = peakRef.current;
+    setAverageMagnitude(avg);
+    setPeakMagnitude(peak);
+    setSamples([...samplesRef.current]);
+    setCurrentValues({ ...currentValuesRef.current });
+
+    haptic("success");
+    onCapture({
+      peak,
+      average: avg,
+      samples: countRef.current,
+    });
+  }, [cleanup, haptic, onCapture]);
+
+  const startRecording = useCallback(async () => {
+    const granted = await ensurePermission();
+    if (!granted) return;
+
+    cleanup();
     haptic("medium");
+    recordingRef.current = true;
     setRecording(true);
     setPeakMagnitude(0);
     setAverageMagnitude(0);
     setSamples([]);
     sumMagnitudeRef.current = 0;
     countRef.current = 0;
+    peakRef.current = 0;
+    samplesRef.current = [];
+    currentValuesRef.current = { x: 0, y: 0, z: 0, magnitude: 0 };
     startTimeRef.current = Date.now();
 
-    Accelerometer.setUpdateInterval(50); // 20Hz
+    Accelerometer.setUpdateInterval(MOTION_SAMPLE_INTERVAL_MS);
     subscriptionRef.current = Accelerometer.addListener((data) => {
       const magnitude = Math.sqrt(data.x ** 2 + data.y ** 2 + data.z ** 2);
-      const gravityAdjusted = Math.abs(magnitude - 1); // Remove gravity (1g baseline)
+      const gravityAdjusted = Math.abs(magnitude - 1);
 
-      setCurrentValues({
+      currentValuesRef.current = {
         x: data.x,
         y: data.y,
         z: data.z,
         magnitude: gravityAdjusted,
-      });
-      setSamples((prev) => [...prev.slice(-50), gravityAdjusted]);
+      };
+      samplesRef.current = [
+        ...samplesRef.current.slice(-50),
+        gravityAdjusted,
+      ];
 
       sumMagnitudeRef.current += gravityAdjusted;
       countRef.current++;
 
-      if (gravityAdjusted > peakMagnitude) {
-        setPeakMagnitude(gravityAdjusted);
+      if (gravityAdjusted > peakRef.current) {
+        peakRef.current = gravityAdjusted;
       }
-
-      // Animate chart
-      Animated.timing(chartAnim, {
-        toValue: 1,
-        duration: 50,
-        useNativeDriver: false,
-      }).start(() => chartAnim.setValue(0));
     });
 
-    // Auto-stop after duration
-    setTimeout(() => {
-      if (recording) {
-        stopRecording();
-      }
+    uiTickRef.current = setInterval(() => {
+      setCurrentValues({ ...currentValuesRef.current });
+      setPeakMagnitude(peakRef.current);
+      setSamples([...samplesRef.current]);
+    }, RECORDER_UI_TICK_MS);
+
+    autoStopRef.current = setTimeout(() => {
+      stopRecording();
     }, duration * 1000);
-  };
-
-  const stopRecording = () => {
-    if (subscriptionRef.current) {
-      subscriptionRef.current.remove();
-      subscriptionRef.current = null;
-    }
-
-    const avg =
-      countRef.current > 0 ? sumMagnitudeRef.current / countRef.current : 0;
-    setAverageMagnitude(avg);
-
-    haptic("success");
-    setRecording(false);
-
-    onCapture({
-      peak: peakMagnitude,
-      average: avg,
-      samples: countRef.current,
-    });
-  };
+  }, [cleanup, duration, ensurePermission, haptic, stopRecording]);
 
   const getStabilityLevel = (peak: number) => {
     if (peak < 0.05)
@@ -167,7 +201,7 @@ export function AccelerometerRecorder({
         </Text>
         <TouchableOpacity
           style={styles.permissionButton}
-          onPress={requestPermissions}
+          onPress={() => void ensurePermission()}
         >
           <Text style={styles.permissionButtonText}>Grant Permission</Text>
         </TouchableOpacity>
@@ -302,7 +336,7 @@ export function AccelerometerRecorder({
       {/* Control Button */}
       <TouchableOpacity
         style={[styles.recordButton, recording && styles.recordButtonActive]}
-        onPress={recording ? stopRecording : startRecording}
+        onPress={recording ? stopRecording : () => void startRecording()}
       >
         <Text style={styles.recordButtonText}>
           {recording ? "⏹️ Stop Measurement" : `📳 Start ({duration}s)`}

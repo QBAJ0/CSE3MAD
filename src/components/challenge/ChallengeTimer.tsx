@@ -29,6 +29,7 @@ export function ChallengeTimer({
   const [isWarning, setIsWarning] = useState(false);
   const { haptic } = useHaptic();
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const warned60Ref = useRef(false);
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
   const handleTimeout = useCallback(() => {
@@ -52,33 +53,44 @@ export function ChallengeTimer({
   }, [minutes, onTimeout]);
 
   useEffect(() => {
-    if (isActive && timeLeft > 0) {
-      intervalRef.current = setInterval(() => {
-        setTimeLeft((prev) => {
-          const newTime = prev - 1;
-          onTimeUpdate?.(newTime);
-          if (newTime <= 60 && newTime > 0 && !isWarning) {
-            setIsWarning(true);
-            haptic("warning");
-            Vibration.vibrate(500);
-          }
-          if (newTime === 30) {
-            haptic("heavy");
-            Vibration.vibrate([500, 200, 500]);
-          }
-          if (newTime === 0) {
-            clearInterval(intervalRef.current!);
-            haptic("error");
-            handleTimeout();
-          }
-          return newTime;
-        });
-      }, 1000);
+    if (!isActive) {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      return;
     }
+
+    intervalRef.current = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 0) return 0;
+        const newTime = prev - 1;
+        onTimeUpdate?.(newTime);
+        if (newTime <= 60 && newTime > 0 && !warned60Ref.current) {
+          warned60Ref.current = true;
+          setIsWarning(true);
+          haptic("warning");
+          Vibration.vibrate(500);
+        }
+        if (newTime === 30) {
+          haptic("heavy");
+          Vibration.vibrate([500, 200, 500]);
+        }
+        if (newTime === 0) {
+          haptic("error");
+          handleTimeout();
+        }
+        return newTime;
+      });
+    }, 1000);
+
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
     };
-  }, [handleTimeout, haptic, isActive, isWarning, onTimeUpdate, timeLeft]);
+  }, [handleTimeout, haptic, isActive, onTimeUpdate]);
 
   useEffect(() => {
     if (isWarning) {

@@ -1,0 +1,2 @@
+export const MOTION_SAMPLE_INTERVAL_MS = 100;
+export const RECORDER_UI_TICK_MS = 250;

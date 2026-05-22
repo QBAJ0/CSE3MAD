@@ -1,10 +1,11 @@
 import { Gyroscope } from "expo-sensors";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  MOTION_SAMPLE_INTERVAL_MS,
+  RECORDER_UI_TICK_MS,
+} from "../../config/sensorSampling";
 import { useHaptic } from "../../hooks/useHaptic";
-
-const SAMPLE_INTERVAL_MS = 100;
-const UI_TICK_MS = 250;
 const MIN_SAMPLES = 8;
 
 type GyroscopeCapture = {
@@ -137,7 +138,7 @@ export function GyroscopeRecorder({
     currentValuesRef.current = { x: 0, y: 0, z: 0 };
     startTimeRef.current = Date.now();
 
-    Gyroscope.setUpdateInterval(SAMPLE_INTERVAL_MS);
+    Gyroscope.setUpdateInterval(MOTION_SAMPLE_INTERVAL_MS);
     subscriptionRef.current = Gyroscope.addListener((data) => {
       const magnitude = Math.sqrt(data.x ** 2 + data.y ** 2 + data.z ** 2);
       const previousMagnitude = lastMagnitudeRef.current;
@@ -155,13 +156,13 @@ export function GyroscopeRecorder({
     uiTickRef.current = setInterval(() => {
       setCurrentValues({ ...currentValuesRef.current });
       setPeakRotation(peakRotationRef.current);
-    }, UI_TICK_MS);
+    }, RECORDER_UI_TICK_MS);
 
     durationTimerRef.current = setInterval(() => {
       const seconds = (Date.now() - startTimeRef.current) / 1000;
       setElapsed(Math.min(duration, seconds));
       if (seconds >= duration) stopRecording();
-    }, UI_TICK_MS);
+    }, RECORDER_UI_TICK_MS);
   }, [cleanup, duration, ensurePermission, haptic, stopRecording]);
 
   const resetSaved = () => {

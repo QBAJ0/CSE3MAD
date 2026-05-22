@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useHaptic } from "../../hooks/useHaptic";
 import { Measurement } from "../../types";
@@ -15,15 +15,22 @@ export function StopwatchRecorder({ measurement, value, onChange }: Props) {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const { haptic } = useHaptic();
 
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []);
+
   const start = () => {
     haptic("medium");
     setRunning(true);
     const startTime = Date.now() - time * 1000;
+    if (intervalRef.current) clearInterval(intervalRef.current);
     intervalRef.current = setInterval(() => {
       const elapsed = (Date.now() - startTime) / 1000;
       setTime(elapsed);
       onChange(elapsed.toFixed(2));
-    }, 50);
+    }, 100);
   };
 
   const stop = () => {

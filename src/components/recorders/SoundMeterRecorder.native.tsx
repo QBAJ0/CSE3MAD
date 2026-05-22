@@ -28,37 +28,75 @@ export function SoundMeterRecorder({
   const [peakDb, setPeakDb] = useState(existingValue || 0);
   const [permissionGranted, setPermissionGranted] = useState(false);
   const recordingRef = useRef<Audio.Recording | null>(null);
+  const autoStopRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const peakDbRef = useRef(0);
+  const lastMeterUiAtRef = useRef(0);
   const meterAnim = useRef(new Animated.Value(0)).current;
   const { haptic } = useHaptic();
 
+  const unloadRecording = async () => {
+    if (autoStopRef.current) {
+      clearTimeout(autoStopRef.current);
+      autoStopRef.current = null;
+    }
+    const active = recordingRef.current;
+    recordingRef.current = null;
+    if (!active) return;
+    try {
+      await active.stopAndUnloadAsync();
+      await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
+    } catch (error) {
+      console.error("Stop failed:", error);
+    }
+  };
+
   useEffect(() => {
-    requestPermissions();
+    void Audio.requestPermissionsAsync().then(({ status }) =>
+      setPermissionGranted(status === "granted"),
+    );
     return () => {
-      if (recordingRef.current) {
-        recordingRef.current.stopAndUnloadAsync();
-      }
+      void unloadRecording();
     };
   }, []);
 
-  const requestPermissions = async () => {
+  const ensurePermission = async () => {
     const { status } = await Audio.requestPermissionsAsync();
-    setPermissionGranted(status === "granted");
-    if (status !== "granted") {
+    const granted = status === "granted";
+    setPermissionGranted(granted);
+    if (!granted) {
       Alert.alert(
         "Permission Needed",
         "Microphone access is required to measure sound levels.",
       );
     }
+    return granted;
+  };
+
+  const stopRecording = async () => {
+    if (!recordingRef.current) return;
+
+    haptic("success");
+    setRecording(false);
+
+    await unloadRecording();
+
+    const peak = peakDbRef.current;
+    if (peak > 0) {
+      setPeakDb(peak);
+      setCurrentDb(peak);
+      onCapture(peak);
+    }
   };
 
   const startRecording = async () => {
-    if (!permissionGranted) {
-      await requestPermissions();
-      if (!permissionGranted) return;
-    }
+    const granted = await ensurePermission();
+    if (!granted) return;
+
+    await unloadRecording();
 
     haptic("medium");
     setRecording(true);
+    peakDbRef.current = 0;
     setPeakDb(0);
     setCurrentDb(0);
 
@@ -70,61 +108,42 @@ export function SoundMeterRecorder({
 
       const recording = new Audio.Recording();
       await recording.prepareToRecordAsync({
-        ...Audio.RecordingOptionsPresets.HIGH_QUALITY,
+        ...Audio.RecordingOptionsPresets.LOW_QUALITY,
         isMeteringEnabled: true,
       });
 
       recording.setOnRecordingStatusUpdate((status) => {
-        if (status.isRecording && status.metering !== undefined) {
-          // Convert dBFS to approximate dB SPL
-          // dBFS ranges from -160 to 0, add 90 for approximate SPL
-          const dbSPL = Math.max(0, Math.min(120, status.metering + 90));
-          setCurrentDb(dbSPL);
-          if (dbSPL > peakDb) setPeakDb(dbSPL);
+        if (!status.isRecording || status.metering === undefined) return;
 
-          // Animate meter
-          Animated.timing(meterAnim, {
-            toValue: dbSPL / 120,
-            duration: 100,
-            useNativeDriver: false,
-          }).start();
+        const dbSPL = Math.max(0, Math.min(120, status.metering + 90));
+        if (dbSPL > peakDbRef.current) {
+          peakDbRef.current = dbSPL;
         }
+
+        const now = Date.now();
+        if (now - lastMeterUiAtRef.current < 200) return;
+        lastMeterUiAtRef.current = now;
+
+        setCurrentDb(dbSPL);
+        setPeakDb(peakDbRef.current);
+        Animated.timing(meterAnim, {
+          toValue: dbSPL / 120,
+          duration: 150,
+          useNativeDriver: false,
+        }).start();
       });
 
       await recording.startAsync();
       recordingRef.current = recording;
 
-      // Auto-stop after 10 seconds
-      setTimeout(() => {
-        if (recordingRef.current && recording) {
-          stopRecording();
-        }
+      autoStopRef.current = setTimeout(() => {
+        void stopRecording();
       }, 10000);
     } catch (error) {
       console.error("Recording failed:", error);
       Alert.alert("Error", "Failed to start recording. Please try again.");
       setRecording(false);
-    }
-  };
-
-  const stopRecording = async () => {
-    if (!recordingRef.current) return;
-
-    haptic("success");
-    setRecording(false);
-
-    try {
-      await recordingRef.current.stopAndUnloadAsync();
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: false,
-      });
       recordingRef.current = null;
-
-      if (peakDb > 0) {
-        onCapture(peakDb);
-      }
-    } catch (error) {
-      console.error("Stop failed:", error);
     }
   };
 
@@ -150,7 +169,7 @@ export function SoundMeterRecorder({
         <Text style={styles.permissionText}>Microphone access required</Text>
         <TouchableOpacity
           style={styles.permissionButton}
-          onPress={requestPermissions}
+          onPress={() => void ensurePermission()}
         >
           <Text style={styles.permissionButtonText}>Grant Permission</Text>
         </TouchableOpacity>
