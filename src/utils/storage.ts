@@ -10,6 +10,7 @@ export const STORAGE_KEYS = {
   EARNED_BADGES: "stemm_earned_badges",
   REMINDER_HOUR: "reminder_hour",
   REMINDER_MINUTE: "reminder_minute",
+  PENDING_CLOUD_SYNC: "stemm_pending_challenge_cloud_sync",
 } as const;
 
 export const DEFAULT_REMINDER_HOUR = 19;

@@ -1,6 +1,8 @@
 import { router, Stack } from "expo-router";
 import { useEffect } from "react";
+import { AppState } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { processPendingChallengeCloudSync } from "../src/services/challengeCloudSync";
 import { ErrorBoundary } from "../src/components/ui/ErrorBoundary";
 import { ActivityProvider } from "../src/context/ActivityContext";
 import { TeamProvider } from "../src/context/TeamContext";
@@ -22,6 +24,18 @@ export default function RootLayout() {
       ]);
     };
     setup().catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    void processPendingChallengeCloudSync();
+
+    const appStateSub = AppState.addEventListener("change", (nextState) => {
+      if (nextState === "active") {
+        void processPendingChallengeCloudSync();
+      }
+    });
+
+    return () => appStateSub.remove();
   }, []);
 
   useEffect(() => {

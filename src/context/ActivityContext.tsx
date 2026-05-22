@@ -3,7 +3,7 @@ import {
   resolveSubmissionLocation,
   scoreActivityResult,
 } from "../services/challengeScoring";
-import { pushActivityToCloud, pushResultToCloud } from "../services/leaderboard";
+import { syncChallengeResultToCloud } from "../services/challengeCloudSync";
 import { ActivityResult, DifficultyMode, Prototype } from "../types";
 import { storage } from "../utils/storage";
 
@@ -169,9 +169,8 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
     const points = scoreActivityResult(baseResult, completedInTime);
     const result: ActivityResult = { ...baseResult, points, completedInTime };
 
-    await storage.saveCompletedActivity(result); // Videos persisted to local storage
-    pushResultToCloud(result);   // updates team aggregate on leaderboard
-    pushActivityToCloud(result); // saves full result + GPS to activities collection
+    await storage.saveCompletedActivity(result);
+    void syncChallengeResultToCloud(result);
     return result;
   };
 
