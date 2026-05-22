@@ -28,6 +28,7 @@ export function PhotoRecorder({
   const [photoUri, setPhotoUri] = useState<string | null>(existingUri || null);
   const [cameraOpen, setCameraOpen] = useState(false);
   const [facing, setFacing] = useState<CameraType>("back");
+  const [torchOn, setTorchOn] = useState(false);
   const cameraRef = useRef<CameraView>(null);
   const { haptic } = useHaptic();
 
@@ -113,7 +114,10 @@ export function PhotoRecorder({
       <View style={styles.buttonRow}>
         <TouchableOpacity
           style={styles.cameraButton}
-          onPress={() => setCameraOpen(true)}
+          onPress={() => {
+            setTorchOn(false);
+            setCameraOpen(true);
+          }}
         >
           <Text style={styles.cameraButtonText}>📷 {label}</Text>
         </TouchableOpacity>
@@ -128,23 +132,57 @@ export function PhotoRecorder({
       <Modal
         visible={cameraOpen}
         animationType="slide"
-        onRequestClose={() => setCameraOpen(false)}
+        onRequestClose={() => {
+          setCameraOpen(false);
+          setTorchOn(false);
+        }}
       >
         <View style={styles.cameraContainer}>
-          <CameraView ref={cameraRef} style={styles.camera} facing={facing} />
-          <View style={styles.cameraControls}>
+          <CameraView
+            ref={cameraRef}
+            style={styles.camera}
+            facing={facing}
+            enableTorch={torchOn && facing === "back"}
+          />
+          <View style={styles.cameraTopBar}>
             <TouchableOpacity
               style={styles.closeButton}
-              onPress={() => setCameraOpen(false)}
+              onPress={() => {
+                setCameraOpen(false);
+                setTorchOn(false);
+              }}
             >
               <Text style={styles.closeButtonText}>✕</Text>
             </TouchableOpacity>
+            {facing === "back" && (
+              <TouchableOpacity
+                style={[
+                  styles.torchButton,
+                  torchOn && styles.torchButtonActive,
+                ]}
+                onPress={() => {
+                  haptic("light");
+                  setTorchOn((on) => !on);
+                }}
+              >
+                <Text style={styles.torchButtonText}>{torchOn ? "🔦" : "💡"}</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+          <View style={styles.cameraControls}>
             <TouchableOpacity style={styles.captureButton} onPress={takePhoto}>
               <View style={styles.captureButtonInner} />
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.flipButton}
-              onPress={() => setFacing(facing === "back" ? "front" : "back")}
+              onPress={() => {
+                haptic("light");
+                setFacing((current) => {
+                  const next = current === "back" ? "front" : "back";
+                  if (next === "front") setTorchOn(false);
+                  return next;
+                });
+              }}
             >
               <Text style={styles.flipButtonText}>🔄</Text>
             </TouchableOpacity>
@@ -207,15 +245,39 @@ const styles = StyleSheet.create({
   deleteButtonText: { color: "#FFF", fontWeight: "600" },
   cameraContainer: { flex: 1, backgroundColor: "#000" },
   camera: { flex: 1 },
+  cameraTopBar: {
+    position: "absolute",
+    top: 48,
+    left: 20,
+    right: 20,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
   cameraControls: {
     position: "absolute",
     bottom: 40,
     left: 0,
     right: 0,
     flexDirection: "row",
-    justifyContent: "space-around",
+    justifyContent: "center",
     alignItems: "center",
+    gap: 48,
     paddingHorizontal: 40,
+  },
+  torchButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  torchButtonActive: {
+    backgroundColor: "rgba(250,204,21,0.85)",
+  },
+  torchButtonText: {
+    fontSize: 24,
   },
   closeButton: {
     width: 50,

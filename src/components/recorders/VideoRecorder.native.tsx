@@ -28,6 +28,7 @@ export function VideoRecorder({
   const [recording, setRecording] = useState(false);
   const [videoUri, setVideoUri] = useState<string | null>(existingUri || null);
   const [facing, setFacing] = useState<CameraType>("back");
+  const [torchOn, setTorchOn] = useState(false);
   const cameraRef = useRef<CameraView>(null);
   const { haptic } = useHaptic();
 
@@ -65,17 +66,29 @@ export function VideoRecorder({
 
   const handleOpenCamera = () => {
     haptic("medium");
+    setTorchOn(false);
     setCameraOpen(true);
   };
 
   const handleCloseCamera = () => {
     setCameraOpen(false);
     setRecording(false);
+    setTorchOn(false);
   };
 
   const toggleCameraFacing = () => {
     haptic("light");
-    setFacing((current) => (current === "back" ? "front" : "back"));
+    setFacing((current) => {
+      const next = current === "back" ? "front" : "back";
+      if (next === "front") setTorchOn(false);
+      return next;
+    });
+  };
+
+  const toggleTorch = () => {
+    if (facing !== "back") return;
+    haptic("light");
+    setTorchOn((on) => !on);
   };
 
   const startRecording = async () => {
@@ -128,6 +141,7 @@ export function VideoRecorder({
 
   const retakeVideo = () => {
     setVideoUri(null);
+    setTorchOn(false);
     setCameraOpen(true);
     haptic("light");
   };
@@ -234,6 +248,7 @@ export function VideoRecorder({
             facing={facing}
             mode="video"
             autofocus="on"
+            enableTorch={torchOn && facing === "back"}
           />
 
           <View style={styles.cameraOverlay}>
@@ -247,12 +262,27 @@ export function VideoRecorder({
 
               <Text style={styles.cameraTitle}>Record Your Experiment</Text>
 
-              <TouchableOpacity
-                onPress={toggleCameraFacing}
-                style={styles.flipButton}
-              >
-                <Text style={styles.flipButtonText}>🔄</Text>
-              </TouchableOpacity>
+              <View style={styles.headerActions}>
+                {facing === "back" && (
+                  <TouchableOpacity
+                    onPress={toggleTorch}
+                    style={[
+                      styles.torchButton,
+                      torchOn && styles.torchButtonActive,
+                    ]}
+                  >
+                    <Text style={styles.torchButtonText}>
+                      {torchOn ? "🔦" : "💡"}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity
+                  onPress={toggleCameraFacing}
+                  style={styles.flipButton}
+                >
+                  <Text style={styles.flipButtonText}>🔄</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             <View style={styles.cameraFooter}>
@@ -428,6 +458,25 @@ const styles = StyleSheet.create({
     color: "#FFF",
     fontSize: 16,
     fontWeight: "600",
+  },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  torchButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  torchButtonActive: {
+    backgroundColor: "rgba(250,204,21,0.85)",
+  },
+  torchButtonText: {
+    fontSize: 22,
   },
   flipButton: {
     width: 44,
