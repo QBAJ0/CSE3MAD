@@ -11,6 +11,7 @@ export const STORAGE_KEYS = {
   REMINDER_HOUR: "reminder_hour",
   REMINDER_MINUTE: "reminder_minute",
   PENDING_CLOUD_SYNC: "stemm_pending_challenge_cloud_sync",
+  PENDING_MEDIA_UPLOAD: "stemm_pending_media_upload",
 } as const;
 
 export const DEFAULT_REMINDER_HOUR = 19;

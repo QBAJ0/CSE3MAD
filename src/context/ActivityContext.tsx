@@ -4,6 +4,7 @@ import {
   scoreActivityResult,
 } from "../services/challengeScoring";
 import { syncChallengeResultToCloud } from "../services/challengeCloudSync";
+import { enqueueMediaUploadsForResult } from "../services/mediaUploadQueue";
 import { ActivityResult, DifficultyMode, Prototype } from "../types";
 import { storage } from "../utils/storage";
 
@@ -171,6 +172,7 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
 
     await storage.saveCompletedActivity(result);
     void syncChallengeResultToCloud(result);
+    void enqueueMediaUploadsForResult(result);
     return result;
   };
 
