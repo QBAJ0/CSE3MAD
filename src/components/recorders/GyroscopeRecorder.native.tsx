@@ -1,7 +1,11 @@
 import { Gyroscope } from "expo-sensors";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useHaptic } from "../../hooks/useHaptic";
+
+const SAMPLE_INTERVAL_MS = 100;
+const UI_TICK_MS = 250;
+const MIN_SAMPLES = 8;
 
 type GyroscopeCapture = {
   smoothness: number;
@@ -21,43 +25,102 @@ export function GyroscopeRecorder({
   existingValue,
 }: GyroscopeRecorderProps) {
   const [recording, setRecording] = useState(false);
-  const [permissionGranted, setPermissionGranted] = useState(false);
+  const [permissionGranted, setPermissionGranted] = useState<boolean | null>(
+    null,
+  );
   const [elapsed, setElapsed] = useState(0);
   const [currentValues, setCurrentValues] = useState({ x: 0, y: 0, z: 0 });
   const [smoothness, setSmoothness] = useState(existingValue?.smoothness ?? 0);
   const [peakRotation, setPeakRotation] = useState(existingValue?.range ?? 0);
 
   const { haptic } = useHaptic();
-  const subscriptionRef = useRef<ReturnType<typeof Gyroscope.addListener> | null>(null);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const subscriptionRef = useRef<ReturnType<typeof Gyroscope.addListener> | null>(
+    null,
+  );
+  const durationTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const uiTickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef(0);
   const lastMagnitudeRef = useRef<number | null>(null);
   const changeSumRef = useRef(0);
   const peakRotationRef = useRef(0);
   const sampleCountRef = useRef(0);
   const recordingRef = useRef(false);
+  const currentValuesRef = useRef({ x: 0, y: 0, z: 0 });
 
-  useEffect(() => {
-    requestPermissions();
-    return cleanup;
+  const clearTimers = useCallback(() => {
+    if (durationTimerRef.current) {
+      clearInterval(durationTimerRef.current);
+      durationTimerRef.current = null;
+    }
+    if (uiTickRef.current) {
+      clearInterval(uiTickRef.current);
+      uiTickRef.current = null;
+    }
   }, []);
 
-  const cleanup = () => {
+  const clearSubscription = useCallback(() => {
     subscriptionRef.current?.remove();
     subscriptionRef.current = null;
-    if (timerRef.current) clearInterval(timerRef.current);
-    timerRef.current = null;
-  };
+  }, []);
 
-  const requestPermissions = async () => {
+  const cleanup = useCallback(() => {
+    clearSubscription();
+    clearTimers();
+    recordingRef.current = false;
+  }, [clearSubscription, clearTimers]);
+
+  const ensurePermission = useCallback(async (): Promise<boolean> => {
     const { status } = await Gyroscope.requestPermissionsAsync();
     const granted = status === "granted";
     setPermissionGranted(granted);
     return granted;
-  };
+  }, []);
 
-  const startRecording = async () => {
-    const granted = permissionGranted || (await requestPermissions());
+  useEffect(() => {
+    let active = true;
+    void Gyroscope.isAvailableAsync().then((available) => {
+      if (!active) return;
+      if (!available) {
+        setPermissionGranted(false);
+        return;
+      }
+      void ensurePermission();
+    });
+    return () => {
+      active = false;
+      cleanup();
+    };
+  }, [cleanup, ensurePermission]);
+
+  const stopRecording = useCallback(() => {
+    if (!recordingRef.current) return;
+
+    cleanup();
+    setRecording(false);
+    setElapsed(duration);
+
+    const samples = sampleCountRef.current;
+    if (samples < MIN_SAMPLES) {
+      haptic("warning");
+      setSmoothness(0);
+      setPeakRotation(0);
+      return;
+    }
+
+    const averageChange = changeSumRef.current / (samples - 1);
+    const smoothnessScore = Math.round(
+      Math.max(0, Math.min(100, 100 - averageChange * 160)),
+    );
+    const range = Number(peakRotationRef.current.toFixed(3));
+
+    setSmoothness(smoothnessScore);
+    setPeakRotation(range);
+    haptic("success");
+    onCapture({ smoothness: smoothnessScore, range, samples });
+  }, [cleanup, duration, haptic, onCapture]);
+
+  const startRecording = useCallback(async () => {
+    const granted = await ensurePermission();
     if (!granted) return;
 
     cleanup();
@@ -71,17 +134,17 @@ export function GyroscopeRecorder({
     changeSumRef.current = 0;
     peakRotationRef.current = 0;
     sampleCountRef.current = 0;
+    currentValuesRef.current = { x: 0, y: 0, z: 0 };
     startTimeRef.current = Date.now();
 
-    Gyroscope.setUpdateInterval(50);
+    Gyroscope.setUpdateInterval(SAMPLE_INTERVAL_MS);
     subscriptionRef.current = Gyroscope.addListener((data) => {
       const magnitude = Math.sqrt(data.x ** 2 + data.y ** 2 + data.z ** 2);
       const previousMagnitude = lastMagnitudeRef.current;
 
-      setCurrentValues(data);
+      currentValuesRef.current = data;
       sampleCountRef.current += 1;
       peakRotationRef.current = Math.max(peakRotationRef.current, magnitude);
-      setPeakRotation(peakRotationRef.current);
 
       if (previousMagnitude != null) {
         changeSumRef.current += Math.abs(magnitude - previousMagnitude);
@@ -89,33 +152,17 @@ export function GyroscopeRecorder({
       lastMagnitudeRef.current = magnitude;
     });
 
-    timerRef.current = setInterval(() => {
+    uiTickRef.current = setInterval(() => {
+      setCurrentValues({ ...currentValuesRef.current });
+      setPeakRotation(peakRotationRef.current);
+    }, UI_TICK_MS);
+
+    durationTimerRef.current = setInterval(() => {
       const seconds = (Date.now() - startTimeRef.current) / 1000;
       setElapsed(Math.min(duration, seconds));
       if (seconds >= duration) stopRecording();
-    }, 250);
-  };
-
-  const stopRecording = () => {
-    if (!recordingRef.current) return;
-
-    cleanup();
-    recordingRef.current = false;
-    setRecording(false);
-    setElapsed(duration);
-
-    const samples = sampleCountRef.current;
-    const averageChange = samples > 1 ? changeSumRef.current / (samples - 1) : 0;
-    const smoothnessScore = Math.round(
-      Math.max(0, Math.min(100, 100 - averageChange * 160)),
-    );
-    const range = Number(peakRotationRef.current.toFixed(2));
-
-    setSmoothness(smoothnessScore);
-    setPeakRotation(range);
-    haptic("success");
-    onCapture({ smoothness: smoothnessScore, range, samples });
-  };
+    }, UI_TICK_MS);
+  }, [cleanup, duration, ensurePermission, haptic, stopRecording]);
 
   const resetSaved = () => {
     setSmoothness(0);
@@ -123,9 +170,19 @@ export function GyroscopeRecorder({
     onCapture({ smoothness: 0, range: 0, samples: 0 });
   };
 
-  const hasSavedValue = !recording && (smoothness > 0 || peakRotation > 0);
-  const smoothnessColor =
-    smoothness >= 75 ? "#2F80ED" : smoothness >= 45 ? "#F6B84A" : "#EF4444";
+  const hasSavedValue =
+    !recording &&
+    (existingValue?.smoothness !== undefined
+      ? existingValue.smoothness > 0 || (existingValue.range ?? 0) > 0
+      : smoothness > 0 || peakRotation > 0);
+
+  if (permissionGranted === null) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.permissionText}>Checking gyroscope…</Text>
+      </View>
+    );
+  }
 
   if (!permissionGranted) {
     return (
@@ -133,7 +190,7 @@ export function GyroscopeRecorder({
         <Text style={styles.permissionText}>Gyroscope access required</Text>
         <TouchableOpacity
           style={styles.permissionButton}
-          onPress={requestPermissions}
+          onPress={() => void ensurePermission()}
         >
           <Text style={styles.permissionButtonText}>Grant Permission</Text>
         </TouchableOpacity>
@@ -142,24 +199,35 @@ export function GyroscopeRecorder({
   }
 
   if (hasSavedValue) {
+    const displaySmoothness = existingValue?.smoothness ?? smoothness;
+    const displayRange = existingValue?.range ?? peakRotation;
+    const savedColor =
+      displaySmoothness >= 75
+        ? "#2F80ED"
+        : displaySmoothness >= 45
+          ? "#F6B84A"
+          : "#EF4444";
     return (
       <View style={styles.container}>
         <Text style={styles.savedTitle}>Movement Control</Text>
         <View style={styles.savedStats}>
           <View style={styles.savedStat}>
-            <Text style={styles.savedValue}>{smoothness.toFixed(0)}</Text>
+            <Text style={styles.savedValue}>{displaySmoothness.toFixed(0)}</Text>
             <Text style={styles.savedLabel}>Smoothness (%)</Text>
           </View>
           <View style={styles.savedStat}>
-            <Text style={styles.savedValue}>{peakRotation.toFixed(2)}</Text>
-            <Text style={styles.savedLabel}>Peak rotation</Text>
+            <Text style={styles.savedValue}>{displayRange.toFixed(3)}</Text>
+            <Text style={styles.savedLabel}>Peak rotation (rad/s)</Text>
           </View>
         </View>
         <View style={styles.smoothnessBar}>
           <View
             style={[
               styles.smoothnessFill,
-              { width: `${smoothness}%`, backgroundColor: smoothnessColor },
+              {
+                width: `${Math.min(100, displaySmoothness)}%`,
+                backgroundColor: savedColor,
+              },
             ]}
           />
         </View>
@@ -196,7 +264,7 @@ export function GyroscopeRecorder({
 
       <TouchableOpacity
         style={[styles.recordButton, recording && styles.recordButtonActive]}
-        onPress={recording ? stopRecording : startRecording}
+        onPress={recording ? stopRecording : () => void startRecording()}
       >
         <Text style={styles.recordButtonText}>
           {recording

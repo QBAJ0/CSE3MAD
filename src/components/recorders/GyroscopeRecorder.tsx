@@ -1,4 +1,4 @@
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
 interface GyroscopeRecorderProps {
   onCapture: (data: { smoothness: number; range: number; samples: number }) => void;
@@ -6,20 +6,30 @@ interface GyroscopeRecorderProps {
   existingValue?: { smoothness: number; range?: number };
 }
 
-export function GyroscopeRecorder({ onCapture }: GyroscopeRecorderProps) {
+export function GyroscopeRecorder({
+  existingValue,
+}: GyroscopeRecorderProps) {
+  if (existingValue && (existingValue.smoothness > 0 || (existingValue.range ?? 0) > 0)) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.saved}>
+          Smoothness {existingValue.smoothness}% · peak rotation{" "}
+          {(existingValue.range ?? 0).toFixed(3)} rad/s
+        </Text>
+        <Text style={styles.message}>
+          Recorded on a previous session. Open this challenge on a phone to
+          remeasure.
+        </Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      <Text style={styles.icon}>🔄</Text>
       <Text style={styles.message}>
-        Gyroscope not available on web.{"\n"}Use the mobile app to measure
-        movement smoothness.
+        Gyroscope measurement is not available in the browser. Complete this
+        step on the iOS or Android app to record movement smoothness.
       </Text>
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() => onCapture({ smoothness: 0, range: 0, samples: 0 })}
-      >
-        <Text style={styles.buttonText}>Skip (record 0)</Text>
-      </TouchableOpacity>
     </View>
   );
 }
@@ -34,18 +44,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
   },
-  icon: { fontSize: 32 },
   message: {
     color: "#64748B",
     fontSize: 14,
     textAlign: "center",
     lineHeight: 22,
   },
-  button: {
-    backgroundColor: "#E2E8F0",
-    paddingVertical: 10,
-    paddingHorizontal: 24,
-    borderRadius: 10,
-  },
-  buttonText: { color: "#12343B", fontWeight: "600" },
+  saved: { color: "#2F80ED", fontSize: 14, fontWeight: "700", textAlign: "center" },
 });
