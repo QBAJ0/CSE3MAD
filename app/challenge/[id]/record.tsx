@@ -216,7 +216,7 @@ export default function RecordScreen() {
             slowMoFactor={4}
             onComplete={(marks) => {
               saveMeasurement(measurement.key, "analyzed");
-              saveMeasurement("contactTime", marks.contactTime);
+              saveMeasurement("contactTimeSeconds", marks.contactTime);
               saveMeasurement("bounced", marks.bounced ? "Yes" : "No");
               if (marks.timeToBouncePeak) {
                 saveMeasurement("timeToBouncePeak", marks.timeToBouncePeak);
