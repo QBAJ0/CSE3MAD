@@ -92,14 +92,6 @@ export function TeamReactionBoard({ onComplete }: TeamReactionBoardProps) {
       setCurrentMemberIndex((prev) => prev + 1);
     } else {
       setPhase("complete");
-      const finalResults =
-        team?.members.map((m) => ({
-          name: m.name,
-          dominantTime: dominantTimes[m.name],
-          nonDominantTime: nonDominantTimes[m.name],
-          tracingScore: tracingScores[m.name],
-        })) || [];
-      onComplete(finalResults);
     }
   };
 

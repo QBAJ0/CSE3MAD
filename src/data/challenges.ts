@@ -553,11 +553,6 @@ export const CHALLENGES: Challenge[] = [
     measurements: [
       { key: "teamResults", label: "Team Results", recorder: "teamReaction" },
       {
-        key: "tracingResult",
-        label: "Tracing Test",
-        recorder: "tracing",
-      },
-      {
         key: "videoUri",
         label: "Team Test Video",
         recorder: "video",
