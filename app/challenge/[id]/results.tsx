@@ -201,7 +201,23 @@ export default function ResultsScreen() {
         `+${earnedPoints} XP earned!\n\nGreat science, team!`,
         [
           {
-            text: "Awesome!",
+            text: "View details",
+            onPress: () => {
+              clearDraft();
+              router.replace(
+                `/challenge/${challenge.id}/details?resultId=${encodeURIComponent(result.id)}`,
+              );
+            },
+          },
+          {
+            text: "Leaderboard",
+            onPress: () => {
+              clearDraft();
+              router.replace("/(tabs)/leaderboard");
+            },
+          },
+          {
+            text: "Back to Challenges",
             onPress: () => {
               clearDraft();
               router.replace("/(tabs)/activity");
