@@ -21,6 +21,11 @@ import { ChallengeTabBar } from "../../../src/components/challenge/ChallengeTabB
 import { useActivity } from "../../../src/context/ActivityContext";
 import { useTeam } from "../../../src/context/TeamContext";
 import { getChallengeById } from "../../../src/data/challenges";
+import {
+  buildIncompleteSummary,
+  getRequiredMeasurements,
+  isPrototypeComplete,
+} from "../../../src/utils/challengeRecordValidation";
 
 export default function ChallengeBriefScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -57,6 +62,16 @@ export default function ChallengeBriefScreen() {
   // True if this team already has an in-progress draft for this challenge
   const hasDraft =
     draft.challengeId === challenge.id && draft.prototypes.length > 0;
+
+  const draftMeasurements = challenge.measurements.filter(
+    (m) => !m.difficulty || m.difficulty === draft.difficulty,
+  );
+  const requiredForDraft = getRequiredMeasurements(draftMeasurements);
+  const reflectReady =
+    hasDraft &&
+    draft.prototypes.every((p) =>
+      isPrototypeComplete(p, requiredForDraft),
+    );
 
   // True if this challenge has a harder high school mode
   const hasHighSchool = challenge.difficultyLevels.includes("highSchool");
@@ -108,8 +123,18 @@ export default function ChallengeBriefScreen() {
           onBrief={() => {}}
           onDoit={() => router.push(`/challenge/${challenge.id}/record`)}
           onReflect={() => router.push(`/challenge/${challenge.id}/results`)}
+          onReflectDisabledPress={() =>
+            Alert.alert(
+              hasDraft
+                ? "Reflect not ready yet"
+                : "Start the challenge first",
+              hasDraft
+                ? buildIncompleteSummary(draft.prototypes, requiredForDraft)
+                : "Complete measurements in Do It before opening Reflect.",
+            )
+          }
           doitEnabled={hasDraft}
-          reflectEnabled={hasDraft}
+          reflectEnabled={reflectReady}
         />
 
         {/* ── Hero section ── */}

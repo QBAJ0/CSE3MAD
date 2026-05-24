@@ -31,11 +31,12 @@ import { getChallengeById } from "../../../src/data/challenges";
 import { useHaptic } from "../../../src/hooks/useHaptic";
 import { TapReactionGame } from "../../../src/components/recorders/TapReactionGame";
 import { Measurement } from "../../../src/types";
-
-// GPS, video, photo and frame-analysis are optional bonuses — don't block completion
-const OPTIONAL_RECORDERS = new Set<Measurement["recorder"]>([
-  "gps", "video", "photo", "videoAnalyzer", "slowMotion",
-]);
+import {
+  buildIncompleteSummary,
+  getMissingMeasurementLabels,
+  getRequiredMeasurements,
+  isPrototypeComplete,
+} from "../../../src/utils/challengeRecordValidation";
 
 type SaveFn = (key: string, val: string | number) => void;
 
@@ -140,13 +141,32 @@ export default function RecordScreen() {
     saveMeasurement("location", `${lat.toFixed(4)}, ${lng.toFixed(4)}`);
   };
 
-  const isComplete = () =>
-    measurements
-      .filter((m) => !OPTIONAL_RECORDERS.has(m.recorder))
-      .every((m) => {
-        const val = current.measurements[m.key];
-        return val !== undefined && val !== "";
-      });
+  const requiredMeasurements = getRequiredMeasurements(measurements);
+  const currentComplete = isPrototypeComplete(current, requiredMeasurements);
+  const allPrototypesComplete = draft.prototypes.every((p) =>
+    isPrototypeComplete(p, requiredMeasurements),
+  );
+  const onLastPrototype = currentNum >= max;
+  const canProceed = onLastPrototype ? allPrototypesComplete : currentComplete;
+  const missingOnCurrent = getMissingMeasurementLabels(
+    current,
+    requiredMeasurements,
+  );
+  const incompleteSummary = buildIncompleteSummary(
+    draft.prototypes,
+    requiredMeasurements,
+  );
+
+  const showIncompleteAlert = (title: string) => {
+    haptic("warning");
+    Alert.alert(title, incompleteSummary);
+  };
+
+  const goToReflect = () => {
+    router.push(
+      `/challenge/${challenge.id}/results${timeExpired ? "?timeExpired=true" : ""}`,
+    );
+  };
 
   const handleTimeout = () => {
     haptic("error");
@@ -165,21 +185,18 @@ export default function RecordScreen() {
   };
 
   const handleNext = () => {
-    if (!isComplete()) {
-      haptic("warning");
-      Alert.alert(
-        "Incomplete",
-        "Please complete all measurements before continuing.",
-      );
+    if (!canProceed) {
+      const title = onLastPrototype
+        ? "Complete all designs first"
+        : "Complete this design first";
+      showIncompleteAlert(title);
       return;
     }
     haptic("success");
     if (currentNum < max) {
       addPrototype();
     } else {
-      router.push(
-        `/challenge/${challenge.id}/results${timeExpired ? "?timeExpired=true" : ""}`,
-      );
+      goToReflect();
     }
   };
 
@@ -282,11 +299,16 @@ export default function RecordScreen() {
         active="doit"
         onBrief={() => router.back()}
         onDoit={() => {}}
-        onReflect={() =>
-          router.push(`/challenge/${challenge.id}/results${timeExpired ? "?timeExpired=true" : ""}`)
+        onReflect={goToReflect}
+        onReflectDisabledPress={() =>
+          showIncompleteAlert(
+            max > 1
+              ? "Reflect unlocks when every design is complete"
+              : "Complete required measurements first",
+          )
         }
         doitEnabled={true}
-        reflectEnabled={false}
+        reflectEnabled={allPrototypesComplete}
       />
 
       <ChallengeTimer
@@ -306,14 +328,25 @@ export default function RecordScreen() {
         <Text style={styles.exitText}>Save Draft & Exit</Text>
       </TouchableOpacity>
 
+      {max > 1 && (
+        <Text style={styles.multiProtoHint}>
+          {allPrototypesComplete
+            ? `All ${max} designs complete — you can go to Reflect.`
+            : `Complete required measurements for each design (${draft.prototypes.length} of ${max} started).`}
+        </Text>
+      )}
+
       {draft.prototypes.length > 1 && (
         <View style={styles.protoRow}>
-          {draft.prototypes.map((p, i) => (
+          {draft.prototypes.map((p, i) => {
+            const protoDone = isPrototypeComplete(p, requiredMeasurements);
+            return (
             <TouchableOpacity
               key={p.index}
               style={[
                 styles.protoChip,
                 current.index === p.index && styles.protoActive,
+                !protoDone && styles.protoIncomplete,
               ]}
               onPress={() => setCurrentPrototypeIndex(i)}
             >
@@ -326,7 +359,19 @@ export default function RecordScreen() {
                 #{p.index}
               </Text>
             </TouchableOpacity>
-          ))}
+            );
+          })}
+        </View>
+      )}
+
+      {!canProceed && missingOnCurrent.length > 0 && (
+        <View style={styles.validationHint}>
+          <Text style={styles.validationHintTitle}>
+            Still needed for Design #{current.index}:
+          </Text>
+          <Text style={styles.validationHintText}>
+            {missingOnCurrent.join(", ")}
+          </Text>
         </View>
       )}
 
@@ -342,15 +387,21 @@ export default function RecordScreen() {
       </View>
 
       <Pressable
-        style={[styles.nextBtn, !isComplete() && styles.nextDisabled]}
+        style={[styles.nextBtn, !canProceed && styles.nextDisabled]}
         onPress={handleNext}
-        disabled={!isComplete()}
       >
         <Text style={styles.nextText}>
           {currentNum < max
             ? `Test Next Design (${currentNum}/${max})`
             : "Go to Reflect →"}
         </Text>
+        {!canProceed && (
+          <Text style={styles.nextHint}>
+            {onLastPrototype && max > 1 && !allPrototypesComplete
+              ? "Finish every design tab before Reflect"
+              : "Complete required fields above"}
+          </Text>
+        )}
       </Pressable>
 
       {timeExpired && (
@@ -407,8 +458,30 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   protoActive: { backgroundColor: "#2F80ED" },
+  protoIncomplete: { borderWidth: 2, borderColor: "#F59E0B" },
   protoText: { fontSize: 16, fontWeight: "700", color: "#64748B" },
   protoActiveText: { color: "#FFF" },
+  multiProtoHint: {
+    fontSize: 13,
+    color: "#64748B",
+    marginBottom: 12,
+    lineHeight: 18,
+  },
+  validationHint: {
+    backgroundColor: "#FFFBEB",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#FDE68A",
+  },
+  validationHintTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#92400E",
+    marginBottom: 4,
+  },
+  validationHintText: { fontSize: 13, color: "#78350F" },
   measureCard: {
     backgroundColor: "#FFF",
     borderRadius: 20,
@@ -425,6 +498,13 @@ const styles = StyleSheet.create({
   },
   nextDisabled: { backgroundColor: "#CBD5E1" },
   nextText: { color: "#FFF", fontSize: 16, fontWeight: "700" },
+  nextHint: {
+    color: "#E2E8F0",
+    fontSize: 12,
+    fontWeight: "600",
+    marginTop: 4,
+    textAlign: "center",
+  },
   penaltyWarning: {
     marginTop: 12,
     backgroundColor: "#FEE2E2",

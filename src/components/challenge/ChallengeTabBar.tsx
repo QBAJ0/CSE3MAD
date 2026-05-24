@@ -7,6 +7,7 @@ interface Props {
   onBrief: () => void;
   onDoit?: () => void;
   onReflect?: () => void;
+  onReflectDisabledPress?: () => void;
   doitEnabled?: boolean;
   reflectEnabled?: boolean;
 }
@@ -16,6 +17,7 @@ export function ChallengeTabBar({
   onBrief,
   onDoit,
   onReflect,
+  onReflectDisabledPress,
   doitEnabled = false,
   reflectEnabled = false,
 }: Props) {
@@ -58,7 +60,10 @@ export function ChallengeTabBar({
           active === "reflect" && styles.activeTab,
           !reflectEnabled && active !== "reflect" && styles.disabledTab,
         ]}
-        onPress={reflectEnabled ? onReflect : undefined}
+        onPress={() => {
+          if (reflectEnabled) onReflect?.();
+          else onReflectDisabledPress?.();
+        }}
         activeOpacity={reflectEnabled ? 0.7 : 1}
       >
         <Text
