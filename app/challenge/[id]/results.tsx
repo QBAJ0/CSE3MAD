@@ -116,51 +116,84 @@ export default function ResultsScreen() {
     );
   }
 
-  const isReadyToSubmit = () =>
-    rating > 0 &&
-    observationQuestions.every(
-      (_, i) =>
-        (observations[i] ?? "").trim().length >=
-        GAMIFICATION.OBSERVATION_MIN_CHARS,
-    );
+  const getSubmitBlockers = (): string[] => {
+    const blockers: string[] = [];
+    if (rating === 0) {
+      blockers.push("Select a star rating (1–5 stars).");
+    }
+    observationQuestions.forEach((_, i) => {
+      const len = (observations[i] ?? "").trim().length;
+      if (len < GAMIFICATION.OBSERVATION_MIN_CHARS) {
+        blockers.push(
+          `Question ${i + 1}: write at least ${GAMIFICATION.OBSERVATION_MIN_CHARS} characters (${len}/${GAMIFICATION.OBSERVATION_MIN_CHARS}).`,
+        );
+      }
+    });
+    return blockers;
+  };
+
+  const isReadyToSubmit = () => getSubmitBlockers().length === 0;
+
+  const describeFinalizeFailure = (): string => {
+    if (
+      !draft.id ||
+      draft.challengeId === undefined ||
+      !draft.teamId ||
+      !draft.teamName ||
+      !draft.difficulty
+    ) {
+      return "Your session data is incomplete. Return to Do It and restart the challenge from the brief screen.";
+    }
+    return "Could not save your result on this device. Check storage space and try Claim again. Cloud sync is optional and does not block saving.";
+  };
 
   const handleSubmit = async () => {
-    if (!isReadyToSubmit()) {
-      Alert.alert(
-        "Not quite done",
-        "Please answer all observation questions and rate the activity.",
-      );
+    const blockers = getSubmitBlockers();
+    if (blockers.length > 0) {
+      Alert.alert("Not quite done", blockers.join("\n\n"));
       return;
     }
 
     setIsSubmitting(true);
-
-    const result = await finalize({
-      rating: rating as 1 | 2 | 3 | 4 | 5,
-      reflection: combinedReflection,
-      completedInTime: !hasTimeExpired,
-    });
-
-    if (result) {
-      const earnedPoints = result.points ?? 0;
-      await updateTeamPoints(earnedPoints);
-      const streak = await storage.updateStreak();
-
-      const [allCompleted, earnedList, savedTeam] = await Promise.all([
-        storage.getCompletedActivities(),
-        storage.getEarnedBadges(),
-        storage.getTeam(),
-      ]);
-      const newBadgeIds = checkNewBadges({
-        result,
-        allCompleted,
-        streak,
-        newTotalXP: savedTeam?.totalPoints ?? 0,
-        earnedIds: new Set(earnedList),
-        teamMemberCount: savedTeam?.members.length ?? 0,
+    try {
+      const result = await finalize({
+        rating: rating as 1 | 2 | 3 | 4 | 5,
+        reflection: combinedReflection,
+        completedInTime: !hasTimeExpired,
       });
-      if (newBadgeIds.length > 0) {
-        await storage.unlockBadges(newBadgeIds);
+
+      if (!result) {
+        Alert.alert("Could not claim reward", describeFinalizeFailure());
+        return;
+      }
+
+      const earnedPoints = result.points ?? 0;
+      try {
+        await updateTeamPoints(earnedPoints);
+      } catch (e) {
+        console.warn("Failed to update team points after save:", e);
+      }
+
+      try {
+        const streak = await storage.updateStreak();
+        const [allCompleted, earnedList, savedTeam] = await Promise.all([
+          storage.getCompletedActivities(),
+          storage.getEarnedBadges(),
+          storage.getTeam(),
+        ]);
+        const newBadgeIds = checkNewBadges({
+          result,
+          allCompleted,
+          streak,
+          newTotalXP: savedTeam?.totalPoints ?? 0,
+          earnedIds: new Set(earnedList),
+          teamMemberCount: savedTeam?.members.length ?? 0,
+        });
+        if (newBadgeIds.length > 0) {
+          await storage.unlockBadges(newBadgeIds);
+        }
+      } catch (e) {
+        console.warn("Post-claim extras failed (result was saved):", e);
       }
 
       Alert.alert(
@@ -176,9 +209,17 @@ export default function ResultsScreen() {
           },
         ],
       );
+    } catch (e) {
+      console.error("Claim failed:", e);
+      Alert.alert(
+        "Could not claim reward",
+        e instanceof Error
+          ? e.message
+          : "Something went wrong while submitting. Your answers are still here — try again.",
+      );
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setIsSubmitting(false);
   };
 
   const fanPhysics =
@@ -524,18 +565,22 @@ export default function ResultsScreen() {
         </View>
 
         <Text style={styles.observationsSubtitle}>
-          Answer each question as a team
+          Answer each question as a team (at least{" "}
+          {GAMIFICATION.OBSERVATION_MIN_CHARS} characters each)
         </Text>
 
-        {observationQuestions.map((question, i) => (
+        {observationQuestions.map((question, i) => {
+          const answerLen = (observations[i] ?? "").trim().length;
+          const answerReady =
+            answerLen >= GAMIFICATION.OBSERVATION_MIN_CHARS;
+          return (
           <View key={i} style={styles.observationField}>
             <Text style={styles.observationQuestion}>{question}</Text>
 
             <TextInput
               style={[
                 styles.observationInput,
-                (observations[i] ?? "").trim().length >= 5 &&
-                  styles.observationInputValid,
+                answerReady && styles.observationInputValid,
               ]}
               placeholder="Write your answer here..."
               placeholderTextColor="#94A3B8"
@@ -547,14 +592,23 @@ export default function ResultsScreen() {
               numberOfLines={3}
               textAlignVertical="top"
             />
+            <Text
+              style={[
+                styles.observationCount,
+                answerReady && styles.observationCountReady,
+              ]}
+            >
+              {answerLen}/{GAMIFICATION.OBSERVATION_MIN_CHARS} characters
+            </Text>
           </View>
-        ))}
+          );
+        })}
       </View>
 
       <View style={styles.card}>
         <View style={styles.cardTitleRow}>
           <Ionicons name="star-outline" size={16} color="#12343B" />
-          <Text style={styles.cardTitle}>Rate this activity</Text>
+          <Text style={styles.cardTitle}>Rate this activity (required)</Text>
         </View>
 
         <View style={styles.starsRow}>
@@ -606,7 +660,7 @@ export default function ResultsScreen() {
           (!isReadyToSubmit() || isSubmitting) && styles.claimBtnDisabled,
         ]}
         onPress={handleSubmit}
-        disabled={!isReadyToSubmit() || isSubmitting}
+        disabled={isSubmitting}
       >
         <Text style={styles.claimBtnText}>
           {isSubmitting
@@ -614,6 +668,14 @@ export default function ResultsScreen() {
             : `CLAIM REWARD  +${predictedPoints} XP`}
         </Text>
       </Pressable>
+
+      {!isReadyToSubmit() && !isSubmitting && (
+        <Text style={styles.claimHint}>
+          {rating === 0
+            ? "Select a star rating and complete every observation above."
+            : "Complete every observation above to claim."}
+        </Text>
+      )}
 
       <TouchableOpacity
         style={styles.exitLink}
@@ -890,6 +952,13 @@ const styles = StyleSheet.create({
     borderColor: "#2F80ED",
     backgroundColor: "#EEF5FF",
   },
+  observationCount: {
+    fontSize: 12,
+    color: "#94A3B8",
+    marginTop: 6,
+    textAlign: "right",
+  },
+  observationCountReady: { color: "#2F80ED", fontWeight: "600" },
 
   starsRow: {
     flexDirection: "row",
@@ -957,6 +1026,14 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "800",
     letterSpacing: 0.3,
+  },
+  claimHint: {
+    marginHorizontal: 20,
+    marginTop: 10,
+    fontSize: 13,
+    color: "#64748B",
+    textAlign: "center",
+    lineHeight: 18,
   },
 
   redoLink: { alignItems: "center", paddingVertical: 16 },

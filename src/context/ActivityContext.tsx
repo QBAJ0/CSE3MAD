@@ -146,34 +146,40 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
       return null;
     }
 
-    const submittedLocation = resolveSubmissionLocation(
-      draft.location,
-      draft.prototypes,
-    );
+    try {
+      const submittedLocation = resolveSubmissionLocation(
+        draft.location,
+        draft.prototypes,
+      );
 
-    // Keep every prototype measurement, including video, photo, and GPS evidence.
-    const baseResult = {
-      id: draft.id,
-      challengeId: draft.challengeId,
-      teamId: draft.teamId,
-      teamName: draft.teamName,
-      difficulty: draft.difficulty,
-      prediction: draft.prediction ?? "",
-      prototypes: draft.prototypes, // Includes all measurements.video, measurements.photo, etc.
-      derivedByPrototype: draft.derivedByPrototype ?? {},
-      rating,
-      reflection,
-      location: submittedLocation,
-      createdAt: draft.createdAt ?? new Date().toISOString(),
-    };
+      const baseResult = {
+        id: draft.id,
+        challengeId: draft.challengeId,
+        teamId: draft.teamId,
+        teamName: draft.teamName,
+        difficulty: draft.difficulty,
+        prediction: draft.prediction ?? "",
+        prototypes: draft.prototypes,
+        derivedByPrototype: draft.derivedByPrototype ?? {},
+        rating,
+        reflection,
+        location: submittedLocation,
+        createdAt: draft.createdAt ?? new Date().toISOString(),
+      };
 
-    const points = scoreActivityResult(baseResult, completedInTime);
-    const result: ActivityResult = { ...baseResult, points, completedInTime };
+      const points = scoreActivityResult(baseResult, completedInTime);
+      const result: ActivityResult = { ...baseResult, points, completedInTime };
 
-    await storage.saveCompletedActivity(result);
-    void syncChallengeResultToCloud(result);
-    void enqueueMediaUploadsForResult(result);
-    return result;
+      const saved = await storage.saveCompletedActivity(result);
+      if (!saved) return null;
+
+      void syncChallengeResultToCloud(result);
+      void enqueueMediaUploadsForResult(result);
+      return result;
+    } catch (e) {
+      console.error("finalize failed:", e);
+      return null;
+    }
   };
 
   const clearDraft = () => setDraft(emptyDraft);

@@ -36,7 +36,7 @@ export const storage = {
     }
   },
 
-  async saveCompletedActivity(activity: ActivityResult): Promise<void> {
+  async saveCompletedActivity(activity: ActivityResult): Promise<boolean> {
     try {
       const stored = await AsyncStorage.getItem(
         STORAGE_KEYS.COMPLETED_ACTIVITIES,
@@ -47,8 +47,10 @@ export const storage = {
         STORAGE_KEYS.COMPLETED_ACTIVITIES,
         JSON.stringify(activities),
       );
+      return true;
     } catch (e) {
       console.error("Failed to save activity:", e);
+      return false;
     }
   },
 
