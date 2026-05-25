@@ -49,6 +49,6 @@ describe("navigation route smoke", () => {
         <ChallengeBriefScreen />
       </AppProviders>,
     );
-    expect(await findByText(/Start Challenge/i)).toBeTruthy();
+    expect(await findByText(/Start testing/i)).toBeTruthy();
   });
 });

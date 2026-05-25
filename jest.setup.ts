@@ -14,17 +14,26 @@ jest.mock("firebase/firestore", () => ({
   orderBy: jest.fn(),
 }));
 
-jest.mock("@expo/vector-icons", () => {
+jest.mock("firebase/storage", () => ({
+  getDownloadURL: jest.fn(),
+  ref: jest.fn(),
+  uploadBytes: jest.fn(),
+}));
+
+const mockVectorIcon = () => {
   const React = require("react");
   const { Text } = require("react-native");
-  const MockIcon = (props: { name?: string }) =>
+  return (props: { name?: string }) =>
     React.createElement(Text, null, props.name ?? "");
-  return {
-    Ionicons: MockIcon,
-    MaterialIcons: MockIcon,
-    FontAwesome: MockIcon,
-  };
-});
+};
+
+jest.mock("@expo/vector-icons", () => ({
+  Ionicons: mockVectorIcon(),
+  MaterialIcons: mockVectorIcon(),
+  FontAwesome: mockVectorIcon(),
+}));
+
+jest.mock("@expo/vector-icons/Ionicons", () => mockVectorIcon());
 
 jest.mock("expo-router", () => {
   const React = require("react");
@@ -154,6 +163,7 @@ jest.mock("@/src/firebase", () => ({
   app: null,
   auth: null,
   db: null,
+  cloudStorage: null,
   storage: null,
   isFirebaseConfigured: false,
   isFirebaseStorageReady: false,
