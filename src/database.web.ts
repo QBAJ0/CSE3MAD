@@ -1,7 +1,5 @@
 /**
- * Web: expo-sqlite’s WASM bundle is not wired in this project’s install, so we
- * avoid importing `expo-sqlite` on web. This in-memory store matches the SQL
- * used by `teamDb` and `resultDb` only — data resets on full page reload.
+ * Web: in-memory SQLite shim for `teamDb` + `challengeResultDb` (resets on reload).
  */
 
 import type { AppSqliteDb } from "./database.types";
@@ -19,14 +17,14 @@ type MemberRow = {
   memberName: string;
 };
 
-type ActivityResultRow = {
-  id: number;
-  teamId: number;
-  activityId: string;
-  activityName: string;
-  score: number;
-  sensorValue: number | null;
-  notes: string | null;
+type ChallengeResultRow = {
+  resultId: string;
+  sqliteTeamId: number;
+  teamDiscriminator: string;
+  challengeId: number;
+  teamName: string;
+  points: number;
+  payloadJson: string;
   createdAt: string;
 };
 
@@ -44,14 +42,11 @@ function norm(sql: string): string {
 class WebMemoryDatabase implements AppSqliteDb {
   private teams: TeamRow[] = [];
   private members: MemberRow[] = [];
-  private activityResults: ActivityResultRow[] = [];
+  private challengeResults: ChallengeResultRow[] = [];
   private nextTeamId = 1;
   private nextMemberId = 1;
-  private nextResultId = 1;
 
-  async execAsync(_source: string): Promise<void> {
-    // Schema is implicit; matches native initDatabase no-op for our usage.
-  }
+  async execAsync(_source: string): Promise<void> {}
 
   async runAsync(source: string, ...params: unknown[]): Promise<{
     lastInsertRowId: number;
@@ -78,39 +73,45 @@ class WebMemoryDatabase implements AppSqliteDb {
       return { lastInsertRowId: id, changes: 1 };
     }
 
-    if (s.startsWith("insert into activity_results")) {
+    if (s.startsWith("insert or replace into challenge_results")) {
       const [
-        teamId,
-        activityId,
-        activityName,
-        score,
-        sensorValue,
-        notes,
+        resultId,
+        sqliteTeamId,
+        teamDiscriminator,
+        challengeId,
+        teamName,
+        points,
+        payloadJson,
         createdAt,
       ] = binds as [
-        number,
-        string,
         string,
         number,
-        number | null,
-        string | null,
+        string,
+        number,
+        string,
+        number,
+        string,
         string,
       ];
-      const id = this.nextResultId++;
-      this.activityResults.push({
-        id,
-        teamId: Number(teamId),
-        activityId: String(activityId),
-        activityName: String(activityName),
-        score: Number(score),
-        sensorValue:
-          sensorValue === null || sensorValue === undefined
-            ? null
-            : Number(sensorValue),
-        notes: notes == null ? null : String(notes),
+      const row: ChallengeResultRow = {
+        resultId: String(resultId),
+        sqliteTeamId: Number(sqliteTeamId),
+        teamDiscriminator: String(teamDiscriminator),
+        challengeId: Number(challengeId),
+        teamName: String(teamName),
+        points: Number(points),
+        payloadJson: String(payloadJson),
         createdAt: String(createdAt),
-      });
-      return { lastInsertRowId: id, changes: 1 };
+      };
+      const idx = this.challengeResults.findIndex(
+        (r) => r.resultId === row.resultId,
+      );
+      if (idx >= 0) {
+        this.challengeResults[idx] = row;
+      } else {
+        this.challengeResults.push(row);
+      }
+      return { lastInsertRowId: 0, changes: 1 };
     }
 
     throw new Error(`[database.web] Unsupported SQL: ${source.slice(0, 80)}…`);
@@ -127,6 +128,15 @@ class WebMemoryDatabase implements AppSqliteDb {
     ) {
       const id = Number(binds[0]);
       const row = this.teams.find((t) => t.id === id);
+      return (row ?? null) as T | null;
+    }
+
+    if (
+      s.includes("from challenge_results") &&
+      s.includes("where resultid =")
+    ) {
+      const resultId = String(binds[0]);
+      const row = this.challengeResults.find((r) => r.resultId === resultId);
       return (row ?? null) as T | null;
     }
 
@@ -153,59 +163,19 @@ class WebMemoryDatabase implements AppSqliteDb {
     }
 
     if (
-      s.includes("from activity_results") &&
-      s.includes("where teamid =")
+      s.includes("from challenge_results") &&
+      s.includes("where teamdiscriminator =")
     ) {
-      const teamId = Number(binds[0]);
-      return this.activityResults
-        .filter((r) => r.teamId === teamId)
-        .sort((a, b) => {
-          const c = b.createdAt.localeCompare(a.createdAt);
-          return c !== 0 ? c : b.id - a.id;
-        }) as T[];
+      const disc = String(binds[0]);
+      return this.challengeResults
+        .filter((r) => r.teamDiscriminator === disc)
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt)) as T[];
     }
 
-    if (s.includes("from activity_results") && !s.includes("where")) {
-      return [...this.activityResults].sort((a, b) => {
-        const c = b.createdAt.localeCompare(a.createdAt);
-        return c !== 0 ? c : b.id - a.id;
-      }) as T[];
-    }
-
-    if (
-      s.includes("from activity_results r") &&
-      s.includes("inner join teams t")
-    ) {
-      const byTeam = new Map<
-        number,
-        { teamName: string; totalScore: number; count: number }
-      >();
-      for (const r of this.activityResults) {
-        const team = this.teams.find((t) => t.id === r.teamId);
-        if (!team) continue;
-        const cur = byTeam.get(team.id) ?? {
-          teamName: team.teamName,
-          totalScore: 0,
-          count: 0,
-        };
-        cur.totalScore += r.score;
-        cur.count += 1;
-        byTeam.set(team.id, cur);
-      }
-      const rows = [...byTeam.entries()]
-        .map(([teamId, v]) => ({
-          teamId,
-          teamName: v.teamName,
-          totalScore: v.totalScore,
-          completedActivityCount: v.count,
-        }))
-        .sort((a, b) => {
-          if (b.totalScore !== a.totalScore) {
-            return b.totalScore - a.totalScore;
-          }
-          return a.teamName.localeCompare(b.teamName);
-        });
-      return rows as T[];
+    if (s.includes("from challenge_results") && !s.includes("where")) {
+      return [...this.challengeResults].sort((a, b) =>
+        b.createdAt.localeCompare(a.createdAt),
+      ) as T[];
     }
 
     throw new Error(`[database.web] Unsupported SQL: ${source.slice(0, 80)}…`);

@@ -2,6 +2,16 @@ jest.mock("@react-native-async-storage/async-storage", () =>
   require("@react-native-async-storage/async-storage/jest/async-storage-mock"),
 );
 
+jest.mock("@/src/database", () => require("@/src/database.web"));
+
+jest.mock("firebase/auth", () => ({
+  signInAnonymously: jest.fn().mockResolvedValue({ user: { uid: "test-anon-uid" } }),
+  onAuthStateChanged: jest.fn(() => jest.fn()),
+  createUserWithEmailAndPassword: jest.fn(),
+  signInWithEmailAndPassword: jest.fn(),
+  signOut: jest.fn(),
+}));
+
 jest.mock("firebase/firestore", () => ({
   collection: jest.fn(),
   doc: jest.fn(),
@@ -161,7 +171,7 @@ jest.mock("react-native-vision-camera", () => ({
 
 jest.mock("@/src/firebase", () => ({
   app: null,
-  auth: null,
+  auth: { currentUser: { uid: "test-anon-uid" } },
   db: null,
   cloudStorage: null,
   storage: null,

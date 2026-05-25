@@ -47,9 +47,13 @@ export function collectMediaEvidenceFromResult(
   return refs;
 }
 
-export function buildMediaStoragePath(ref: MediaEvidenceRef): string {
+/** Matches `storage.rules` path `activity-evidence/{ownerUid}/{activityId}/...`. */
+export function buildMediaStoragePath(
+  ref: MediaEvidenceRef,
+  ownerUid: string,
+): string {
   const ext = extensionFromUri(ref.localUri);
-  return `teams/${ref.teamId}/results/${ref.resultId}/p${ref.prototypeIndex}/${ref.measurementKey}${ext}`;
+  return `activity-evidence/${ownerUid}/${ref.resultId}/prototype-${ref.prototypeIndex}-${ref.measurementKey}${ext}`;
 }
 
 function extensionFromUri(uri: string): string {

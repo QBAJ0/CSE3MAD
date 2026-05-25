@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { doc, getDoc } from "firebase/firestore";
 import { db, isFirebaseConfigured } from "@/src/firebase";
+import { ensureFirebaseAuth } from "./authSession";
 import { STORAGE_KEYS } from "@/src/utils/storage";
 import { ActivityResult } from "../types";
 import {
@@ -90,6 +91,13 @@ export async function syncChallengeResultToCloud(
   result: ActivityResult,
 ): Promise<void> {
   if (!isFirebaseConfigured || !db) return;
+
+  try {
+    await ensureFirebaseAuth();
+  } catch {
+    await enqueueOrUpdate(result, false, false);
+    return;
+  }
 
   let leaderboardOk = await pushResultToCloud(result);
   let activityOk = await pushActivityToCloud(result);

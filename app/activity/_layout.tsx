@@ -1,9 +1,6 @@
-import { Stack } from "expo-router";
+import { Redirect } from "expo-router";
 
-export default function ActivityGroupLayout() {
-  return (
-    <Stack screenOptions={{ headerShown: true }}>
-      <Stack.Screen name="[id]" options={{ headerShown: false }} />
-    </Stack>
-  );
+/** Legacy `/activity` lab flow — redirect to the official Challenges tab. */
+export default function DeprecatedActivityLayout() {
+  return <Redirect href="/(tabs)/activity" />;
 }

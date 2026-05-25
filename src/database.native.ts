@@ -33,16 +33,16 @@ export async function initDatabase(): Promise<void> {
     );
   `);
   await db.execAsync(`
-    CREATE TABLE IF NOT EXISTS activity_results (
-      id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-      teamId INTEGER NOT NULL,
-      activityId TEXT NOT NULL,
-      activityName TEXT NOT NULL,
-      score INTEGER NOT NULL,
-      sensorValue REAL,
-      notes TEXT,
+    CREATE TABLE IF NOT EXISTS challenge_results (
+      resultId TEXT PRIMARY KEY NOT NULL,
+      sqliteTeamId INTEGER NOT NULL,
+      teamDiscriminator TEXT NOT NULL,
+      challengeId INTEGER NOT NULL,
+      teamName TEXT NOT NULL,
+      points INTEGER NOT NULL,
+      payloadJson TEXT NOT NULL,
       createdAt TEXT NOT NULL,
-      FOREIGN KEY (teamId) REFERENCES teams (id) ON DELETE CASCADE
+      FOREIGN KEY (sqliteTeamId) REFERENCES teams (id) ON DELETE CASCADE
     );
   `);
 }

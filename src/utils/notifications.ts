@@ -9,7 +9,7 @@ const STREAK_REMINDER_ID = "streak-reminder";
 // to suppress the spurious error log when running in Expo Go.
 const isExpoGo = Constants.executionEnvironment === "storeClient";
 
-if (!isExpoGo) {
+if (Platform.OS !== "web" && !isExpoGo) {
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
       shouldShowBanner: true,
@@ -21,7 +21,7 @@ if (!isExpoGo) {
 }
 
 export async function requestNotificationPermissions(): Promise<boolean> {
-  if (isExpoGo) return false;
+  if (Platform.OS === "web" || isExpoGo) return false;
   if (Platform.OS === "android") {
     await Notifications.setNotificationChannelAsync("streak-reminders", {
       name: "Streak Reminders",
@@ -62,7 +62,7 @@ type NotificationSubscription = { remove: () => void };
 export function addNotificationUrlListener(
   onUrl: (url: string) => void,
 ): NotificationSubscription {
-  if (isExpoGo) {
+  if (Platform.OS === "web" || isExpoGo) {
     return { remove: () => {} };
   }
 

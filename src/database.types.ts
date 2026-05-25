@@ -1,4 +1,4 @@
-/** Subset of `expo-sqlite` `SQLiteDatabase` used by `teamDb` / `resultDb`. */
+/** Subset of `expo-sqlite` `SQLiteDatabase` used by `teamDb` / `challengeResultDb`. */
 export interface AppSqliteDb {
   execAsync(source: string): Promise<void>;
   runAsync(

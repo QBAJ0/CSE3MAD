@@ -9,8 +9,7 @@ import {
   setDoc,
   where,
 } from "firebase/firestore";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
-import { auth, cloudStorage, db } from "@/src/firebase";
+import { auth, db } from "@/src/firebase";
 import { ActivityResult, Comment, LeaderboardEntry } from "../types";
 
 export type SyncFailReason = "offline" | "permission" | "unknown";
@@ -122,56 +121,6 @@ function summarizeEvidence(result: ActivityResult) {
   };
 }
 
-function isEvidenceKey(key: string): boolean {
-  const normalized = key.toLowerCase();
-  return normalized.includes("video") || normalized.includes("photo");
-}
-
-function extensionFromUri(uri: string): string {
-  const withoutQuery = uri.split("?")[0] ?? uri;
-  const match = withoutQuery.match(/\.([a-zA-Z0-9]+)$/);
-  return match ? `.${match[1].toLowerCase()}` : "";
-}
-
-async function uploadEvidenceFiles(result: ActivityResult, ownerUid: string) {
-  if (!cloudStorage) return [];
-
-  const uploads: {
-    prototypeIndex: number;
-    key: string;
-    localUri: string;
-    downloadUrl: string;
-  }[] = [];
-
-  for (const prototype of result.prototypes) {
-    for (const [key, value] of Object.entries(prototype.measurements)) {
-      if (!isEvidenceKey(key) || typeof value !== "string" || value.trim() === "") {
-        continue;
-      }
-
-      try {
-        const response = await fetch(value);
-        const blob = await response.blob();
-        const fileRef = ref(
-          cloudStorage,
-          `activity-evidence/${ownerUid}/${result.id}/prototype-${prototype.index}-${key}${extensionFromUri(value)}`,
-        );
-        await uploadBytes(fileRef, blob);
-        uploads.push({
-          prototypeIndex: prototype.index,
-          key,
-          localUri: value,
-          downloadUrl: await getDownloadURL(fileRef),
-        });
-      } catch (e) {
-        console.warn(`[leaderboard] uploadEvidenceFiles (${classifyError(e)}):`, e);
-      }
-    }
-  }
-
-  return uploads;
-}
-
 export async function pushResultToCloud(result: ActivityResult): Promise<boolean> {
   const ownerUid = currentOwnerUid();
   if (!db || !ownerUid) return false;
@@ -217,7 +166,6 @@ export async function pushActivityToCloud(result: ActivityResult): Promise<boole
   if (!db || !ownerUid) return false;
   try {
     const evidence = summarizeEvidence(result);
-    const uploadedEvidence = await uploadEvidenceFiles(result, ownerUid);
     await setDoc(doc(db, "activities", result.id), {
       ownerUid,
       id: result.id,
@@ -234,40 +182,12 @@ export async function pushActivityToCloud(result: ActivityResult): Promise<boole
       completedInTime: result.completedInTime ?? true,
       location: result.location ?? null,
       evidence,
-      uploadedEvidence,
       createdAt: result.createdAt,
     });
     return true;
   } catch (e) {
     console.warn(`[leaderboard] pushActivityToCloud (${classifyError(e)}):`, e);
     return false;
-  }
-}
-
-export async function fetchActivitiesByChallenge(
-  challengeId: number,
-): Promise<Pick<ActivityResult, "id" | "teamName" | "teamId" | "rating" | "reflection" | "createdAt">[]> {
-  if (!db) return [];
-  try {
-    const q = query(
-      collection(db, "activities"),
-      where("challengeId", "==", challengeId),
-      orderBy("createdAt", "desc"),
-    );
-    const snap = await getDocs(q);
-    return snap.docs.map((d) => {
-      const data = d.data();
-      return {
-        id: data.id,
-        teamName: data.teamName,
-        teamId: data.teamId,
-        rating: data.rating ?? 0,
-        reflection: data.reflection ?? "",
-        createdAt: data.createdAt,
-      };
-    });
-  } catch (e) {
-    throw new CloudSyncError(classifyError(e), e);
   }
 }
 
@@ -300,28 +220,3 @@ export async function fetchComments(challengeId: number): Promise<Comment[]> {
   }
 }
 
-export async function fetchCloudLeaderboard(): Promise<LeaderboardEntry[]> {
-  if (!db) return [];
-  try {
-    const snap = await getDocs(collection(db, COLLECTION));
-    const entries = snap.docs.map((d) => {
-      const data = d.data();
-      return {
-        teamName: data.teamName,
-        discriminator: data.discriminator,
-        totalPoints: data.totalPoints || 0,
-        challengesCompleted: data.challengesCompleted || 0,
-        averageRating:
-          data.ratingCount > 0 ? data.ratingSum / data.ratingCount : 0,
-        lastActive: data.lastActive || "",
-        rank: 0,
-      } as LeaderboardEntry;
-    });
-
-    return entries
-      .sort((a, b) => b.totalPoints - a.totalPoints)
-      .map((e, i) => ({ ...e, rank: i + 1 }));
-  } catch (e) {
-    throw new CloudSyncError(classifyError(e), e);
-  }
-}

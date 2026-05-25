@@ -16,31 +16,26 @@ export type TeamWithMembers = {
   members: LocalMember[];
 };
 
-export type ResultRow = {
-  id: number;
-  teamId: number;
-  activityId: string;
-  activityName: string;
-  score: number;
-  sensorValue: number | null;
-  notes: string | null;
-  createdAt: string;
-};
-
-export type ResultInput = {
-  teamId: number;
-  activityId: string;
-  activityName: string;
-  score: number;
-  sensorValue?: number | null;
-  notes?: string | null;
-  createdAt: string;
-};
-
-export type LeaderboardRow = {
-  rank: number;
-  teamId: number;
+/** Local STEMM challenge submission (main `/challenge` flow). */
+export type ChallengeResultRow = {
+  resultId: string;
+  sqliteTeamId: number;
+  teamDiscriminator: string;
+  challengeId: number;
   teamName: string;
-  totalScore: number;
-  completedActivityCount: number;
+  points: number;
+  payloadJson: string;
+  createdAt: string;
 };
+
+export type ChallengeResultInput = {
+  resultId: string;
+  sqliteTeamId: number;
+  teamDiscriminator: string;
+  challengeId: number;
+  teamName: string;
+  points: number;
+  payloadJson: string;
+  createdAt: string;
+};
+

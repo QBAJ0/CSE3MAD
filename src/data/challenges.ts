@@ -1,5 +1,5 @@
 // data/challenges.ts — canonical XP challenge catalog (Challenges tab, `/challenge/...`).
-// Lab-only simplified recording list: `labRecordingCatalog.ts`.
+// Official STEMM challenge definitions for the `/challenge/[id]` flow.
 import { Challenge } from "../types";
 
 export const CHALLENGES: Challenge[] = [

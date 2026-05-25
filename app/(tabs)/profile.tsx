@@ -165,42 +165,16 @@ export default function ProfileScreen() {
           <Text style={styles.cardTitle}>Data & tools</Text>
         </View>
         <Text style={styles.toolsHint}>
-          Local lab saves, SQLite checks, and account sign-in (optional).
+          Challenge results are saved on this device (SQLite) and sync to the cloud
+          when online. Email sign-in is optional for teachers or advanced accounts.
         </Text>
-
-        <Pressable
-          style={({ pressed }) => [styles.toolRow, pressed && styles.pressed]}
-          onPress={() => router.push("/(tabs)/activities")}
-        >
-          <Ionicons name="flask-outline" size={20} color="#0F172A" />
-          <Text style={styles.toolLabel}>Lab activities</Text>
-          <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
-        </Pressable>
-
-        <Pressable
-          style={({ pressed }) => [styles.toolRow, pressed && styles.pressed]}
-          onPress={() => router.push("/(tabs)/results")}
-        >
-          <Ionicons name="document-text-outline" size={20} color="#0F172A" />
-          <Text style={styles.toolLabel}>Lab results (SQLite)</Text>
-          <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
-        </Pressable>
-
-        <Pressable
-          style={({ pressed }) => [styles.toolRow, pressed && styles.pressed]}
-          onPress={() => router.push("/(tabs)/sqlite-test")}
-        >
-          <Ionicons name="hardware-chip-outline" size={20} color="#0F172A" />
-          <Text style={styles.toolLabel}>SQLite check</Text>
-          <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
-        </Pressable>
 
         <Pressable
           style={({ pressed }) => [styles.toolRow, pressed && styles.pressed]}
           onPress={() => router.push("/(tabs)/auth")}
         >
           <Ionicons name="log-in-outline" size={20} color="#0F172A" />
-          <Text style={styles.toolLabel}>Email sign-in</Text>
+          <Text style={styles.toolLabel}>Email sign-in (optional)</Text>
           <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
         </Pressable>
       </View>

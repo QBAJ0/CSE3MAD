@@ -5,7 +5,9 @@ import {
   resolveSubmissionLocation,
   scoreActivityResult,
 } from "../services/challengeScoring";
+import { ensureFirebaseAuth } from "../services/authSession";
 import { syncChallengeResultToCloud } from "../services/challengeCloudSync";
+import { persistChallengeResultToSqlite } from "../services/challengeResultLocal";
 import { enqueueMediaUploadsForResult } from "../services/mediaUploadQueue";
 import { deriveFanForce, deriveParachute } from "../services/physics";
 import {
@@ -308,11 +310,22 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
       const points = scoreActivityResult(baseResult, completedInTime);
       const result: ActivityResult = { ...baseResult, points, completedInTime };
 
+      const sqliteSaved = await persistChallengeResultToSqlite(result);
+      if (!sqliteSaved) return null;
+
       const saved = await storage.saveCompletedActivity(result);
       if (!saved) return null;
 
-      void syncChallengeResultToCloud(result);
-      void enqueueMediaUploadsForResult(result);
+      void (async () => {
+        try {
+          await ensureFirebaseAuth();
+          await syncChallengeResultToCloud(result);
+          void enqueueMediaUploadsForResult(result);
+        } catch (e) {
+          console.warn("[ActivityContext] cloud sync after claim:", e);
+        }
+      })();
+
       return result;
     } catch (e) {
       console.error("finalize failed:", e);

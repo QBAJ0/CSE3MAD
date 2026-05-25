@@ -2,8 +2,7 @@
 // Shows all teams ranked by XP. Filter by week, month, or all time.
 
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useFocusEffect } from "@react-navigation/native";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -14,9 +13,7 @@ import {
 } from "react-native";
 import { useTeam } from "../../src/context/TeamContext";
 import { LeaderboardTimeFrame, useLeaderboard } from "../../src/hooks/useLeaderboard";
-import { fetchLeaderboard } from "../../src/services/resultDb";
 import type { LeaderboardEntry } from "../../src/types";
-import type { LeaderboardRow } from "../../src/types/db";
 
 const RANK_LABEL: Record<number, string> = { 1: "1st", 2: "2nd", 3: "3rd" };
 const RANK_ICONS: Record<1 | 2 | 3, React.ComponentProps<typeof Ionicons>["name"]> = {
@@ -40,26 +37,6 @@ const PODIUM_HEIGHTS: Record<1 | 2 | 3, number> = {
 export default function LeaderboardScreen() {
   const { team } = useTeam();
   const [timeFrame, setTimeFrame] = useState<LeaderboardTimeFrame>("all");
-
-  const [sqlRows, setSqlRows] = useState<LeaderboardRow[]>([]);
-  const [sqlLoading, setSqlLoading] = useState(false);
-
-  const loadSqlLeaderboard = useCallback(async () => {
-    try {
-      setSqlLoading(true);
-      setSqlRows(await fetchLeaderboard());
-    } catch {
-      setSqlRows([]);
-    } finally {
-      setSqlLoading(false);
-    }
-  }, []);
-
-  useFocusEffect(
-    useCallback(() => {
-      void loadSqlLeaderboard();
-    }, [loadSqlLeaderboard]),
-  );
 
   // Load leaderboard data for the selected time frame
   const { entries: leaderboard, loading } = useLeaderboard(timeFrame);
@@ -275,50 +252,6 @@ export default function LeaderboardScreen() {
         </View>
       )}
 
-      <View style={styles.labSectionWrap}>
-        <View style={styles.labHeaderRow}>
-          <View style={styles.labHeaderIcon}>
-            <Ionicons name="phone-portrait-outline" size={18} color="#2563EB" />
-          </View>
-          <View style={styles.labHeaderText}>
-            <Text style={styles.labTitle}>Device Lab Scores</Text>
-            <Text style={styles.labSectionHint}>
-              Local SQLite activity totals, separate from the XP race.
-            </Text>
-          </View>
-        </View>
-        {sqlLoading ? (
-          <View style={[styles.row, { justifyContent: "center" }]}>
-            <ActivityIndicator size="small" color="#2563EB" />
-          </View>
-        ) : sqlRows.length === 0 ? (
-          <Text style={styles.labEmpty}>No lab results saved yet.</Text>
-        ) : (
-          sqlRows.map((r) => {
-            const isYou = team?.teamName === r.teamName;
-            return (
-              <View
-                key={`sql-${r.teamId}`}
-                style={[styles.row, isYou && styles.rowYou]}
-              >
-                <View style={styles.rowRank}>
-                  <Text style={styles.rowRankText}>#{r.rank}</Text>
-                </View>
-                <View style={styles.rowInfo}>
-                  <Text style={styles.rowName}>{r.teamName}</Text>
-                  <Text style={styles.rowId}>
-                    {r.completedActivityCount} activities recorded
-                  </Text>
-                </View>
-                <View style={styles.rowRight}>
-                  <Text style={styles.rowXP}>{r.totalScore}</Text>
-                  <Text style={styles.rowXPLabel}>LAB</Text>
-                </View>
-              </View>
-            );
-          })
-        )}
-      </View>
     </ScrollView>
   );
 }
