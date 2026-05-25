@@ -113,6 +113,8 @@ export function TracingRecorder({
   const lastTraceTimeRef = useRef<number>(0);
   // Ref mirrors isTracing state so the PanResponder (created once) always reads the current value
   const isTracingRef = useRef(false);
+  // Ref mirrors tracePoints so stale interval closures can read the latest accumulated points
+  const tracePointsRef = useRef<Point[]>([]);
 
   // Generate target path based on shape
   useEffect(() => {
@@ -133,6 +135,7 @@ export function TracingRecorder({
   // Animate the target dot along the path
   const startTracing = () => {
     isTracingRef.current = true;
+    tracePointsRef.current = [];
     setIsTracing(true);
     setTracePoints([]);
     setCurrentTargetIndex(0);
@@ -162,7 +165,8 @@ export function TracingRecorder({
   };
 
   const calculateScore = () => {
-    if (tracePoints.length === 0 || targetPath.current.length === 0) {
+    const points = tracePointsRef.current;
+    if (points.length === 0 || targetPath.current.length === 0) {
       setScore(0);
       setAccuracy(0);
       setDelay(0);
@@ -174,13 +178,13 @@ export function TracingRecorder({
     let totalDistance = 0;
     let maxDistance = 0;
     const alignmentCount = Math.min(
-      tracePoints.length,
+      points.length,
       targetPath.current.length,
     );
 
     for (let i = 0; i < alignmentCount; i++) {
       const target = targetPath.current[i];
-      const trace = tracePoints[i];
+      const trace = points[i];
       if (target && trace) {
         const distance = Math.sqrt(
           Math.pow(target.x - trace.x, 2) + Math.pow(target.y - trace.y, 2),
@@ -228,6 +232,7 @@ export function TracingRecorder({
       onPanResponderGrant: (e) => {
         const { locationX, locationY } = e.nativeEvent;
         const newPoint = { x: locationX, y: locationY };
+        tracePointsRef.current = [...tracePointsRef.current, newPoint];
         setTracePoints((prev) => [...prev, newPoint]);
         lastTraceTimeRef.current = Date.now();
         haptic("light");
@@ -235,6 +240,7 @@ export function TracingRecorder({
       onPanResponderMove: (e) => {
         const { locationX, locationY } = e.nativeEvent;
         const newPoint = { x: locationX, y: locationY };
+        tracePointsRef.current = [...tracePointsRef.current, newPoint];
         setTracePoints((prev) => [...prev, newPoint]);
         lastTraceTimeRef.current = Date.now();
       },
@@ -260,6 +266,7 @@ export function TracingRecorder({
 
   // Reset and try again
   const resetTracing = () => {
+    tracePointsRef.current = [];
     setTracePoints([]);
     setCurrentTargetIndex(0);
     setScore(null);

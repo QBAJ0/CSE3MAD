@@ -31,7 +31,7 @@ export default function HomeScreen() {
   const dataLoading = statsLoading || activityLoading;
 
   const nextChallenge = CHALLENGES.find((c) => !completedIds.has(c.id));
-  const allDone = completedCount >= CHALLENGES.length;
+  const allDone = completedIds.size >= CHALLENGES.length;
 
   const level = Math.floor(totalPoints / XP_PER_LEVEL) + 1;
   const xpIntoLevel = totalPoints % XP_PER_LEVEL;
@@ -56,8 +56,8 @@ export default function HomeScreen() {
         <Text style={styles.subGreeting}>
           {allDone
             ? "You've conquered all 7 challenges!"
-            : `${CHALLENGES.length - completedCount} challenge${
-                CHALLENGES.length - completedCount !== 1 ? "s" : ""
+            : `${CHALLENGES.length - completedIds.size} challenge${
+                CHALLENGES.length - completedIds.size !== 1 ? "s" : ""
               } left to conquer`}
         </Text>
 
@@ -87,7 +87,7 @@ export default function HomeScreen() {
         <StatCard
           iconName="checkmark-circle"
           iconColor="#2563EB"
-          value={`${completedCount}/${CHALLENGES.length}`}
+          value={`${completedIds.size}/${CHALLENGES.length}`}
           label="Challenges"
           valueColor="#2563EB"
           loading={dataLoading}

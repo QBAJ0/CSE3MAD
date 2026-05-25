@@ -69,7 +69,8 @@ const getScoredMeasurements = (
   measurements.filter(
     (measurement) =>
       (!measurement.difficulty || measurement.difficulty === difficulty) &&
-      !EVIDENCE_RECORDERS.has(measurement.recorder),
+      !EVIDENCE_RECORDERS.has(measurement.recorder) &&
+      !measurement.optional,
   );
 
 const hasCompleteRequiredData = (result: Omit<ActivityResult, "points">) => {

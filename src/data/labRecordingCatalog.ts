@@ -16,7 +16,7 @@ export const LAB_RECORDING_ACTIVITIES: LabRecordingActivity[] = [
   {
     id: "parachute-drop",
     title: "Parachute Drop Challenge",
-    category: "Physics / Engineering",
+    category: "Physics & Engineering",
     shortDescription:
       "Design and test a parachute so a payload descends slowly and lands safely.",
     measurementLabel: "Descent time (seconds)",

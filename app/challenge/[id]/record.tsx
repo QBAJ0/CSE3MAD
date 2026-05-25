@@ -146,7 +146,7 @@ export default function RecordScreen() {
 
   const isComplete = () =>
     measurements
-      .filter((m) => !OPTIONAL_RECORDERS.has(m.recorder))
+      .filter((m) => !OPTIONAL_RECORDERS.has(m.recorder) && !m.optional)
       .every((m) => {
         const val = current.measurements[m.key];
         return val !== undefined && val !== "";

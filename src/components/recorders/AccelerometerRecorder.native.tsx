@@ -51,6 +51,7 @@ export function AccelerometerRecorder({
   const startTimeRef = useRef<number>(0);
   const sumMagnitudeRef = useRef<number>(0);
   const countRef = useRef<number>(0);
+  const peakMagnitudeRef = useRef<number>(0);
   const chartAnim = useRef(new Animated.Value(0)).current;
   // Ref mirrors recording state so the auto-stop setTimeout always reads the current value
   const recordingRef = useRef(false);
@@ -84,6 +85,7 @@ export function AccelerometerRecorder({
     setSamples([]);
     sumMagnitudeRef.current = 0;
     countRef.current = 0;
+    peakMagnitudeRef.current = 0;
     startTimeRef.current = Date.now();
 
     Accelerometer.setUpdateInterval(50); // 20Hz
@@ -102,7 +104,8 @@ export function AccelerometerRecorder({
       sumMagnitudeRef.current += gravityAdjusted;
       countRef.current++;
 
-      if (gravityAdjusted > peakMagnitude) {
+      if (gravityAdjusted > peakMagnitudeRef.current) {
+        peakMagnitudeRef.current = gravityAdjusted;
         setPeakMagnitude(gravityAdjusted);
       }
 
@@ -137,20 +140,25 @@ export function AccelerometerRecorder({
     setRecording(false);
 
     onCapture({
-      peak: peakMagnitude,
+      peak: peakMagnitudeRef.current,
       average: avg,
       samples: countRef.current,
     });
   };
 
   const getStabilityLevel = (peak: number) => {
-    if (peak < 0.05)
-      return { label: "Rock Solid", color: "#2563EB" };
-    if (peak < 0.1) return { label: "Stable", color: "#F97316" };
-    if (peak < 0.2) return { label: "Wobbly", color: "#F59E0B" };
-    if (peak < 0.35)
-      return { label: "Unstable", color: "#F97316" };
-    return { label: "Collapse Risk", color: "#EF4444" };
+    if (vibrateMode) {
+      if (peak < 0.05) return { label: "No movement", color: "#2563EB" };
+      if (peak < 0.1) return { label: "Stable", color: "#F97316" };
+      if (peak < 0.2) return { label: "Shaking", color: "#F59E0B" };
+      if (peak < 0.35) return { label: "Unstable", color: "#F97316" };
+      return { label: "High vibration", color: "#EF4444" };
+    }
+    if (peak < 0.05) return { label: "Very smooth", color: "#2563EB" };
+    if (peak < 0.1) return { label: "Smooth", color: "#F97316" };
+    if (peak < 0.2) return { label: "Moderate", color: "#F59E0B" };
+    if (peak < 0.35) return { label: "Jerky", color: "#F97316" };
+    return { label: "Very jerky", color: "#EF4444" };
   };
 
   const stability = getStabilityLevel(peakMagnitude);

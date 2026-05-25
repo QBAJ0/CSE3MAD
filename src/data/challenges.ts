@@ -86,6 +86,7 @@ export const CHALLENGES: Challenge[] = [
         recorder: "manualNumber",
         placeholder: "Only if it bounced",
         difficulty: "highSchool",
+        optional: true,
       },
       {
         key: "slowMotionVideo",
@@ -184,11 +185,9 @@ export const CHALLENGES: Challenge[] = [
       "Measure sound levels in different activities and map noise pollution zones.",
     equipment: ["Mobile phone with STEMM Lab app and microphone"],
     instructions: [
-      "Predict which classroom action will create the loudest sound",
       "Measure actions such as dropping objects, talking, walking, and stamping",
       "Record peak dB levels and GPS-tagged locations",
       "Map loud and quiet zones",
-      "Upload evidence and team reflections",
     ],
     features: ["predictionRequired", "video", "gps", "sensors"],
     maxPrototypes: 3,
@@ -221,7 +220,10 @@ export const CHALLENGES: Challenge[] = [
       },
       { key: "location", label: "GPS Location", recorder: "gps" },
     ],
-    curriculumLinks: ["ACSSU073 - Sound and energy"],
+    curriculumLinks: [
+      "ACSSU073 - Sound and energy",
+      "ACSIS125 - Processing and analysing data",
+    ],
     predictionPrompt: "Which classroom action do you think makes the most noise? Will the quietest action surprise you?",
     extensionTip: "Compare readings from different rooms or outside. How does distance from the source change the dB level?",
     thingsToKnow: [
@@ -278,12 +280,12 @@ export const CHALLENGES: Challenge[] = [
       "Sticky tape",
     ],
     instructions: [
-      "Stand paper upright",
-      "Place phone flat on the paper strip",
-      "Fan air from 30cm away",
-      "Measure bend angle with a protractor",
-      "Check tilt sensor reading",
-      "Try different distances (15cm, 30cm, 45cm)",
+      "Stand paper upright on a table",
+      "Position the phone on the floor to record the paper movement",
+      "Fan air from 30cm away for 20 seconds",
+      "Measure the bend angle with a protractor",
+      "Try different fan designs and distances (15cm, 30cm, 45cm)",
+      "Repeat with cardboard instead of paper",
       "Upload a photo or video of each fan design",
     ],
     features: ["predictionRequired", "video", "gps", "multiplePrototypes"],
@@ -314,12 +316,6 @@ export const CHALLENGES: Challenge[] = [
         unit: "°",
         recorder: "manualNumber",
         placeholder: "0",
-      },
-      {
-        key: "tiltData",
-        label: "Tilt sensor",
-        unit: "g",
-        recorder: "accelerometer",
       },
       {
         key: "distance",
@@ -374,15 +370,17 @@ export const CHALLENGES: Challenge[] = [
     ],
     observationQuestions: [
       "Which fan design created the most air movement?",
+      "How did the distance from the fan affect the bend angle?",
+      "How does material stiffness affect how much the paper bends?",
       "Did the material or the fan shape matter more?",
-      "Were your predictions correct?",
+      "Were your predictions correct? Did anything surprise you?",
       "What would you try next to maximise the bend angle?",
     ],
   },
   // Activity 4: Earthquake
   {
     id: 4,
-    title: "Earthquake Structure",
+    title: "Earthquake-Resistant Structure",
     category: "Engineering",
     icon: "construct-outline",
     color: "#0F766E",
@@ -403,7 +401,6 @@ export const CHALLENGES: Challenge[] = [
       "Activate vibration",
       "Measure movement",
       "Modify structure and retest",
-      "Upload a photo or video of the structure",
     ],
     features: ["predictionRequired", "video", "gps", "multiplePrototypes", "sensors"],
     maxPrototypes: 3,
@@ -442,7 +439,10 @@ export const CHALLENGES: Challenge[] = [
       },
       { key: "location", label: "GPS Location", recorder: "gps" },
     ],
-    curriculumLinks: ["ACSSU096 - Earth processes"],
+    curriculumLinks: [
+      "ACSSU096 - Earth processes",
+      "ACTDEP025 - Evaluating design solutions",
+    ],
     predictionPrompt: "Which structure design do you think will withstand the most vibration? What building features help resist earthquakes?",
     extensionTip: "Try adding a 'base isolator' layer of foam or rubber under your structure. How does it change the vibration readings?",
     thingsToKnow: [
@@ -515,6 +515,7 @@ export const CHALLENGES: Challenge[] = [
         label: "Smoothness",
         unit: "%",
         recorder: "gyroscope",
+        optional: true,
       },
       {
         key: "vibrationData",
@@ -536,7 +537,11 @@ export const CHALLENGES: Challenge[] = [
       },
       { key: "location", label: "GPS Location", recorder: "gps" },
     ],
-    curriculumLinks: ["ACPPS051 - Movement skills"],
+    curriculumLinks: [
+      "ACPPS051 - Movement skills",
+      "ACPPS054 - Physical performance",
+      "ACSSU176 - Structure and function of body systems",
+    ],
     predictionPrompt: "Which movement do you think will have the smoothest score? Do you think practice will improve your results?",
     extensionTip: "Try the same movement with your non-dominant hand. Is there a difference in smoothness?",
     thingsToKnow: [
@@ -569,9 +574,11 @@ export const CHALLENGES: Challenge[] = [
       },
     ],
     observationQuestions: [
+      "Which movement was the hardest to keep the vibration low?",
       "Which movement produced the smoothest score?",
       "Did practice between attempts improve your results?",
       "Were your predictions correct?",
+      "Did anything surprise you about the results?",
       "What does a high smoothness score tell you about movement control?",
     ],
   },
@@ -658,7 +665,7 @@ export const CHALLENGES: Challenge[] = [
     equipment: ["Mobile phone with STEMM Lab app", "Flat surface or mat"],
     instructions: [
       "Place phone on chest",
-      "Record breathing for 1 minute",
+      "Record breathing for 30 seconds",
       "Perform exercise (jog/star jumps)",
       "Record again",
       "Compare rates",
@@ -690,6 +697,7 @@ export const CHALLENGES: Challenge[] = [
         unit: "min",
         recorder: "manualNumber",
         placeholder: "e.g. 2",
+        optional: true,
       },
       {
         key: "videoUri",
@@ -698,7 +706,11 @@ export const CHALLENGES: Challenge[] = [
       },
       { key: "location", label: "GPS Location", recorder: "gps" },
     ],
-    curriculumLinks: ["ACSSU176 - Body systems"],
+    curriculumLinks: [
+      "ACSSU176 - Body systems",
+      "ACPPS051 - Movement skills",
+      "ACPPS054 - Physical performance",
+    ],
     predictionPrompt: "How many breaths per minute do you take at rest? How much do you think exercise will change it?",
     extensionTip: "Try different types of exercise (slow jog vs. star jumps). Does the intensity of exercise change your recovery time?",
     thingsToKnow: [

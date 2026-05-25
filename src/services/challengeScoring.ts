@@ -71,7 +71,7 @@ export function getChallengeScoringSignals(args: {
     ) ?? [];
 
   const requiredMeasurements = measurements.filter(
-    (m) => !EVIDENCE_RECORDERS.has(m.recorder),
+    (m) => !EVIDENCE_RECORDERS.has(m.recorder) && !m.optional,
   );
 
   const hasCompleteData =
@@ -116,6 +116,7 @@ export function getChallengeScoringSignals(args: {
 
 export type ChallengePointsInput = {
   prototypeCount: number;
+  predictionChars: number;
   reflectionChars: number;
   hasCompleteData: boolean;
   hasEvidence: boolean;
@@ -127,6 +128,7 @@ export type ChallengePointsInput = {
 export function calculateChallengePoints(input: ChallengePointsInput): number {
   let points: number = SCORING.BASE_XP;
 
+  if (input.predictionChars >= GAMIFICATION.PREDICTION_MIN_CHARS) points += SCORING.PREDICTION_BONUS;
   if (input.prototypeCount >= 2) points += SCORING.MULTI_DESIGN_2;
   if (input.prototypeCount >= 3) points += SCORING.MULTI_DESIGN_3;
   if (input.hasCompleteData) points += SCORING.DATA_QUALITY;
@@ -154,6 +156,11 @@ export function buildChallengePointsBreakdown(
   const items: PointsBreakdownItem[] = [];
   let pts: number = SCORING.BASE_XP;
   items.push({ label: "Base completion", value: `+${SCORING.BASE_XP}` });
+
+  if (input.predictionChars >= GAMIFICATION.PREDICTION_MIN_CHARS) {
+    pts += SCORING.PREDICTION_BONUS;
+    items.push({ label: "Prediction made", value: `+${SCORING.PREDICTION_BONUS}` });
+  }
 
   if (input.prototypeCount >= 2) {
     const bonus =
@@ -208,7 +215,7 @@ export function buildChallengePointsBreakdown(
 
   if (input.difficulty === "highSchool") {
     pts = Math.floor(pts * SCORING.HIGH_SCHOOL_MULTIPLIER);
-    items.push({ label: "High school multiplier", value: "×1.5" });
+    items.push({ label: "High school multiplier", value: "×1.3" });
   }
 
   if (!input.completedInTime) {
@@ -243,6 +250,7 @@ export function buildPointsInputFromDraft(args: {
   challengeId: number;
   difficulty: DifficultyMode;
   prototypes: Prototype[];
+  predictionChars: number;
   reflectionChars: number;
   draftLocation?: { lat: number; lng: number };
   completedInTime: boolean;
@@ -260,6 +268,7 @@ export function buildPointsInputFromDraft(args: {
 
   return {
     prototypeCount: args.prototypes.length,
+    predictionChars: args.predictionChars,
     reflectionChars: args.reflectionChars,
     ...signals,
     difficulty: args.difficulty,

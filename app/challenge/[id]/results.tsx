@@ -83,7 +83,7 @@ const hasCompleteRequiredData = (
   difficulty: DifficultyMode,
 ) => {
   const requiredMeasurements = getActiveMeasurements(challenge, difficulty).filter(
-    (measurement) => !EVIDENCE_RECORDERS.has(measurement.recorder),
+    (measurement) => !EVIDENCE_RECORDERS.has(measurement.recorder) && !measurement.optional,
   );
 
   if (prototypes.length === 0 || requiredMeasurements.length === 0) {

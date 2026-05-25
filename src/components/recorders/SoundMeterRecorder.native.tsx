@@ -28,6 +28,7 @@ export function SoundMeterRecorder({
   const [peakDb, setPeakDb] = useState(existingValue || 0);
   const [permissionGranted, setPermissionGranted] = useState(false);
   const recordingRef = useRef<Audio.Recording | null>(null);
+  const peakDbRef = useRef<number>(0);
   const meterAnim = useRef(new Animated.Value(0)).current;
   const { haptic } = useHaptic();
 
@@ -61,6 +62,7 @@ export function SoundMeterRecorder({
     setRecording(true);
     setPeakDb(0);
     setCurrentDb(0);
+    peakDbRef.current = 0;
 
     try {
       await Audio.setAudioModeAsync({
@@ -80,7 +82,10 @@ export function SoundMeterRecorder({
           // dBFS ranges from -160 to 0, add 90 for approximate SPL
           const dbSPL = Math.max(0, Math.min(120, status.metering + 90));
           setCurrentDb(dbSPL);
-          if (dbSPL > peakDb) setPeakDb(dbSPL);
+          if (dbSPL > peakDbRef.current) {
+            peakDbRef.current = dbSPL;
+            setPeakDb(dbSPL);
+          }
 
           // Animate meter
           Animated.timing(meterAnim, {
@@ -120,8 +125,8 @@ export function SoundMeterRecorder({
       });
       recordingRef.current = null;
 
-      if (peakDb > 0) {
-        onCapture(peakDb);
+      if (peakDbRef.current > 0) {
+        onCapture(peakDbRef.current);
       }
     } catch (error) {
       console.error("Stop failed:", error);

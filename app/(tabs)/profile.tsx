@@ -109,7 +109,11 @@ export default function ProfileScreen() {
   };
 
   const hasVideoEvidence = (activity: ActivityResult) =>
-    activity.prototypes.some((p) => Boolean(p.measurements.video));
+    activity.prototypes.some((p) =>
+      Object.entries(p.measurements).some(
+        ([key, value]) => key.toLowerCase().includes("video") && Boolean(value),
+      ),
+    );
 
   if (loading) {
     return (

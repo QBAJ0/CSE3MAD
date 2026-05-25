@@ -12,7 +12,7 @@ export default function ActivitiesScreen() {
         </View>
         <Text style={styles.title}>Lab recording activities</Text>
         <Text style={styles.subtitle}>
-          Quick local experiments for SQLite and optional cloud saves.
+          Choose a real-world STEMM challenge, record your results, and improve your design like a scientist.
         </Text>
       </View>
 
