@@ -28,77 +28,41 @@ export function SoundMeterRecorder({
   const [peakDb, setPeakDb] = useState(existingValue || 0);
   const [permissionGranted, setPermissionGranted] = useState(false);
   const recordingRef = useRef<Audio.Recording | null>(null);
-  const autoStopRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const peakDbRef = useRef(0);
-  const lastMeterUiAtRef = useRef(0);
+  const peakDbRef = useRef<number>(0);
   const meterAnim = useRef(new Animated.Value(0)).current;
   const { haptic } = useHaptic();
 
-  const unloadRecording = async () => {
-    if (autoStopRef.current) {
-      clearTimeout(autoStopRef.current);
-      autoStopRef.current = null;
-    }
-    const active = recordingRef.current;
-    recordingRef.current = null;
-    if (!active) return;
-    try {
-      await active.stopAndUnloadAsync();
-      await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
-    } catch (error) {
-      console.error("Stop failed:", error);
-    }
-  };
-
   useEffect(() => {
-    void Audio.requestPermissionsAsync().then(({ status }) =>
-      setPermissionGranted(status === "granted"),
-    );
+    requestPermissions();
     return () => {
-      void unloadRecording();
+      if (recordingRef.current) {
+        recordingRef.current.stopAndUnloadAsync();
+      }
     };
   }, []);
 
-  const ensurePermission = async () => {
+  const requestPermissions = async () => {
     const { status } = await Audio.requestPermissionsAsync();
-    const granted = status === "granted";
-    setPermissionGranted(granted);
-    if (!granted) {
+    setPermissionGranted(status === "granted");
+    if (status !== "granted") {
       Alert.alert(
         "Permission Needed",
         "Microphone access is required to measure sound levels.",
       );
     }
-    return granted;
-  };
-
-  const stopRecording = async () => {
-    if (!recordingRef.current) return;
-
-    haptic("success");
-    setRecording(false);
-
-    await unloadRecording();
-
-    const peak = peakDbRef.current;
-    if (peak > 0) {
-      setPeakDb(peak);
-      setCurrentDb(peak);
-      onCapture(peak);
-    }
   };
 
   const startRecording = async () => {
-    const granted = await ensurePermission();
-    if (!granted) return;
-
-    await unloadRecording();
+    if (!permissionGranted) {
+      await requestPermissions();
+      if (!permissionGranted) return;
+    }
 
     haptic("medium");
     setRecording(true);
-    peakDbRef.current = 0;
     setPeakDb(0);
     setCurrentDb(0);
+    peakDbRef.current = 0;
 
     try {
       await Audio.setAudioModeAsync({
@@ -108,52 +72,74 @@ export function SoundMeterRecorder({
 
       const recording = new Audio.Recording();
       await recording.prepareToRecordAsync({
-        ...Audio.RecordingOptionsPresets.LOW_QUALITY,
+        ...Audio.RecordingOptionsPresets.HIGH_QUALITY,
         isMeteringEnabled: true,
       });
 
       recording.setOnRecordingStatusUpdate((status) => {
-        if (!status.isRecording || status.metering === undefined) return;
+        if (status.isRecording && status.metering !== undefined) {
+          // Convert dBFS to approximate dB SPL
+          // dBFS ranges from -160 to 0, add 90 for approximate SPL
+          const dbSPL = Math.max(0, Math.min(120, status.metering + 90));
+          setCurrentDb(dbSPL);
+          if (dbSPL > peakDbRef.current) {
+            peakDbRef.current = dbSPL;
+            setPeakDb(dbSPL);
+          }
 
-        const dbSPL = Math.max(0, Math.min(120, status.metering + 90));
-        if (dbSPL > peakDbRef.current) {
-          peakDbRef.current = dbSPL;
+          // Animate meter
+          Animated.timing(meterAnim, {
+            toValue: dbSPL / 120,
+            duration: 100,
+            useNativeDriver: false,
+          }).start();
         }
-
-        const now = Date.now();
-        if (now - lastMeterUiAtRef.current < 200) return;
-        lastMeterUiAtRef.current = now;
-
-        setCurrentDb(dbSPL);
-        setPeakDb(peakDbRef.current);
-        Animated.timing(meterAnim, {
-          toValue: dbSPL / 120,
-          duration: 150,
-          useNativeDriver: false,
-        }).start();
       });
 
       await recording.startAsync();
       recordingRef.current = recording;
 
-      autoStopRef.current = setTimeout(() => {
-        void stopRecording();
+      // Auto-stop after 10 seconds
+      setTimeout(() => {
+        if (recordingRef.current && recording) {
+          stopRecording();
+        }
       }, 10000);
     } catch (error) {
       console.error("Recording failed:", error);
       Alert.alert("Error", "Failed to start recording. Please try again.");
       setRecording(false);
+    }
+  };
+
+  const stopRecording = async () => {
+    if (!recordingRef.current) return;
+
+    haptic("success");
+    setRecording(false);
+
+    try {
+      await recordingRef.current.stopAndUnloadAsync();
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+      });
       recordingRef.current = null;
+
+      if (peakDbRef.current > 0) {
+        onCapture(peakDbRef.current);
+      }
+    } catch (error) {
+      console.error("Stop failed:", error);
     }
   };
 
   const getRiskLevel = (db: number): { label: string; color: string; icon: IoniconName } => {
     if (db < 40)
-      return { label: "Quiet", color: "#2F80ED", icon: "volume-mute" };
+      return { label: "Quiet", color: "#2563EB", icon: "volume-mute" };
     if (db < 60)
-      return { label: "Conversation", color: "#F28C28", icon: "people" };
+      return { label: "Conversation", color: "#F97316", icon: "people" };
     if (db < 75)
-      return { label: "Busy", color: "#F6B84A", icon: "megaphone" };
+      return { label: "Busy", color: "#F59E0B", icon: "megaphone" };
     if (db < 90) return { label: "Loud", color: "#F97316", icon: "warning" };
     if (db < 110)
       return { label: "Very Loud", color: "#EF4444", icon: "volume-high" };
@@ -169,7 +155,7 @@ export function SoundMeterRecorder({
         <Text style={styles.permissionText}>Microphone access required</Text>
         <TouchableOpacity
           style={styles.permissionButton}
-          onPress={() => void ensurePermission()}
+          onPress={requestPermissions}
         >
           <Text style={styles.permissionButtonText}>Grant Permission</Text>
         </TouchableOpacity>
@@ -292,18 +278,18 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   permissionText: {
-    color: "#12343B",
+    color: "#0F172A",
     textAlign: "center",
     marginBottom: 12,
   },
   permissionButton: {
-    backgroundColor: "#2F80ED",
+    backgroundColor: "#2563EB",
     padding: 12,
     borderRadius: 10,
     alignItems: "center",
   },
   permissionButtonText: {
-    color: "#F0F6FF",
+    color: "#EFF6FF",
     fontWeight: "700",
   },
   meterContainer: {
@@ -363,7 +349,7 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 20,
     padding: 10,
-    backgroundColor: "#F0F6FF",
+    backgroundColor: "#EFF6FF",
     borderRadius: 12,
   },
   peakLabel: {
@@ -379,7 +365,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
   },
   recordButton: {
-    backgroundColor: "#2F80ED",
+    backgroundColor: "#2563EB",
     padding: 16,
     borderRadius: 12,
     alignItems: "center",
@@ -403,7 +389,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   savedText: {
-    color: "#2F80ED",
+    color: "#2563EB",
     fontSize: 24,
     fontWeight: "700",
   },
@@ -417,7 +403,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   retakeButton: {
-    backgroundColor: "#3B82F6",
+    backgroundColor: "#2563EB",
     padding: 10,
     borderRadius: 8,
     paddingHorizontal: 20,

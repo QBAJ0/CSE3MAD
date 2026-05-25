@@ -12,7 +12,6 @@ import {
   addNotificationUrlListener,
   requestNotificationPermissions,
 } from "../src/utils/notifications";
-// Import at top level so TaskManager.defineTask runs before any registration attempt
 import { registerStreakReminderTask } from "../src/tasks/streakReminderTask";
 
 export default function RootLayout() {
@@ -61,30 +60,7 @@ export default function RootLayout() {
               <Stack.Screen name="(onboarding)" />
               <Stack.Screen name="(tabs)" />
               <Stack.Screen name="activity" options={{ headerShown: false }} />
-              <Stack.Screen
-                name="challenge/[id]/index"
-                options={{
-                  headerShown: true,
-                  title: "Challenge",
-                  headerBackTitle: "Back",
-                }}
-              />
-              <Stack.Screen
-                name="challenge/[id]/record"
-                options={{
-                  headerShown: true,
-                  title: "Record Data",
-                  headerBackTitle: "Back",
-                }}
-              />
-              <Stack.Screen
-                name="challenge/[id]/results"
-                options={{
-                  headerShown: true,
-                  title: "Review & Submit",
-                  headerBackTitle: "Back",
-                }}
-              />
+              <Stack.Screen name="challenge" options={{ headerShown: false }} />
             </Stack>
           </ActivityProvider>
         </TeamProvider>

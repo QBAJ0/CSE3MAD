@@ -20,7 +20,7 @@ import { useTeam } from "../../src/context/TeamContext";
 
 const YEAR_OPTIONS = ["Year 5", "Year 6", "Year 7", "Year 8", "Year 9", "Year 10"];
 
-const AVATAR_COLORS = ["#007C7A", "#2F80ED", "#F6D7A8", "#F28C28", "#007C7A", "#2F80ED"];
+const AVATAR_COLORS = ["#0F766E", "#2563EB", "#FED7AA", "#F97316", "#0F766E", "#2563EB"];
 
 type Member = {
   name: string;
@@ -104,7 +104,7 @@ export default function RegisterScreen() {
       >
         {/* ── Header ── */}
         <View style={styles.header}>
-          <Ionicons name="rocket" size={32} color="#F6D7A8" style={styles.headerIcon} />
+          <Ionicons name="rocket" size={32} color="#FED7AA" style={styles.headerIcon} />
           <Text style={styles.headerTitle}>Create Your Team</Text>
           <Text style={styles.headerSubtitle}>
             Gather your squad and start the adventure!
@@ -114,7 +114,7 @@ export default function RegisterScreen() {
         {/* ── Team Name section ── */}
         <View style={styles.section}>
           <View style={styles.sectionTitleRow}>
-            <Ionicons name="pricetag-outline" size={18} color="#007C7A" />
+            <Ionicons name="pricetag-outline" size={18} color="#0F766E" />
             <Text style={styles.sectionTitle}>Team Name</Text>
           </View>
 
@@ -143,7 +143,7 @@ export default function RegisterScreen() {
         <View style={styles.section}>
           <View style={styles.sectionRow}>
             <View style={styles.sectionTitleRow}>
-              <Ionicons name="people-outline" size={18} color="#007C7A" />
+              <Ionicons name="people-outline" size={18} color="#0F766E" />
               <Text style={styles.sectionTitle}>Team Members</Text>
             </View>
             <View style={styles.countBadge}>
@@ -281,14 +281,14 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#FFF5E8",
+    backgroundColor: "#FFF7ED",
   },
   content: {
     paddingBottom: 48,
   },
 
   header: {
-    backgroundColor: "#007C7A",
+    backgroundColor: "#0F766E",
     paddingTop: 56,
     paddingBottom: 32,
     paddingHorizontal: 24,
@@ -331,12 +331,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 17,
     fontWeight: "800",
-    color: "#007C7A",
+    color: "#0F766E",
   },
   countBadge: {
-    backgroundColor: "#F6D7A8",
+    backgroundColor: "#FED7AA",
     borderWidth: 1,
-    borderColor: "#F28C28",
+    borderColor: "#F97316",
     paddingHorizontal: 10,
     paddingVertical: 3,
     borderRadius: 12,
@@ -344,21 +344,21 @@ const styles = StyleSheet.create({
   countBadgeText: {
     fontSize: 12,
     fontWeight: "800",
-    color: "#007C7A",
+    color: "#0F766E",
   },
 
   input: {
     borderWidth: 1.5,
-    borderColor: "#FFF5E8",
+    borderColor: "#FFF7ED",
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 15,
-    color: "#007C7A",
+    color: "#0F766E",
     backgroundColor: "#FFFFFF",
   },
   inputFilled: {
-    borderColor: "#2F80ED",
+    borderColor: "#2563EB",
     backgroundColor: "#FFFFFF",
   },
   inputSmall: {
@@ -366,27 +366,27 @@ const styles = StyleSheet.create({
   },
 
   teamIdBox: {
-    backgroundColor: "#F6D7A8",
+    backgroundColor: "#FED7AA",
     borderRadius: 12,
     padding: 16,
     gap: 4,
     borderWidth: 1.5,
-    borderColor: "#F28C28",
+    borderColor: "#F97316",
   },
   teamIdLabel: {
     fontSize: 10,
     fontWeight: "700",
-    color: "#007C7A",
+    color: "#0F766E",
     letterSpacing: 1.5,
   },
   teamIdCode: {
     fontSize: 28,
     fontWeight: "900",
-    color: "#F28C28",
+    color: "#F97316",
   },
   teamIdNote: {
     fontSize: 12,
-    color: "#007C7A",
+    color: "#0F766E",
     opacity: 0.75,
   },
 
@@ -398,9 +398,9 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderRightWidth: 1,
     borderBottomWidth: 1,
-    borderTopColor: "#FFF5E8",
-    borderRightColor: "#FFF5E8",
-    borderBottomColor: "#FFF5E8",
+    borderTopColor: "#FFF7ED",
+    borderRightColor: "#FFF7ED",
+    borderBottomColor: "#FFF7ED",
     gap: 10,
   },
   memberCardHeader: {
@@ -424,7 +424,7 @@ const styles = StyleSheet.create({
   memberLabel: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#007C7A",
+    color: "#0F766E",
     flex: 1,
   },
   removeBtn: {
@@ -459,18 +459,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 9,
     borderRadius: 12,
-    backgroundColor: "#FFF5E8",
+    backgroundColor: "#FFF7ED",
     borderWidth: 1.5,
-    borderColor: "#FFF5E8",
+    borderColor: "#FFF7ED",
   },
   gradeChipSelected: {
-    backgroundColor: "#F28C28",
-    borderColor: "#F28C28",
+    backgroundColor: "#F97316",
+    borderColor: "#F97316",
   },
   gradeChipText: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#007C7A",
+    color: "#0F766E",
   },
   gradeChipTextSelected: {
     color: "#FFFFFF",
@@ -482,14 +482,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 2,
     borderStyle: "dashed",
-    borderColor: "#007C7A",
+    borderColor: "#0F766E",
     alignItems: "center",
-    backgroundColor: "#FFF5E8",
+    backgroundColor: "#FFF7ED",
   },
   addBtnText: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#007C7A",
+    color: "#0F766E",
   },
 
   footer: {
@@ -497,7 +497,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   createBtn: {
-    backgroundColor: "#F28C28",
+    backgroundColor: "#F97316",
     paddingVertical: 18,
     borderRadius: 16,
     alignItems: "center",

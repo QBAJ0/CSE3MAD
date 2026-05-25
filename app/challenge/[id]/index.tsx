@@ -180,6 +180,15 @@ export default function ChallengeBriefScreen() {
               </Text>
             </View>
           </View>
+
+          <View style={styles.missionRow}>
+            {["Predict", "Test", "Record", "Reflect"].map((label, index) => (
+              <View key={label} style={styles.missionChip}>
+                <Text style={styles.missionNumber}>{index + 1}</Text>
+                <Text style={styles.missionText}>{label}</Text>
+              </View>
+            ))}
+          </View>
         </View>
 
         {/* ── Difficulty selector (only if challenge has high school mode) ── */}
@@ -234,7 +243,7 @@ export default function ChallengeBriefScreen() {
                   High School
                 </Text>
                 <Text style={styles.diffSub}>
-                  Calculations +{"\n"}50% more XP
+                  Calculations +{"\n"}30% more XP
                 </Text>
                 {difficulty === "highSchool" && (
                   <View style={styles.diffCheck}>
@@ -248,7 +257,7 @@ export default function ChallengeBriefScreen() {
 
         {/* ── Steps (show first 3 by default) ── */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>What to do</Text>
+          <Text style={styles.sectionTitle}>Start with these steps</Text>
           <View style={styles.stepsCard}>
             {visibleSteps.map((step, i) => (
               <View key={i} style={styles.stepRow}>
@@ -274,7 +283,7 @@ export default function ChallengeBriefScreen() {
                 <Text style={styles.showMoreText}>
                   {showAllSteps
                     ? "▲ Show less"
-                    : `▼ Show all ${challenge.instructions.length} steps`}
+                    : `Show all ${challenge.instructions.length} steps`}
                 </Text>
               </TouchableOpacity>
             )}
@@ -288,7 +297,7 @@ export default function ChallengeBriefScreen() {
           activeOpacity={0.75}
         >
           <Text style={styles.detailsToggleText}>
-            {showDetails ? "▲ Hide details" : "▼ Equipment & science info"}
+            {showDetails ? "Hide learn more" : "Learn more"}
           </Text>
         </TouchableOpacity>
 
@@ -297,7 +306,7 @@ export default function ChallengeBriefScreen() {
             {/* Equipment list */}
             <View style={styles.section}>
               <View style={styles.sectionTitleRow}>
-                <Ionicons name="build-outline" size={17} color="#12343B" />
+                <Ionicons name="build-outline" size={17} color="#0F172A" />
                 <Text style={styles.sectionTitle}>You will need</Text>
               </View>
               <View style={styles.equipRow}>
@@ -313,7 +322,7 @@ export default function ChallengeBriefScreen() {
             {challenge.thingsToKnow && challenge.thingsToKnow.length > 0 && (
               <View style={styles.section}>
                 <View style={styles.sectionTitleRow}>
-                  <Ionicons name="bulb-outline" size={17} color="#12343B" />
+                  <Ionicons name="bulb-outline" size={17} color="#0F172A" />
                   <Text style={styles.sectionTitle}>Things to Know</Text>
                 </View>
                 {challenge.thingsToKnow.map((card, i) => (
@@ -364,8 +373,8 @@ export default function ChallengeBriefScreen() {
         <View style={styles.section}>
           <View style={styles.predictionHeader}>
             <View style={styles.sectionTitleRow}>
-              <Ionicons name="help-circle-outline" size={17} color="#12343B" />
-              <Text style={styles.sectionTitle}>Your Prediction</Text>
+              <Ionicons name="help-circle-outline" size={17} color="#0F172A" />
+              <Text style={styles.sectionTitle}>Predict</Text>
             </View>
             <View style={styles.optionalPill}>
               <Text style={styles.optionalText}>optional +XP</Text>
@@ -373,7 +382,7 @@ export default function ChallengeBriefScreen() {
           </View>
           <Text style={styles.predictionHint}>
             {challenge.predictionPrompt ??
-              "What do you think will happen? Write your team's guess."}
+              "What do you think will happen? Write one team guess."}
           </Text>
           <TextInput
             style={[
@@ -401,7 +410,7 @@ export default function ChallengeBriefScreen() {
           >
             <View style={styles.startBtnRow}>
               <Ionicons name="flash" size={18} color="#FFFFFF" />
-              <Text style={styles.startBtnText}>Start Challenge</Text>
+              <Text style={styles.startBtnText}>Start testing</Text>
             </View>
           </Pressable>
 
@@ -414,7 +423,7 @@ export default function ChallengeBriefScreen() {
               activeOpacity={0.8}
             >
               <Text style={styles.resumeBtnText}>
-                ↺ Resume previous attempt
+                Resume previous attempt
               </Text>
             </TouchableOpacity>
           )}
@@ -498,7 +507,7 @@ const styles = StyleSheet.create({
   heroTitle: {
     fontSize: 26,
     fontWeight: "800",
-    color: "#12343B",
+    color: "#0F172A",
     textAlign: "center",
     marginBottom: 14,
     lineHeight: 32,
@@ -523,6 +532,40 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#64748B",
   },
+  missionRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 14,
+  },
+  missionChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 999,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+  missionNumber: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: "#F97316",
+    color: "#FFFFFF",
+    fontSize: 11,
+    fontWeight: "800",
+    textAlign: "center",
+    lineHeight: 18,
+  },
+  missionText: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: "#0F766E",
+  },
 
   // Sections
   section: {
@@ -538,7 +581,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 17,
     fontWeight: "800",
-    color: "#12343B",
+    color: "#0F172A",
   },
 
   // Difficulty cards
@@ -558,8 +601,8 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   diffCardActive: {
-    borderColor: "#2F80ED",
-    backgroundColor: "#EEF5FF",
+    borderColor: "#0F766E",
+    backgroundColor: "#EFF6FF",
   },
   diffEmoji: { marginBottom: 4 },
   diffLabel: {
@@ -568,7 +611,7 @@ const styles = StyleSheet.create({
     color: "#64748B",
     textAlign: "center",
   },
-  diffLabelActive: { color: "#007C7A" },
+  diffLabelActive: { color: "#0F766E" },
   diffSub: {
     fontSize: 11,
     color: "#94A3B8",
@@ -582,7 +625,7 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: "#2F80ED",
+    backgroundColor: "#0F766E",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -633,7 +676,7 @@ const styles = StyleSheet.create({
   showMoreText: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#2F80ED",
+    color: "#2563EB",
   },
 
   // Details toggle button
@@ -769,14 +812,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 14,
     fontSize: 14,
-    color: "#12343B",
+    color: "#0F172A",
     minHeight: 80,
     backgroundColor: "#FFFFFF",
     lineHeight: 21,
   },
   predictionInputFilled: {
-    borderColor: "#2F80ED",
-    backgroundColor: "#EEF5FF",
+    borderColor: "#0F766E",
+    backgroundColor: "#ECFDF5",
   },
 
   // CTA
@@ -785,7 +828,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   startBtn: {
-    backgroundColor: "#2F80ED",
+    backgroundColor: "#F97316",
     paddingVertical: 18,
     borderRadius: 16,
     alignItems: "center",

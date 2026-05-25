@@ -1,11 +1,19 @@
 import React, { createContext, useContext, useState } from "react";
+import { GAMIFICATION } from "../config/constants";
+import { getChallengeById } from "../data/challenges";
 import {
   resolveSubmissionLocation,
   scoreActivityResult,
 } from "../services/challengeScoring";
 import { syncChallengeResultToCloud } from "../services/challengeCloudSync";
 import { enqueueMediaUploadsForResult } from "../services/mediaUploadQueue";
-import { ActivityResult, DifficultyMode, Prototype } from "../types";
+import { deriveFanForce, deriveParachute } from "../services/physics";
+import {
+  ActivityResult,
+  DifficultyMode,
+  Measurement,
+  Prototype,
+} from "../types";
 import { storage } from "../utils/storage";
 
 type Draft = Partial<ActivityResult> & {
@@ -44,6 +52,131 @@ type ActivityContextValue = {
 const emptyDraft: Draft = { prototypes: [], currentPrototypeIndex: 0 };
 
 const ActivityContext = createContext<ActivityContextValue | null>(null);
+
+const EVIDENCE_RECORDERS = new Set<Measurement["recorder"]>([
+  "gps",
+  "video",
+  "videoAnalyzer",
+  "slowMotion",
+  "photo",
+]);
+
+const hasMeasurementValue = (value: unknown) =>
+  value !== undefined && value !== null && String(value).trim().length > 0;
+
+const hasMeaningfulPrediction = (prediction: string | undefined) =>
+  (prediction ?? "").trim().length >= GAMIFICATION.PREDICTION_MIN_CHARS;
+
+const getScoredMeasurements = (
+  measurements: Measurement[],
+  difficulty: DifficultyMode,
+) =>
+  measurements.filter(
+    (measurement) =>
+      (!measurement.difficulty || measurement.difficulty === difficulty) &&
+      !EVIDENCE_RECORDERS.has(measurement.recorder) &&
+      !measurement.optional,
+  );
+
+const hasCompleteRequiredData = (result: Omit<ActivityResult, "points">) => {
+  const challenge = getChallengeById(result.challengeId);
+  if (!challenge || result.prototypes.length === 0) return false;
+
+  const requiredMeasurements = getScoredMeasurements(
+    challenge.measurements,
+    result.difficulty,
+  );
+  if (requiredMeasurements.length === 0) return false;
+
+  return result.prototypes.every((prototype) =>
+    requiredMeasurements.every((measurement) =>
+      hasMeasurementValue(prototype.measurements[measurement.key]),
+    ),
+  );
+};
+
+const hasEvidenceAttached = (result: Omit<ActivityResult, "points">) => {
+  if (result.location) return true;
+
+  const challenge = getChallengeById(result.challengeId);
+  const evidenceKeys =
+    challenge?.measurements
+      .filter(
+        (measurement) =>
+          (!measurement.difficulty ||
+            measurement.difficulty === result.difficulty) &&
+          EVIDENCE_RECORDERS.has(measurement.recorder),
+      )
+      .map((measurement) => measurement.key) ?? [];
+
+  return result.prototypes.some((prototype) =>
+    evidenceKeys.some((key) => hasMeasurementValue(prototype.measurements[key])),
+  );
+};
+
+const hasTeamworkEvidence = (result: Omit<ActivityResult, "points">) =>
+  result.prototypes.some((prototype) => {
+    const rawTeamResults = prototype.measurements.teamResults;
+    if (!hasMeasurementValue(rawTeamResults)) return false;
+
+    if (typeof rawTeamResults !== "string") return true;
+
+    try {
+      const parsed = JSON.parse(rawTeamResults);
+      return Array.isArray(parsed) && parsed.length > 1;
+    } catch {
+      return true;
+    }
+  });
+
+function numberFromMeasurement(value: unknown): number | undefined {
+  const parsed = Number.parseFloat(String(value ?? ""));
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function buildDerivedByPrototype(
+  challengeId: number,
+  prototypes: Prototype[],
+): Record<number, Record<string, number>> {
+  const derived: Record<number, Record<string, number>> = {};
+
+  prototypes.forEach((prototype) => {
+    const measurements = prototype.measurements;
+    const values: Record<string, number> = {};
+
+    if (challengeId === 1) {
+      const calc = deriveParachute({
+        dropHeightMeters: numberFromMeasurement(measurements.dropHeightMeters) ?? NaN,
+        fallTimeSeconds: numberFromMeasurement(measurements.fallTimeSeconds) ?? NaN,
+        toyMassKg: numberFromMeasurement(measurements.toyMassKg),
+        contactTimeSeconds:
+          numberFromMeasurement(measurements.contactTimeSeconds) ??
+          numberFromMeasurement(measurements.contactTime),
+        bounced: String(measurements.bounced) === "Yes",
+        timeToMaxHeightSeconds:
+          numberFromMeasurement(measurements.timeToMaxHeightSeconds) ??
+          numberFromMeasurement(measurements.timeToBouncePeak),
+      });
+      Object.entries(calc).forEach(([key, value]) => {
+        if (value != null && Number.isFinite(value)) values[key] = value;
+      });
+    }
+
+    if (challengeId === 3) {
+      const force = deriveFanForce(
+        String(measurements.material ?? ""),
+        numberFromMeasurement(measurements.bendAngle) ?? NaN,
+      );
+      if (force != null) values.estimatedForce = force;
+    }
+
+    if (Object.keys(values).length > 0) {
+      derived[prototype.index] = values;
+    }
+  });
+
+  return derived;
+}
 
 export function ActivityProvider({ children }: { children: React.ReactNode }) {
   const [draft, setDraft] = useState<Draft>(emptyDraft);
@@ -152,6 +285,11 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
         draft.prototypes,
       );
 
+      const derivedByPrototype = {
+        ...buildDerivedByPrototype(draft.challengeId, draft.prototypes),
+        ...(draft.derivedByPrototype ?? {}),
+      };
+
       const baseResult = {
         id: draft.id,
         challengeId: draft.challengeId,
@@ -160,7 +298,7 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
         difficulty: draft.difficulty,
         prediction: draft.prediction ?? "",
         prototypes: draft.prototypes,
-        derivedByPrototype: draft.derivedByPrototype ?? {},
+        derivedByPrototype,
         rating,
         reflection,
         location: submittedLocation,

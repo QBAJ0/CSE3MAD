@@ -45,6 +45,8 @@ export type Measurement = {
   choices?: string[];
   placeholder?: string;
   difficulty?: DifficultyMode;
+  vibrate?: boolean;
+  optional?: boolean;
 };
 
 export type DerivedMetric = {

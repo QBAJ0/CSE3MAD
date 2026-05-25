@@ -8,7 +8,7 @@ import {
 } from "react-native";
 
 interface GyroscopeRecorderProps {
-  onCapture: (data: { smoothness: number; range: number; samples: number }) => void;
+  onCapture: (data: { smoothness: number; range: number }) => void;
   duration?: number;
   existingValue?: { smoothness: number; range?: number };
 }
@@ -36,7 +36,7 @@ export function GyroscopeRecorder({
       range = parsed;
     }
 
-    onCapture({ smoothness, range, samples: 0 });
+    onCapture({ smoothness, range });
   };
 
   if (existingValue && (existingValue.smoothness > 0 || (existingValue.range ?? 0) > 0)) {
@@ -49,7 +49,7 @@ export function GyroscopeRecorder({
         <Text style={styles.hint}>Entered manually on web.</Text>
         <TouchableOpacity
           style={styles.button}
-          onPress={() => onCapture({ smoothness: 0, range: 0, samples: 0 })}
+          onPress={() => onCapture({ smoothness: 0, range: 0 })}
         >
           <Text style={styles.buttonText}>Remeasure</Text>
         </TouchableOpacity>
@@ -135,5 +135,5 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
   },
-  buttonText: { color: "#12343B", fontWeight: "600" },
+  buttonText: { color: "#0F172A", fontWeight: "600" },
 });

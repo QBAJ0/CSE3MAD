@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Stemmlab",
-    "slug": "Stemmlab",
+    "slug": "stemmlab",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -11,7 +11,9 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "UIBackgroundModes": ["fetch"]
+        "UIBackgroundModes": [
+          "fetch"
+        ]
       }
     },
     "android": {
@@ -22,7 +24,8 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.StaceyJepkemoi.Stemmlab"
     },
     "web": {
       "output": "static",
@@ -31,13 +34,18 @@
     "plugins": [
       "expo-router",
       [
-        "expo-build-properties",
+        "expo-splash-screen",
         {
-          "ios": {
-            "useFrameworks": "static"
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 300,
+          "resizeMode": "contain",
+          "backgroundColor": "#FFF7ED",
+          "dark": {
+            "backgroundColor": "#0F766E"
           }
         }
       ],
+      "expo-sqlite",
       [
         "react-native-google-mobile-ads",
         {
@@ -45,23 +53,18 @@
           "iosAppId": "ca-app-pub-3940256099942544~1458002511"
         }
       ],
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 220,
-          "resizeMode": "contain",
-          "backgroundColor": "#FFF5E8",
-          "dark": {
-            "backgroundColor": "#007C7A"
-          }
-        }
-      ],
-      "expo-sqlite"
+      "expo-web-browser",
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "b15991a2-9b12-4d0f-b2cc-bde0dd0707a7"
+      }
     }
   }
 }

@@ -7,7 +7,7 @@ import { readFirebaseConfig } from "@/src/config/env";
 let app: FirebaseApp | null = null;
 let auth: Auth | null = null;
 let db: Firestore | null = null;
-let storage: FirebaseStorage | null = null;
+let cloudStorage: FirebaseStorage | null = null;
 
 const config = readFirebaseConfig();
 
@@ -15,9 +15,12 @@ if (config) {
   app = getApps().length ? getApp() : initializeApp(config);
   auth = getAuth(app);
   db = getFirestore(app);
-  storage = getStorage(app);
+  cloudStorage = getStorage(app);
 }
 
-export { app, auth, db, storage };
+export { app, auth, cloudStorage, db };
+/** @deprecated Use cloudStorage — alias for media upload helper */
+export const storage = cloudStorage;
 export const isFirebaseConfigured = config !== null;
-export const isFirebaseStorageReady = isFirebaseConfigured && storage !== null;
+export const isFirebaseStorageReady =
+  isFirebaseConfigured && cloudStorage !== null;

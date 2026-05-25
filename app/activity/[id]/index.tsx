@@ -1,3 +1,4 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { getLabRecordingActivityById } from "@/src/data/labRecordingCatalog";
 import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import { asHref } from "@/src/utils/expoHref";
@@ -49,21 +50,36 @@ export default function ActivityDetailScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.category}>{challenge.category}</Text>
-      <Text style={styles.title}>{challenge.title}</Text>
-      <Text style={styles.body}>{challenge.shortDescription}</Text>
+      <View style={styles.hero}>
+        <View style={styles.heroIcon}>
+          <Ionicons name="flask-outline" size={30} color="#FED7AA" />
+        </View>
+        <Text style={styles.category}>{challenge.category}</Text>
+        <Text style={styles.title}>{challenge.title}</Text>
+        <Text style={styles.heroBody}>{challenge.shortDescription}</Text>
+      </View>
+
       <View style={styles.block}>
-        <Text style={styles.label}>Measurement</Text>
+        <View style={styles.blockTitleRow}>
+          <Ionicons name="speedometer-outline" size={17} color="#2563EB" />
+          <Text style={styles.label}>Measurement</Text>
+        </View>
         <Text style={styles.body}>{challenge.measurementLabel}</Text>
       </View>
+
       <View style={styles.block}>
-        <Text style={styles.label}>Scoring tip</Text>
+        <View style={styles.blockTitleRow}>
+          <Ionicons name="bulb-outline" size={17} color="#F97316" />
+          <Text style={styles.label}>Scoring tip</Text>
+        </View>
         <Text style={styles.body}>{challenge.scoreHint}</Text>
       </View>
+
       <Pressable
         style={styles.button}
         onPress={() => router.push(asHref(`/activity/${id}/record`))}
       >
+        <Ionicons name="create-outline" size={17} color="#FFFFFF" />
         <Text style={styles.buttonLabel}>Begin recording</Text>
       </Pressable>
     </ScrollView>
@@ -72,9 +88,11 @@ export default function ActivityDetailScreen() {
 
 const styles = StyleSheet.create({
   container: {
+    flexGrow: 1,
     padding: 20,
-    paddingTop: 16,
+    paddingTop: 24,
     gap: 14,
+    backgroundColor: "#FFF7ED",
   },
   centered: {
     flex: 1,
@@ -82,50 +100,85 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     gap: 8,
+    backgroundColor: "#FFF7ED",
+  },
+  hero: {
+    backgroundColor: "#0F766E",
+    borderRadius: 24,
+    padding: 20,
+    gap: 8,
+  },
+  heroIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "rgba(255,255,255,0.14)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.25)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   category: {
     fontSize: 13,
-    fontWeight: "600",
-    color: "#64748b",
+    fontWeight: "800",
+    color: "#FED7AA",
     textTransform: "uppercase",
-    letterSpacing: 0.5,
   },
   title: {
-    fontSize: 22,
-    fontWeight: "700",
+    fontSize: 25,
+    fontWeight: "800",
+    color: "#FFFFFF",
+  },
+  heroBody: {
+    fontSize: 15,
+    lineHeight: 21,
+    color: "rgba(255,255,255,0.82)",
   },
   body: {
-    fontSize: 16,
+    fontSize: 15,
     lineHeight: 22,
     color: "#334155",
   },
   block: {
-    gap: 4,
+    gap: 8,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "#FED7AA",
+  },
+  blockTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
   },
   label: {
     fontSize: 14,
-    fontWeight: "700",
-    color: "#0f172a",
+    fontWeight: "800",
+    color: "#0F766E",
   },
   button: {
     marginTop: 8,
-    backgroundColor: "#2563eb",
+    backgroundColor: "#F97316",
     paddingVertical: 14,
-    borderRadius: 10,
+    borderRadius: 14,
     alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 6,
   },
   buttonLabel: {
-    color: "#fff",
-    fontWeight: "600",
+    color: "#FFFFFF",
+    fontWeight: "800",
     fontSize: 16,
   },
   error: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#b91c1c",
+    fontWeight: "700",
+    color: "#DC2626",
   },
   muted: {
     fontSize: 14,
-    color: "#64748b",
+    color: "#64748B",
   },
 });

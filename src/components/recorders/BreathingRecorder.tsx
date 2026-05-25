@@ -46,11 +46,11 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 10,
   },
-  label: { color: "#12343B", fontSize: 15, fontWeight: "700" },
+  label: { color: "#0F172A", fontSize: 15, fontWeight: "700" },
   hint: { color: "#64748B", fontSize: 12 },
   input: {
-    backgroundColor: "#F0F6FF",
-    color: "#12343B",
+    backgroundColor: "#EFF6FF",
+    color: "#0F172A",
     borderRadius: 10,
     padding: 12,
     fontSize: 20,
@@ -59,7 +59,7 @@ const styles = StyleSheet.create({
     borderColor: "#E2E8F0",
   },
   btn: {
-    backgroundColor: "#2F80ED",
+    backgroundColor: "#2563EB",
     padding: 14,
     borderRadius: 12,
     alignItems: "center",

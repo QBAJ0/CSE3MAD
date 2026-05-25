@@ -35,6 +35,7 @@ describe("challengeScoring", () => {
     it("awards base XP only with minimal input", () => {
       const points = calculateChallengePoints({
         prototypeCount: 1,
+        predictionChars: 0,
         reflectionChars: 0,
         hasCompleteData: false,
         hasEvidence: false,
@@ -55,6 +56,7 @@ describe("challengeScoring", () => {
 
       const points = calculateChallengePoints({
         prototypeCount: 1,
+        predictionChars: 0,
         reflectionChars: 0,
         ...signals,
         difficulty: "primary",
@@ -74,6 +76,7 @@ describe("challengeScoring", () => {
 
       const points = calculateChallengePoints({
         prototypeCount: 1,
+        predictionChars: 0,
         reflectionChars: 0,
         ...signals,
         difficulty: "primary",
@@ -97,6 +100,7 @@ describe("challengeScoring", () => {
       const reflection = "x".repeat(GAMIFICATION.REFLECTION_THRESHOLD_1 + 1);
       const points = calculateChallengePoints({
         prototypeCount: 1,
+        predictionChars: 0,
         reflectionChars: reflection.length,
         hasCompleteData: false,
         hasEvidence: false,
@@ -104,7 +108,7 @@ describe("challengeScoring", () => {
         difficulty: "primary",
         completedInTime: true,
       });
-      expect(points).toBe(SCORING.BASE_XP + SCORING.REFLECTION_BONUS);
+      expect(points).toBe(SCORING.BASE_XP + SCORING.REFLECTION_BONUS_1);
     });
 
     it("adds teamwork bonus when teamResults has multiple entries", () => {
@@ -125,6 +129,7 @@ describe("challengeScoring", () => {
 
       const points = calculateChallengePoints({
         prototypeCount: 1,
+        predictionChars: 0,
         reflectionChars: 0,
         ...signals,
         difficulty: "primary",
@@ -136,6 +141,7 @@ describe("challengeScoring", () => {
     it("stacks multi-prototype bonuses for two and three designs", () => {
       const two = calculateChallengePoints({
         prototypeCount: 2,
+        predictionChars: 0,
         reflectionChars: 0,
         hasCompleteData: false,
         hasEvidence: false,
@@ -147,6 +153,7 @@ describe("challengeScoring", () => {
 
       const three = calculateChallengePoints({
         prototypeCount: 3,
+        predictionChars: 0,
         reflectionChars: 0,
         hasCompleteData: false,
         hasEvidence: false,
@@ -175,6 +182,7 @@ describe("challengeScoring", () => {
         challengeId: 1,
         difficulty: "primary",
         prototypes,
+        predictionChars: "It will fall slowly".length,
         reflectionChars: reflection.length,
         draftLocation: { lat: -37.81, lng: 144.96 },
         completedInTime: true,
@@ -188,6 +196,7 @@ describe("challengeScoring", () => {
         challengeId: 1,
         difficulty: "primary",
         prototypes,
+        predictionChars: "It will fall slowly".length,
         reflectionChars: reflection.length,
         draftLocation: { lat: -37.81, lng: 144.96 },
         completedInTime: true,
@@ -228,6 +237,7 @@ describe("challengeScoring", () => {
         challengeId: 1,
         difficulty: "highSchool",
         prototypes: hsPrototypes,
+        predictionChars: "Prediction text here".length,
         reflectionChars: reflection.length,
         draftLocation: { lat: -37.81, lng: 144.96 },
         completedInTime: false,

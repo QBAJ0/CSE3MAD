@@ -83,10 +83,11 @@ export function TeamReactionBoard({ onComplete }: TeamReactionBoardProps) {
     score: number;
   }) => {
     haptic("success");
-    setTracingScores((prev) => ({
-      ...prev,
+    const updatedTracingScores = {
+      ...tracingScores,
       [currentMember?.name ?? ""]: result.score,
-    }));
+    };
+    setTracingScores(updatedTracingScores);
 
     if (currentMemberIndex + 1 < totalMembers) {
       setCurrentMemberIndex((prev) => prev + 1);
@@ -99,7 +100,7 @@ export function TeamReactionBoard({ onComplete }: TeamReactionBoardProps) {
     return (
       <View style={styles.container}>
         <View style={styles.titleRow}>
-          <Ionicons name="pulse-outline" size={22} color="#2F80ED" />
+          <Ionicons name="pulse-outline" size={22} color="#2563EB" />
           <Text style={styles.title}>Reaction Board</Text>
         </View>
         <Text style={styles.subtitle}>{"Test your team's reaction time!"}</Text>
@@ -139,7 +140,7 @@ export function TeamReactionBoard({ onComplete }: TeamReactionBoardProps) {
       <View style={styles.container}>
         <View style={styles.phaseHeader}>
           <View style={styles.phaseTitleRow}>
-            <Ionicons name="hand-left-outline" size={18} color="#12343B" />
+            <Ionicons name="hand-left-outline" size={18} color="#0F172A" />
             <Text style={styles.phaseTitle}>Phase 1: Dominant Hand</Text>
           </View>
           <Text style={styles.phaseProgress}>
@@ -165,7 +166,7 @@ export function TeamReactionBoard({ onComplete }: TeamReactionBoardProps) {
       <View style={styles.container}>
         <View style={styles.phaseHeader}>
           <View style={styles.phaseTitleRow}>
-            <Ionicons name="hand-right-outline" size={18} color="#12343B" />
+            <Ionicons name="hand-right-outline" size={18} color="#0F172A" />
             <Text style={styles.phaseTitle}>Phase 2: Non-Dominant Hand</Text>
           </View>
           <Text style={styles.phaseProgress}>
@@ -191,7 +192,7 @@ export function TeamReactionBoard({ onComplete }: TeamReactionBoardProps) {
       <View style={styles.container}>
         <View style={styles.phaseHeader}>
           <View style={styles.phaseTitleRow}>
-            <Ionicons name="pencil-outline" size={18} color="#12343B" />
+            <Ionicons name="pencil-outline" size={18} color="#0F172A" />
             <Text style={styles.phaseTitle}>Phase 3: Tracing Challenge</Text>
           </View>
           <Text style={styles.phaseProgress}>
@@ -233,7 +234,7 @@ export function TeamReactionBoard({ onComplete }: TeamReactionBoardProps) {
   return (
     <View style={styles.container}>
       <View style={styles.titleRow}>
-        <Ionicons name="trophy-outline" size={22} color="#2F80ED" />
+        <Ionicons name="trophy-outline" size={22} color="#2563EB" />
         <Text style={styles.title}>Team Results</Text>
       </View>
 
@@ -320,7 +321,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontWeight: "800",
-    color: "#12343B",
+    color: "#0F172A",
     textAlign: "center",
   },
   subtitle: {
@@ -334,21 +335,21 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     padding: 12,
-    backgroundColor: "#F0F6FF",
+    backgroundColor: "#EFF6FF",
     borderRadius: 10,
     marginBottom: 8,
   },
-  memberName: { color: "#12343B", fontWeight: "600" },
+  memberName: { color: "#0F172A", fontWeight: "600" },
   statusRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   memberStatus: { color: "#64748B" },
   phaseInfo: {
-    color: "#2F80ED",
+    color: "#2563EB",
     textAlign: "center",
     marginBottom: 16,
     fontWeight: "600",
   },
   startButton: {
-    backgroundColor: "#2F80ED",
+    backgroundColor: "#2563EB",
     padding: 16,
     borderRadius: 12,
     alignItems: "center",
@@ -360,34 +361,34 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   phaseTitleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  phaseTitle: { color: "#12343B", fontSize: 16, fontWeight: "700" },
+  phaseTitle: { color: "#0F172A", fontSize: 16, fontWeight: "700" },
   phaseProgress: { color: "#64748B" },
   memberPrompt: {
-    color: "#2F80ED",
+    color: "#2563EB",
     fontWeight: "700",
     fontSize: 14,
     textAlign: "center",
     marginBottom: 12,
   },
   fastestCard: {
-    backgroundColor: "#2F80ED",
+    backgroundColor: "#2563EB",
     borderRadius: 16,
     padding: 20,
     alignItems: "center",
     marginBottom: 20,
   },
-  fastestLabel: { color: "#F0F6FF", fontSize: 12, fontWeight: "600" },
-  fastestName: { color: "#F0F6FF", fontSize: 24, fontWeight: "800" },
-  fastestTime: { color: "#F0F6FF", fontSize: 18, fontWeight: "700" },
+  fastestLabel: { color: "#EFF6FF", fontSize: 12, fontWeight: "600" },
+  fastestName: { color: "#EFF6FF", fontSize: 24, fontWeight: "800" },
+  fastestTime: { color: "#EFF6FF", fontSize: 18, fontWeight: "700" },
   resultsList: { maxHeight: 300, marginBottom: 16 },
   resultCard: {
-    backgroundColor: "#F0F6FF",
+    backgroundColor: "#EFF6FF",
     borderRadius: 12,
     padding: 14,
     marginBottom: 10,
   },
   resultName: {
-    color: "#12343B",
+    color: "#0F172A",
     fontSize: 16,
     fontWeight: "700",
     marginBottom: 8,
@@ -398,7 +399,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   resultLabel: { color: "#64748B", fontSize: 13 },
-  resultValue: { color: "#2F80ED", fontWeight: "700", fontSize: 13 },
+  resultValue: { color: "#2563EB", fontWeight: "700", fontSize: 13 },
   resultDiff: {
     textAlign: "center",
     fontSize: 12,
@@ -407,9 +408,9 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   slower: { backgroundColor: "#FEE2E2", color: "#DC2626" },
-  faster: { backgroundColor: "#EEF5FF", color: "#2F80ED" },
+  faster: { backgroundColor: "#EFF6FF", color: "#2563EB" },
   completeButton: {
-    backgroundColor: "#2F80ED",
+    backgroundColor: "#2563EB",
     padding: 16,
     borderRadius: 12,
     alignItems: "center",

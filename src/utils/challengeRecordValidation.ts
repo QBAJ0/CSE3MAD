@@ -11,7 +11,9 @@ export const OPTIONAL_RECORDERS = new Set<Measurement["recorder"]>([
 export function getRequiredMeasurements(
   measurements: Measurement[],
 ): Measurement[] {
-  return measurements.filter((m) => !OPTIONAL_RECORDERS.has(m.recorder));
+  return measurements.filter(
+    (m) => !OPTIONAL_RECORDERS.has(m.recorder) && !m.optional,
+  );
 }
 
 export function isPrototypeComplete(

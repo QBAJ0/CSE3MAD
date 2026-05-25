@@ -1,3 +1,4 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
@@ -20,7 +21,7 @@ export default function SqliteTestScreen() {
 
   const runTest = useCallback(async () => {
     setBusy(true);
-    setStatus("Running…");
+    setStatus("Running...");
     setOutput("");
     try {
       const createdAt = new Date().toISOString();
@@ -52,23 +53,41 @@ export default function SqliteTestScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>SQLite check</Text>
-      <Text style={styles.hint}>
-        Inserts one team and one member, then reads them back from the local
-        database.
-      </Text>
+      <View style={styles.hero}>
+        <View style={styles.heroIcon}>
+          <Ionicons name="hardware-chip-outline" size={30} color="#FED7AA" />
+        </View>
+        <Text style={styles.title}>SQLite check</Text>
+        <Text style={styles.hint}>
+          Inserts one team and one member, then reads them back from the local
+          database.
+        </Text>
+      </View>
+
       <Pressable
         style={[styles.button, busy && styles.buttonDisabled]}
         onPress={runTest}
         disabled={busy}
       >
         {busy ? (
-          <ActivityIndicator color="#fff" />
+          <ActivityIndicator color="#FFFFFF" />
         ) : (
-          <Text style={styles.buttonLabel}>Run insert + fetch</Text>
+          <>
+            <Ionicons name="play" size={16} color="#FFFFFF" />
+            <Text style={styles.buttonLabel}>Run insert + fetch</Text>
+          </>
         )}
       </Pressable>
-      <Text style={styles.status}>Status: {status || "—"}</Text>
+
+      <View style={styles.statusPill}>
+        <Ionicons
+          name={status === "OK" ? "checkmark-circle" : "ellipse-outline"}
+          size={16}
+          color={status === "OK" ? "#0F766E" : "#F97316"}
+        />
+        <Text style={styles.status}>Status: {status || "Ready"}</Text>
+      </View>
+
       {output ? (
         <View style={styles.outputBox}>
           <Text style={styles.output}>{output}</Text>
@@ -80,44 +99,82 @@ export default function SqliteTestScreen() {
 
 const styles = StyleSheet.create({
   container: {
+    flexGrow: 1,
     padding: 20,
     paddingTop: 56,
     gap: 12,
+    backgroundColor: "#FFF7ED",
+  },
+  hero: {
+    backgroundColor: "#0F766E",
+    borderRadius: 24,
+    padding: 20,
+    gap: 8,
+  },
+  heroIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "rgba(255,255,255,0.14)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.25)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   title: {
-    fontSize: 22,
-    fontWeight: "700",
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#FFFFFF",
   },
   hint: {
     fontSize: 14,
-    color: "#555",
+    color: "rgba(255,255,255,0.82)",
     lineHeight: 20,
   },
   button: {
-    backgroundColor: "#2563eb",
+    backgroundColor: "#F97316",
     paddingVertical: 14,
-    borderRadius: 10,
+    borderRadius: 14,
     alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 6,
   },
   buttonDisabled: {
     opacity: 0.6,
   },
   buttonLabel: {
-    color: "#fff",
-    fontWeight: "600",
+    color: "#FFFFFF",
+    fontWeight: "800",
     fontSize: 16,
+  },
+  statusPill: {
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#FED7AA",
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
   status: {
     fontSize: 15,
-    fontWeight: "600",
+    fontWeight: "800",
+    color: "#0F766E",
   },
   outputBox: {
-    backgroundColor: "#f1f5f9",
-    padding: 12,
-    borderRadius: 8,
+    backgroundColor: "#FFFFFF",
+    padding: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#BFDBFE",
   },
   output: {
     fontFamily: "monospace",
     fontSize: 12,
+    color: "#334155",
   },
 });

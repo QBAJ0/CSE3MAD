@@ -1,6 +1,5 @@
 // app/(tabs)/leaderboard.tsx
-// Main competition: Stacey team XP (AsyncStorage / useLeaderboard) — podium + ranks.
-// Secondary (below divider): QB SQLite lab totals from /activity recordings on this device only.
+// Shows all teams ranked by XP. Filter by week, month, or all time.
 
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useFocusEffect } from "@react-navigation/native";
@@ -20,11 +19,16 @@ import type { LeaderboardEntry } from "../../src/types";
 import type { LeaderboardRow } from "../../src/types/db";
 
 const RANK_LABEL: Record<number, string> = { 1: "1st", 2: "2nd", 3: "3rd" };
+const RANK_ICONS: Record<1 | 2 | 3, React.ComponentProps<typeof Ionicons>["name"]> = {
+  1: "trophy",
+  2: "medal-outline",
+  3: "ribbon-outline",
+};
 
 const PODIUM_COLORS: Record<1 | 2 | 3, string> = {
-  1: "#F28C28",   // Ochre — bold first place
-  2: "#2F80ED",   // Sky Blue — cool second place
-  3: "#F6D7A8",   // Peach — warm third place
+  1: "#F97316",   // Ochre — bold first place
+  2: "#2563EB",   // Sky Blue — cool second place
+  3: "#FED7AA",   // Peach — warm third place
 };
 
 const PODIUM_HEIGHTS: Record<1 | 2 | 3, number> = {
@@ -57,12 +61,13 @@ export default function LeaderboardScreen() {
     }, [loadSqlLeaderboard]),
   );
 
+  // Load leaderboard data for the selected time frame
   const { entries: leaderboard, loading } = useLeaderboard(timeFrame);
 
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#2F80ED" />
+        <ActivityIndicator size="large" color="#2563EB" />
       </View>
     );
   }
@@ -79,13 +84,22 @@ export default function LeaderboardScreen() {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      {/* ── Title ── */}
-      <View style={styles.titleRow}>
-        <Ionicons name="trophy" size={26} color="#007C7A" />
-        <View style={styles.titleBlock}>
-          <Text style={styles.title}>Leaderboard</Text>
-          <Text style={styles.subtitle}>Team XP — main competition</Text>
+      {/* Hero */}
+      <View style={styles.hero}>
+        <View style={styles.heroTopRow}>
+          <View style={styles.heroIcon}>
+            <Ionicons name="trophy" size={30} color="#FED7AA" />
+          </View>
+          <View style={styles.heroStatPill}>
+            <Ionicons name="people-outline" size={14} color="#0F766E" />
+            <Text style={styles.heroStatText}>{leaderboard.length} teams</Text>
+          </View>
         </View>
+
+        <Text style={styles.title}>Team XP Race</Text>
+        <Text style={styles.subtitle}>
+          Who is leading the lab? Complete challenges to climb the board.
+        </Text>
       </View>
 
       {/* ── Time frame filter ── */}
@@ -121,7 +135,10 @@ export default function LeaderboardScreen() {
       {/* ── Top 3 podium ── */}
       {top3.length > 0 && (
         <View style={styles.podiumWrapper}>
-          <Text style={styles.podiumLabel}>Top teams (XP)</Text>
+          <View style={styles.sectionHeaderRow}>
+            <Ionicons name="sparkles-outline" size={16} color="#F97316" />
+            <Text style={styles.podiumLabel}>Top Performers</Text>
+          </View>
 
           <View style={styles.podiumRow}>
             {([top3[1], top3[0], top3[2]] as (LeaderboardEntry | undefined)[]).map(
@@ -161,10 +178,15 @@ export default function LeaderboardScreen() {
                           backgroundColor: PODIUM_COLORS[rank],
                         },
                       ]}
-                    >
+                      >
                       <View style={styles.podiumRankCircle}>
-                        <Text style={styles.podiumRankText}>{RANK_LABEL[rank]}</Text>
+                        <Ionicons
+                          name={RANK_ICONS[rank]}
+                          size={rank === 1 ? 17 : 15}
+                          color="#FFFFFF"
+                        />
                       </View>
+                      <Text style={styles.podiumRankText}>{RANK_LABEL[rank]}</Text>
                       <Text style={styles.podiumName} numberOfLines={2}>
                         {entry.teamName}
                       </Text>
@@ -183,9 +205,9 @@ export default function LeaderboardScreen() {
       {leaderboard.length === 0 && (
         <View style={styles.emptyState}>
           <Ionicons name="trophy-outline" size={48} color="#94A3B8" />
-          <Text style={styles.emptyTitle}>No entries yet</Text>
+          <Text style={styles.emptyTitle}>Launch your team</Text>
           <Text style={styles.emptySubtitle}>
-            Complete a challenge to appear on the leaderboard!
+            Complete your first challenge to land on the XP race board.
           </Text>
         </View>
       )}
@@ -193,7 +215,10 @@ export default function LeaderboardScreen() {
       {/* ── Ranks 4–10 list ── */}
       {rest.length > 0 && (
         <>
-          <Text style={styles.sectionLabel}>RANKINGS</Text>
+          <View style={styles.sectionHeaderRow}>
+            <Ionicons name="list-outline" size={16} color="#F97316" />
+            <Text style={styles.sectionLabel}>RANKINGS</Text>
+          </View>
           {rest.map((entry) => {
             const isYou = entry.discriminator === team?.discriminator;
             return (
@@ -250,17 +275,21 @@ export default function LeaderboardScreen() {
         </View>
       )}
 
-      {/* QB lab/dev evidence only — not the main XP podium */}
       <View style={styles.labSectionWrap}>
-        <Text style={styles.sectionLabel}>LOCAL LAB / DEV SCORES</Text>
-        <Text style={styles.labSectionHint}>
-          Totals from lab activity recordings saved in SQLite on this device
-          (hidden Activities tab). For local testing and evidence — not team XP
-          above.
-        </Text>
+        <View style={styles.labHeaderRow}>
+          <View style={styles.labHeaderIcon}>
+            <Ionicons name="phone-portrait-outline" size={18} color="#2563EB" />
+          </View>
+          <View style={styles.labHeaderText}>
+            <Text style={styles.labTitle}>Device Lab Scores</Text>
+            <Text style={styles.labSectionHint}>
+              Local SQLite activity totals, separate from the XP race.
+            </Text>
+          </View>
+        </View>
         {sqlLoading ? (
           <View style={[styles.row, { justifyContent: "center" }]}>
-            <ActivityIndicator size="small" color="#22C55E" />
+            <ActivityIndicator size="small" color="#2563EB" />
           </View>
         ) : sqlRows.length === 0 ? (
           <Text style={styles.labEmpty}>No lab results saved yet.</Text>
@@ -298,7 +327,7 @@ export default function LeaderboardScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#FFF5E8",
+    backgroundColor: "#FFF7ED",
   },
   content: {
     padding: 20,
@@ -308,28 +337,56 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#FFF5E8",
+    backgroundColor: "#FFF7ED",
   },
 
-  titleRow: {
+  hero: {
+    backgroundColor: "#0F766E",
+    borderRadius: 24,
+    padding: 20,
+    marginBottom: 16,
+    gap: 8,
+  },
+  heroTopRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    marginBottom: 16,
+    justifyContent: "space-between",
+    marginBottom: 4,
   },
-  titleBlock: {
-    flex: 1,
-    gap: 2,
+  heroIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "rgba(255,255,255,0.14)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.25)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  heroStatPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  heroStatText: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#0F766E",
   },
   title: {
     fontSize: 30,
     fontWeight: "800",
-    color: "#007C7A",
+    color: "#FFFFFF",
   },
   subtitle: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#64748B",
+    color: "rgba(255,255,255,0.82)",
+    lineHeight: 20,
   },
 
   // Time frame filter — full box, rectangular
@@ -345,22 +402,22 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     alignItems: "center",
     borderWidth: 1.5,
-    borderColor: "#FFF5E8",
+    borderColor: "#FFF7ED",
   },
   filterBtnActive: {
-    backgroundColor: "#F28C28",
-    borderColor: "#F28C28",
+    backgroundColor: "#F97316",
+    borderColor: "#F97316",
   },
   filterBtnText: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#007C7A",
+    color: "#0F766E",
   },
   filterBtnTextActive: { color: "#FFFFFF" },
 
   // Your rank spotlight (rank > 3)
   yourSpotlight: {
-    backgroundColor: "#FFF4EC",
+    backgroundColor: "#FFEDD5",
     borderRadius: 16,
     padding: 16,
     flexDirection: "row",
@@ -368,34 +425,40 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 16,
     borderWidth: 2,
-    borderColor: "#F28C28",
+    borderColor: "#F97316",
   },
   yourSpotlightLabel: {
     fontSize: 11,
     fontWeight: "800",
-    color: "#F28C28",
+    color: "#F97316",
     letterSpacing: 1,
   },
   yourSpotlightRank: {
     fontSize: 28,
     fontWeight: "800",
-    color: "#007C7A",
+    color: "#0F766E",
   },
   yourSpotlightPoints: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#F28C28",
+    color: "#F97316",
   },
 
   // Podium
   podiumWrapper: { marginBottom: 20 },
+  sectionHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+    marginBottom: 10,
+    marginTop: 4,
+  },
   podiumLabel: {
     fontSize: 13,
     fontWeight: "800",
-    color: "#94A3B8",
+    color: "#0F766E",
     textTransform: "uppercase",
     letterSpacing: 1,
-    marginBottom: 14,
   },
   podiumRow: {
     flexDirection: "row",
@@ -420,7 +483,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
-    borderColor: "#FFF5E8",
+    borderColor: "#FFF7ED",
     borderStyle: "dashed",
   },
   podiumEmptyText: { fontSize: 24, color: "#94A3B8" },
@@ -431,7 +494,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.3)",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 2,
+    marginBottom: 4,
   },
   podiumRankText: {
     fontSize: 11,
@@ -453,7 +516,7 @@ const styles = StyleSheet.create({
   },
   youBubble: {
     alignSelf: "center",
-    backgroundColor: "#007C7A",
+    backgroundColor: "#0F766E",
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 8,
@@ -471,7 +534,7 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 20,
     fontWeight: "800",
-    color: "#007C7A",
+    color: "#0F766E",
     marginBottom: 6,
   },
   emptySubtitle: {
@@ -484,10 +547,8 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 11,
     fontWeight: "800",
-    color: "#94A3B8",
+    color: "#0F766E",
     letterSpacing: 1,
-    marginBottom: 10,
-    marginTop: 4,
   },
   row: {
     flexDirection: "row",
@@ -497,27 +558,27 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: "#FFF5E8",
+    borderColor: "#FFF7ED",
   },
   rowYou: {
-    backgroundColor: "#FFF4EC",
+    backgroundColor: "#FFEDD5",
     borderWidth: 2,
-    borderColor: "#F28C28",
+    borderColor: "#F97316",
   },
   rowRank: { width: 44, alignItems: "center" },
   rowRankText: { fontSize: 16, fontWeight: "800", color: "#94A3B8" },
-  rowRankTextYou: { color: "#F28C28" },
+  rowRankTextYou: { color: "#F97316" },
   rowInfo: { flex: 1, marginLeft: 10 },
-  rowName: { fontSize: 15, fontWeight: "700", color: "#007C7A" },
-  rowNameYou: { color: "#007C7A", fontWeight: "800" },
+  rowName: { fontSize: 15, fontWeight: "700", color: "#0F766E" },
+  rowNameYou: { color: "#0F766E", fontWeight: "800" },
   rowId: { fontSize: 11, color: "#94A3B8", marginTop: 2 },
   rowRight: { alignItems: "flex-end" },
-  rowXP: { fontSize: 18, fontWeight: "800", color: "#F28C28" },
+  rowXP: { fontSize: 18, fontWeight: "800", color: "#F97316" },
   rowXPLabel: { fontSize: 10, color: "#94A3B8" },
 
   // Your team card (when in top 3)
   yourCard: {
-    backgroundColor: "#007C7A",
+    backgroundColor: "#0F766E",
     borderRadius: 20,
     padding: 20,
     marginTop: 16,
@@ -554,19 +615,41 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.3)",
   },
 
-  // Secondary QB SQLite section — visually separated from XP podium
   labSectionWrap: {
     marginTop: 28,
-    paddingTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: "#E2E8F0",
+    padding: 16,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#FED7AA",
     gap: 10,
+  },
+  labHeaderRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+  },
+  labHeaderIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "#EFF6FF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  labHeaderText: {
+    flex: 1,
+    gap: 2,
+  },
+  labTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#0F766E",
   },
   labSectionHint: {
     fontSize: 13,
     color: "#64748B",
     lineHeight: 18,
-    marginBottom: 4,
   },
   labEmpty: {
     fontSize: 14,

@@ -165,7 +165,7 @@ export function VideoFrameAnalyzer({
                 setCurrentTime(value);
               }
             }}
-            minimumTrackTintColor="#2F80ED"
+            minimumTrackTintColor="#2563EB"
             maximumTrackTintColor="#334155"
           />
           <Text style={styles.timeText}>{formatTime(currentTime)}</Text>
@@ -316,7 +316,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "#2F80ED",
+    backgroundColor: "#2563EB",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    backgroundColor: "#3B82F6",
+    backgroundColor: "#2563EB",
     borderRadius: 8,
   },
   stepButtonText: { color: "#FFF", fontSize: 12, fontWeight: "600" },
@@ -352,7 +352,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 4,
   },
-  markBadgeComplete: { backgroundColor: "#2F80ED" },
+  markBadgeComplete: { backgroundColor: "#2563EB" },
   markBadgeText: { color: "#FFF", fontSize: 11, fontWeight: "600" },
   actionButtons: { flexDirection: "row", gap: 12 },
   markButton: {
@@ -360,7 +360,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     gap: 6,
-    backgroundColor: "#2F80ED",
+    backgroundColor: "#2563EB",
     paddingVertical: 12,
     borderRadius: 10,
     alignItems: "center",
@@ -392,7 +392,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: "#2F80ED",
+    backgroundColor: "#2563EB",
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: "center",

@@ -1,3 +1,4 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { getLabRecordingActivityById } from "@/src/data/labRecordingCatalog";
 import { useTeam } from "@/src/context/TeamContext";
 import { insertActivityResult } from "@/src/services/resultDb";
@@ -111,8 +112,8 @@ export default function RecordResultScreen() {
   if (teamLoading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#2563eb" />
-        <Text style={styles.muted}>Loading team…</Text>
+        <ActivityIndicator size="large" color="#2563EB" />
+        <Text style={styles.muted}>Loading team...</Text>
       </View>
     );
   }
@@ -150,51 +151,71 @@ export default function RecordResultScreen() {
       contentContainerStyle={styles.container}
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={styles.hint}>{challenge.measurementLabel}</Text>
+      <View style={styles.hero}>
+        <View style={styles.heroIcon}>
+          <Ionicons name="create-outline" size={30} color="#FED7AA" />
+        </View>
+        <Text style={styles.heroTitle}>Record result</Text>
+        <Text style={styles.hint}>{challenge.measurementLabel}</Text>
+      </View>
+
       <View style={styles.teamCard}>
-        <Text style={styles.teamLabel}>Team</Text>
+        <View style={styles.teamLabelRow}>
+          <Ionicons name="people-outline" size={16} color="#0F766E" />
+          <Text style={styles.teamLabel}>Team</Text>
+        </View>
         <Text style={styles.teamName}>{team.teamName}</Text>
         <Text style={styles.teamMeta}>ID: {team.discriminator}</Text>
       </View>
+
       <View style={styles.field}>
         <Text style={styles.label}>Score</Text>
         <TextInput
           style={styles.input}
           keyboardType="number-pad"
           placeholder="Whole number"
+          placeholderTextColor="#94A3B8"
           value={scoreText}
           onChangeText={setScoreText}
         />
       </View>
+
       <View style={styles.field}>
         <Text style={styles.label}>Sensor value (optional)</Text>
         <TextInput
           style={styles.input}
           keyboardType="decimal-pad"
           placeholder="Leave blank if not used"
+          placeholderTextColor="#94A3B8"
           value={sensorText}
           onChangeText={setSensorText}
         />
       </View>
+
       <View style={styles.field}>
         <Text style={styles.label}>Notes (optional)</Text>
         <TextInput
           style={[styles.input, styles.notes]}
           multiline
           placeholder="Observations, conditions, etc."
+          placeholderTextColor="#94A3B8"
           value={notes}
           onChangeText={setNotes}
         />
       </View>
+
       <Pressable
         style={[styles.button, busy && styles.buttonDisabled]}
         onPress={onSave}
         disabled={busy}
       >
         {busy ? (
-          <ActivityIndicator color="#fff" />
+          <ActivityIndicator color="#FFFFFF" />
         ) : (
-          <Text style={styles.buttonLabel}>Save result</Text>
+          <>
+            <Ionicons name="save-outline" size={17} color="#FFFFFF" />
+            <Text style={styles.buttonLabel}>Save result</Text>
+          </>
         )}
       </Pressable>
     </ScrollView>
@@ -203,10 +224,12 @@ export default function RecordResultScreen() {
 
 const styles = StyleSheet.create({
   container: {
+    flexGrow: 1,
     padding: 20,
-    paddingTop: 16,
+    paddingTop: 24,
     gap: 14,
     paddingBottom: 32,
+    backgroundColor: "#FFF7ED",
   },
   centered: {
     flex: 1,
@@ -214,31 +237,57 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     gap: 8,
+    backgroundColor: "#FFF7ED",
+  },
+  hero: {
+    backgroundColor: "#0F766E",
+    borderRadius: 24,
+    padding: 20,
+    gap: 8,
+  },
+  heroIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "rgba(255,255,255,0.14)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.25)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  heroTitle: {
+    fontSize: 25,
+    fontWeight: "800",
+    color: "#FFFFFF",
   },
   hint: {
     fontSize: 15,
-    color: "#475569",
+    color: "rgba(255,255,255,0.82)",
     lineHeight: 21,
-    marginBottom: 4,
   },
   teamCard: {
     borderWidth: 1,
-    borderColor: "#bbf7d0",
-    borderRadius: 10,
-    padding: 12,
-    backgroundColor: "#f0fdf4",
-    gap: 4,
+    borderColor: "#FED7AA",
+    borderRadius: 18,
+    padding: 16,
+    backgroundColor: "#FFFFFF",
+    gap: 6,
+  },
+  teamLabelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
   },
   teamLabel: {
     fontSize: 12,
-    fontWeight: "700",
-    color: "#166534",
+    fontWeight: "800",
+    color: "#0F766E",
     textTransform: "uppercase",
   },
   teamName: {
     fontSize: 17,
-    fontWeight: "700",
-    color: "#0f172a",
+    fontWeight: "800",
+    color: "#0F172A",
   },
   teamMeta: {
     fontSize: 13,
@@ -249,17 +298,18 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    fontWeight: "600",
-    color: "#0f172a",
+    fontWeight: "800",
+    color: "#0F766E",
   },
   input: {
     borderWidth: 1,
-    borderColor: "#cbd5e1",
-    borderRadius: 8,
+    borderColor: "#FED7AA",
+    borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 16,
-    backgroundColor: "#fff",
+    backgroundColor: "#FFFFFF",
+    color: "#0F172A",
   },
   notes: {
     minHeight: 96,
@@ -267,26 +317,30 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: 8,
-    backgroundColor: "#2563eb",
+    backgroundColor: "#F97316",
     paddingVertical: 14,
-    borderRadius: 10,
+    borderRadius: 14,
     alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 6,
   },
   buttonDisabled: {
     opacity: 0.65,
   },
   buttonLabel: {
-    color: "#fff",
-    fontWeight: "600",
+    color: "#FFFFFF",
+    fontWeight: "800",
     fontSize: 16,
   },
   error: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#b91c1c",
+    fontWeight: "700",
+    color: "#DC2626",
   },
   muted: {
     fontSize: 14,
-    color: "#64748b",
+    color: "#64748B",
+    textAlign: "center",
   },
 });

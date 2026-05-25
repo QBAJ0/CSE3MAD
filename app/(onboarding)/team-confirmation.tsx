@@ -13,7 +13,7 @@ import {
 import { useTeam } from "../../src/context/TeamContext";
 
 const AVATAR_COLORS = [
-  "#007C7A", "#2F80ED", "#F6D7A8", "#F28C28", "#007C7A", "#2F80ED",
+  "#0F766E", "#2563EB", "#FED7AA", "#F97316", "#0F766E", "#2563EB",
 ];
 
 export default function TeamConfirmationScreen() {
@@ -31,7 +31,7 @@ export default function TeamConfirmationScreen() {
         </View>
 
         <View style={styles.successBadge}>
-          <Ionicons name="checkmark-circle" size={14} color="#007C7A" />
+          <Ionicons name="checkmark-circle" size={14} color="#0F766E" />
           <Text style={styles.successBadgeText}>Team Ready!</Text>
         </View>
 
@@ -78,7 +78,7 @@ export default function TeamConfirmationScreen() {
 
       {/* ── Tip box ── */}
       <View style={styles.tipBox}>
-        <Ionicons name="bulb-outline" size={15} color="#2F80ED" />
+        <Ionicons name="bulb-outline" size={15} color="#2563EB" />
         <Text style={styles.tipText}>
           Complete challenges to earn XP and climb the leaderboard!
         </Text>
@@ -102,7 +102,7 @@ export default function TeamConfirmationScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#FFF5E8",
+    backgroundColor: "#FFF7ED",
   },
   content: {
     padding: 24,
@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: "#F28C28",
+    backgroundColor: "#F97316",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 16,
@@ -128,9 +128,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "#F6D7A8",
+    backgroundColor: "#FED7AA",
     borderWidth: 1.5,
-    borderColor: "#F28C28",
+    borderColor: "#F97316",
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 12,
@@ -139,12 +139,12 @@ const styles = StyleSheet.create({
   successBadgeText: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#007C7A",
+    color: "#0F766E",
   },
   title: {
     fontSize: 28,
     fontWeight: "800",
-    color: "#007C7A",
+    color: "#0F766E",
     marginBottom: 6,
     textAlign: "center",
   },
@@ -163,18 +163,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 20,
     borderWidth: 2,
-    borderColor: "#007C7A",
+    borderColor: "#0F766E",
   },
   teamName: {
     fontSize: 22,
     fontWeight: "800",
-    color: "#007C7A",
+    color: "#0F766E",
     marginBottom: 4,
   },
   teamId: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#F28C28",
+    color: "#F97316",
   },
 
   memberSection: {
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 12,
     borderWidth: 1,
-    borderColor: "#FFF5E8",
+    borderColor: "#FFF7ED",
   },
   memberAvatar: {
     width: 36,
@@ -217,7 +217,7 @@ const styles = StyleSheet.create({
   memberName: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#007C7A",
+    color: "#0F766E",
   },
   memberGrade: {
     fontSize: 11,
@@ -235,18 +235,18 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 28,
     borderWidth: 1.5,
-    borderColor: "#2F80ED",
+    borderColor: "#2563EB",
   },
   tipText: {
     flex: 1,
     fontSize: 13,
-    color: "#007C7A",
+    color: "#0F766E",
     lineHeight: 19,
   },
 
   goBtn: {
     width: "100%",
-    backgroundColor: "#F28C28",
+    backgroundColor: "#F97316",
     paddingVertical: 18,
     borderRadius: 16,
     alignItems: "center",

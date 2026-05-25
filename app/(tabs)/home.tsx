@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { AdMobBanner } from "../../src/components/AdMobBanner";
 import { useTeam } from "../../src/context/TeamContext";
 import { CHALLENGES } from "../../src/data/challenges";
 import { useActivityCompletion } from "../../src/hooks/useActivityCompletion";
@@ -17,7 +18,7 @@ import { useStreakReminder } from "../../src/hooks/useStreakReminder";
 const XP_PER_LEVEL = 500;
 
 const AVATAR_COLORS = [
-  "#007C7A", "#2F80ED", "#F6D7A8", "#F28C28", "#007C7A", "#2F80ED",
+  "#0F766E", "#2563EB", "#FED7AA", "#F97316", "#0F766E", "#2563EB",
 ];
 
 type IoniconName = React.ComponentProps<typeof Ionicons>["name"];
@@ -30,7 +31,7 @@ export default function HomeScreen() {
   const dataLoading = statsLoading || activityLoading;
 
   const nextChallenge = CHALLENGES.find((c) => !completedIds.has(c.id));
-  const allDone = completedCount >= CHALLENGES.length;
+  const allDone = completedIds.size >= CHALLENGES.length;
 
   const level = Math.floor(totalPoints / XP_PER_LEVEL) + 1;
   const xpIntoLevel = totalPoints % XP_PER_LEVEL;
@@ -45,7 +46,7 @@ export default function HomeScreen() {
       {/* ── Header ── */}
       <View style={styles.header}>
         <View style={styles.levelBadge}>
-          <Ionicons name="star" size={11} color="#F6D7A8" />
+          <Ionicons name="star" size={11} color="#FED7AA" />
           <Text style={styles.levelBadgeText}>Level {level}</Text>
         </View>
 
@@ -55,14 +56,14 @@ export default function HomeScreen() {
         <Text style={styles.subGreeting}>
           {allDone
             ? "You've conquered all 7 challenges!"
-            : `${CHALLENGES.length - completedCount} challenge${
-                CHALLENGES.length - completedCount !== 1 ? "s" : ""
+            : `${CHALLENGES.length - completedIds.size} challenge${
+                CHALLENGES.length - completedIds.size !== 1 ? "s" : ""
               } left to conquer`}
         </Text>
 
         {streak > 0 && (
           <View style={styles.streakRow}>
-            <Ionicons name="flame" size={14} color="#F6D7A8" />
+            <Ionicons name="flame" size={14} color="#FED7AA" />
             <Text style={styles.streakText}>{streak}-day streak</Text>
           </View>
         )}
@@ -85,26 +86,26 @@ export default function HomeScreen() {
       <View style={styles.statsRow}>
         <StatCard
           iconName="checkmark-circle"
-          iconColor="#2F80ED"
-          value={`${completedCount}/${CHALLENGES.length}`}
+          iconColor="#2563EB"
+          value={`${completedIds.size}/${CHALLENGES.length}`}
           label="Challenges"
-          valueColor="#2F80ED"
+          valueColor="#2563EB"
           loading={dataLoading}
         />
         <StatCard
           iconName="flash"
-          iconColor="#F28C28"
+          iconColor="#F97316"
           value={String(totalPoints)}
           label="Total XP"
-          valueColor="#F28C28"
+          valueColor="#F97316"
           loading={dataLoading}
         />
         <StatCard
           iconName="people"
-          iconColor="#F6D7A8"
+          iconColor="#FED7AA"
           value={String(team?.members.length ?? 0)}
           label="Members"
-          valueColor="#007C7A"
+          valueColor="#0F766E"
           loading={dataLoading}
         />
       </View>
@@ -119,7 +120,7 @@ export default function HomeScreen() {
             <View style={styles.reminderMiddle}>
               <View style={styles.reminderTitleRow}>
                 <Text style={styles.reminderTitle}>Streak at Risk!</Text>
-                <Ionicons name="flame" size={16} color="#F6D7A8" />
+                <Ionicons name="flame" size={16} color="#FED7AA" />
               </View>
               <Text style={styles.reminderText}>
                 Complete a challenge today to keep your {reminderStreak}-day streak alive.
@@ -168,7 +169,7 @@ export default function HomeScreen() {
       {/* ── All done celebration ── */}
       {allDone && (
         <View style={styles.allDoneCard}>
-          <Ionicons name="trophy" size={40} color="#F28C28" />
+          <Ionicons name="trophy" size={40} color="#F97316" />
           <Text style={styles.allDoneTitle}>All challenges complete!</Text>
           <Text style={styles.allDoneSub}>
             Your team is unstoppable. Check the leaderboard!
@@ -179,7 +180,7 @@ export default function HomeScreen() {
       {/* ── Your squad ── */}
       <View style={styles.squadCard}>
         <View style={styles.squadTitleRow}>
-          <Ionicons name="people" size={16} color="#007C7A" />
+          <Ionicons name="people" size={16} color="#0F766E" />
           <Text style={styles.squadTitle}>Your Squad</Text>
         </View>
         <View style={styles.memberList}>
@@ -224,6 +225,8 @@ export default function HomeScreen() {
           onPress={() => router.navigate("/(tabs)/profile")}
         />
       </View>
+
+      <AdMobBanner />
     </ScrollView>
   );
 }
@@ -267,7 +270,7 @@ function QuickBtn({
 }) {
   return (
     <TouchableOpacity style={quickStyles.btn} onPress={onPress} activeOpacity={0.8}>
-      <Ionicons name={iconName} size={24} color="#007C7A" />
+      <Ionicons name={iconName} size={24} color="#0F766E" />
       <Text style={quickStyles.label}>{label}</Text>
     </TouchableOpacity>
   );
@@ -277,14 +280,14 @@ function QuickBtn({
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#FFF5E8",
+    backgroundColor: "#FFF7ED",
   },
   content: {
     paddingBottom: 40,
   },
 
   header: {
-    backgroundColor: "#007C7A",
+    backgroundColor: "#0F766E",
     paddingTop: 58,
     paddingBottom: 24,
     paddingHorizontal: 20,
@@ -329,7 +332,7 @@ const styles = StyleSheet.create({
   streakText: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#F6D7A8",
+    color: "#FED7AA",
   },
 
   xpSection: {
@@ -354,7 +357,7 @@ const styles = StyleSheet.create({
   },
   xpFill: {
     height: "100%",
-    backgroundColor: "#2F80ED",
+    backgroundColor: "#2563EB",
     borderRadius: 999,
   },
 
@@ -369,7 +372,7 @@ const styles = StyleSheet.create({
   nextCard: {
     marginHorizontal: 16,
     marginBottom: 16,
-    backgroundColor: "#F28C28",
+    backgroundColor: "#F97316",
     borderRadius: 20,
     overflow: "hidden",
   },
@@ -473,18 +476,18 @@ const styles = StyleSheet.create({
   allDoneCard: {
     marginHorizontal: 16,
     marginBottom: 16,
-    backgroundColor: "#FFF5E8",
+    backgroundColor: "#FFF7ED",
     borderRadius: 20,
     padding: 22,
     alignItems: "center",
     gap: 8,
     borderWidth: 2,
-    borderColor: "#007C7A",
+    borderColor: "#0F766E",
   },
   allDoneTitle: {
     fontSize: 18,
     fontWeight: "800",
-    color: "#007C7A",
+    color: "#0F766E",
   },
   allDoneSub: {
     fontSize: 13,
@@ -499,7 +502,7 @@ const styles = StyleSheet.create({
     padding: 20,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: "#FFF5E8",
+    borderColor: "#FFF7ED",
   },
   squadTitleRow: {
     flexDirection: "row",
@@ -510,7 +513,7 @@ const styles = StyleSheet.create({
   squadTitle: {
     fontSize: 16,
     fontWeight: "800",
-    color: "#007C7A",
+    color: "#0F766E",
   },
   memberList: {
     flexDirection: "row",
@@ -537,7 +540,7 @@ const styles = StyleSheet.create({
   memberName: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#007C7A",
+    color: "#0F766E",
     maxWidth: 60,
     textAlign: "center",
   },
@@ -564,7 +567,7 @@ const statStyles = StyleSheet.create({
     alignItems: "center",
     gap: 4,
     borderWidth: 1,
-    borderColor: "#FFF5E8",
+    borderColor: "#FFF7ED",
   },
   value: {
     fontSize: 22,
@@ -586,11 +589,11 @@ const quickStyles = StyleSheet.create({
     alignItems: "center",
     gap: 4,
     borderWidth: 1,
-    borderColor: "#FFF5E8",
+    borderColor: "#FFF7ED",
   },
   label: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#007C7A",
+    color: "#0F766E",
   },
 });

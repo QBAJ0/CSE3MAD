@@ -13,8 +13,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { ResultLocationMap } from "@/src/components/ResultLocationMap";
 import { CommentsSection } from "../../../src/components/challenge/CommentsSection";
-import { GPSMapView } from "../../../src/components/challenge/GPSMapView";
 import { SoundMap } from "../../../src/components/challenge/SoundMap";
 import { getChallengeById } from "../../../src/data/challenges";
 import { parseSoundMapPoints } from "../../../src/utils/soundMap";
@@ -88,7 +88,7 @@ export default function ActivityDetailsScreen() {
   if (loading) {
     return (
       <View style={styles.container}>
-        <ActivityIndicator size="large" color="#2F80ED" />
+        <ActivityIndicator size="large" color="#2563EB" />
       </View>
     );
   }
@@ -100,7 +100,7 @@ export default function ActivityDetailsScreen() {
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <Ionicons name="chevron-back" size={24} color="#12343B" />
+          <Ionicons name="chevron-back" size={24} color="#0F172A" />
           <Text style={styles.backButtonText}>Back</Text>
         </TouchableOpacity>
 
@@ -130,20 +130,6 @@ export default function ActivityDetailsScreen() {
   const hasGPS = Boolean(activity.location);
 
   const soundMapPoints = parseSoundMapPoints(challenge.id, activity.prototypes);
-  const movementAnalysis =
-    challenge.id === 5
-      ? activity.prototypes
-          .map((p, index) => ({
-            label: String(p.measurements.movementType ?? `Trial ${index + 1}`),
-            smoothness: parseFloat(String(p.measurements.smoothness ?? "")),
-            peakRotation: parseFloat(
-              String(p.measurements.smoothnessPeakRotation ?? ""),
-            ),
-          }))
-          .filter(
-            (item) => !isNaN(item.smoothness) || !isNaN(item.peakRotation),
-          )
-      : [];
 
   return (
     <ScrollView
@@ -156,7 +142,7 @@ export default function ActivityDetailsScreen() {
         style={styles.backButton}
         onPress={() => router.back()}
       >
-        <Ionicons name="chevron-back" size={24} color="#12343B" />
+        <Ionicons name="chevron-back" size={24} color="#0F172A" />
         <Text style={styles.backButtonText}>Back</Text>
       </TouchableOpacity>
 
@@ -217,7 +203,7 @@ export default function ActivityDetailsScreen() {
 
           {hasGPS && (
             <View style={styles.gpsBadge}>
-              <Ionicons name="location" size={12} color="#007C7A" />
+              <Ionicons name="location" size={12} color="#0F766E" />
               <Text style={styles.gpsBadgeText}>GPS</Text>
             </View>
           )}
@@ -342,50 +328,6 @@ export default function ActivityDetailsScreen() {
         )}
       </View>
 
-      {movementAnalysis.length > 0 && (
-        <View style={styles.sectionCard}>
-          <TouchableOpacity
-            style={styles.sectionHeader}
-            onPress={() => toggleSection("movement")}
-            activeOpacity={0.7}
-          >
-            <View style={styles.sectionTitleRow}>
-              <Ionicons name="sync-outline" size={18} color="#2F80ED" />
-              <Text style={styles.sectionTitle}>Movement Control</Text>
-            </View>
-            <Ionicons
-              name={
-                expandedSections.has("movement")
-                  ? "chevron-up"
-                  : "chevron-down"
-              }
-              size={20}
-              color="#64748B"
-            />
-          </TouchableOpacity>
-
-          {expandedSections.has("movement") && (
-            <View style={styles.sectionContent}>
-              {movementAnalysis.map((movement, index) => (
-                <View key={index} style={styles.measurementGroup}>
-                  <Text style={styles.measurementName}>{movement.label}</Text>
-                  {!isNaN(movement.smoothness) && (
-                    <Text style={styles.measurementText}>
-                      Smoothness: {movement.smoothness.toFixed(0)}%
-                    </Text>
-                  )}
-                  {!isNaN(movement.peakRotation) && (
-                    <Text style={styles.measurementText}>
-                      Peak rotation: {movement.peakRotation.toFixed(2)} rad/s
-                    </Text>
-                  )}
-                </View>
-              ))}
-            </View>
-          )}
-        </View>
-      )}
-
       {/* GPS Section */}
       {hasGPS && (
         <View style={styles.sectionCard}>
@@ -395,7 +337,7 @@ export default function ActivityDetailsScreen() {
             activeOpacity={0.7}
           >
             <View style={styles.sectionTitleRow}>
-              <Ionicons name="location-outline" size={18} color="#007C7A" />
+              <Ionicons name="location-outline" size={18} color="#0F766E" />
               <Text style={styles.sectionTitle}>Location</Text>
             </View>
             <Ionicons
@@ -419,7 +361,7 @@ export default function ActivityDetailsScreen() {
                 </Text>
               </View>
 
-              <GPSMapView
+              <ResultLocationMap
                 lat={activity.location.lat}
                 lng={activity.location.lng}
               />
@@ -437,7 +379,7 @@ export default function ActivityDetailsScreen() {
             activeOpacity={0.7}
           >
             <View style={styles.sectionTitleRow}>
-              <Ionicons name="volume-high-outline" size={18} color="#007C7A" />
+              <Ionicons name="volume-high-outline" size={18} color="#0F766E" />
               <Text style={styles.sectionTitle}>Sound Pollution Zone Map</Text>
             </View>
             <Ionicons
@@ -494,7 +436,7 @@ export default function ActivityDetailsScreen() {
           activeOpacity={0.7}
         >
           <View style={styles.sectionTitleRow}>
-            <Ionicons name="checkmark-circle-outline" size={18} color="#2F80ED" />
+            <Ionicons name="checkmark-circle-outline" size={18} color="#2563EB" />
             <Text style={styles.sectionTitle}>Summary</Text>
           </View>
           <Ionicons
@@ -590,7 +532,7 @@ const styles = StyleSheet.create({
   backButtonText: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#12343B",
+    color: "#0F172A",
   },
 
   errorContainer: {
@@ -606,7 +548,7 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    backgroundColor: "#2F80ED",
+    backgroundColor: "#2563EB",
     paddingHorizontal: 20,
     paddingVertical: 24,
     alignItems: "center",
@@ -702,7 +644,7 @@ const styles = StyleSheet.create({
   gpsBadge: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#007C7A",
+    backgroundColor: "#0F766E",
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 999,
@@ -744,7 +686,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#12343B",
+    color: "#0F172A",
   },
 
   sectionContent: {
@@ -778,7 +720,7 @@ const styles = StyleSheet.create({
   measurementName: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#12343B",
+    color: "#0F172A",
   },
 
   measurementUnit: {
@@ -825,7 +767,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 12,
     textAlign: "center",
-    backgroundColor: "#F0F9FF",
+    backgroundColor: "#EFF6FF",
     borderRadius: 8,
   },
 
@@ -843,7 +785,7 @@ const styles = StyleSheet.create({
   },
 
   gpsCoordinates: {
-    backgroundColor: "#EEF5FF",
+    backgroundColor: "#EFF6FF",
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -853,14 +795,14 @@ const styles = StyleSheet.create({
   gpsLabel: {
     fontSize: 11,
     fontWeight: "600",
-    color: "#007C7A",
+    color: "#0F766E",
     marginBottom: 2,
   },
 
   gpsValue: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#007C7A",
+    color: "#0F766E",
     marginBottom: 8,
   },
 
@@ -902,7 +844,7 @@ const styles = StyleSheet.create({
   summaryValue: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#12343B",
+    color: "#0F172A",
   },
 
   xpValue: {

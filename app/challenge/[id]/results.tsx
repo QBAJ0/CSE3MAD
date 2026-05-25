@@ -14,8 +14,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { ResultLocationMap } from "@/src/components/ResultLocationMap";
 import { ChallengeTabBar } from "../../../src/components/challenge/ChallengeTabBar";
-import { GPSMapView } from "../../../src/components/challenge/GPSMapView";
 import { SoundMap } from "../../../src/components/challenge/SoundMap";
 import { parseSoundMapPoints } from "../../../src/utils/soundMap";
 import { checkNewBadges } from "../../../src/config/badges";
@@ -24,29 +24,18 @@ import { useActivity } from "../../../src/context/ActivityContext";
 import { useTeam } from "../../../src/context/TeamContext";
 import { getChallengeById } from "../../../src/data/challenges";
 import {
-  buildChallengePointsBreakdown,
-  buildPointsInputFromDraft,
-} from "../../../src/services/challengeScoring";
-import {
   ParachuteDerived,
+  deriveFanForce,
   deriveParachute,
   gForceRiskCategory,
 } from "../../../src/services/physics";
+import {
+  Challenge,
+  DifficultyMode,
+  Measurement,
+  Prototype,
+} from "../../../src/types";
 import { storage } from "../../../src/utils/storage";
-
-const MATERIAL_STIFFNESS: Record<string, number> = {
-  "Thin printer paper": 0.05,
-  "Standard card stock": 0.2,
-  "Thin cardboard": 0.5,
-  "Corrugated cardboard": 2.5,
-};
-
-function deriveFanForce(material: string, bendAngleDeg: number): number | null {
-  const k = MATERIAL_STIFFNESS[material];
-  if (!k || isNaN(bendAngleDeg) || bendAngleDeg <= 0) return null;
-  const thetaRad = (bendAngleDeg * Math.PI) / 180;
-  return k * thetaRad;
-}
 
 const G_FORCE_LABELS: Record<
   "none" | "minor" | "serious" | "severe" | "lifeThreatening",
@@ -58,6 +47,170 @@ const G_FORCE_LABELS: Record<
   severe: "High injury risk",
   lifeThreatening: "Life-threatening",
 };
+
+type BreakdownItem = { label: string; value: string; isPenalty?: boolean };
+
+const EVIDENCE_RECORDERS = new Set<Measurement["recorder"]>([
+  "gps",
+  "video",
+  "videoAnalyzer",
+  "slowMotion",
+  "photo",
+]);
+
+const hasMeasurementValue = (value: unknown) =>
+  value !== undefined && value !== null && String(value).trim().length > 0;
+
+const getVideoEvidenceUri = (prototype: Prototype): string | null => {
+  const entry = Object.entries(prototype.measurements).find(
+    ([key, value]) =>
+      key.toLowerCase().includes("video") && hasMeasurementValue(value),
+  );
+  return entry ? String(entry[1]) : null;
+};
+
+const getActiveMeasurements = (
+  challenge: Challenge | undefined,
+  difficulty: DifficultyMode,
+) =>
+  challenge?.measurements.filter(
+    (measurement) =>
+      !measurement.difficulty || measurement.difficulty === difficulty,
+  ) ?? [];
+
+const hasCompleteRequiredData = (
+  challenge: Challenge | undefined,
+  prototypes: Prototype[],
+  difficulty: DifficultyMode,
+) => {
+  const requiredMeasurements = getActiveMeasurements(challenge, difficulty).filter(
+    (measurement) => !EVIDENCE_RECORDERS.has(measurement.recorder) && !measurement.optional,
+  );
+
+  if (prototypes.length === 0 || requiredMeasurements.length === 0) {
+    return false;
+  }
+
+  return prototypes.every((prototype) =>
+    requiredMeasurements.every((measurement) =>
+      hasMeasurementValue(prototype.measurements[measurement.key]),
+    ),
+  );
+};
+
+const hasEvidenceAttached = (
+  challenge: Challenge | undefined,
+  prototypes: Prototype[],
+  difficulty: DifficultyMode,
+  hasLocation: boolean,
+) => {
+  if (hasLocation) return true;
+
+  const evidenceKeys = getActiveMeasurements(challenge, difficulty)
+    .filter((measurement) => EVIDENCE_RECORDERS.has(measurement.recorder))
+    .map((measurement) => measurement.key);
+
+  return prototypes.some((prototype) =>
+    evidenceKeys.some((key) => hasMeasurementValue(prototype.measurements[key])),
+  );
+};
+
+const hasTeamworkEvidence = (prototypes: Prototype[]) =>
+  prototypes.some((prototype) => {
+    const rawTeamResults = prototype.measurements.teamResults;
+    if (!hasMeasurementValue(rawTeamResults)) return false;
+
+    if (typeof rawTeamResults !== "string") return true;
+
+    try {
+      const parsed = JSON.parse(rawTeamResults);
+      return Array.isArray(parsed) && parsed.length > 1;
+    } catch {
+      return true;
+    }
+  });
+
+function buildPointsBreakdown(
+  prototypeCount: number,
+  predictionChars: number,
+  reflectionChars: number,
+  hasCompleteData: boolean,
+  hasEvidence: boolean,
+  hasTeamwork: boolean,
+  difficulty: string,
+  hasTimeExpired: boolean,
+): { items: BreakdownItem[]; total: number } {
+  const items: BreakdownItem[] = [];
+  let pts: number = SCORING.BASE_XP;
+  items.push({ label: "Base completion", value: `+${SCORING.BASE_XP}` });
+
+  if (predictionChars >= GAMIFICATION.PREDICTION_MIN_CHARS) {
+    pts += SCORING.PREDICTION_BONUS;
+    items.push({
+      label: "Prediction made",
+      value: `+${SCORING.PREDICTION_BONUS}`,
+    });
+  }
+
+  if (prototypeCount >= 2) {
+    const bonus =
+      SCORING.MULTI_DESIGN_2 + (prototypeCount >= 3 ? SCORING.MULTI_DESIGN_3 : 0);
+    pts += bonus;
+    items.push({ label: `Multiple designs (×${prototypeCount})`, value: `+${bonus}` });
+  }
+
+  if (hasCompleteData) {
+    pts += SCORING.DATA_QUALITY;
+    items.push({
+      label: "Complete data set",
+      value: `+${SCORING.DATA_QUALITY}`,
+    });
+  }
+
+  if (reflectionChars > GAMIFICATION.REFLECTION_THRESHOLD_1) {
+    pts += SCORING.REFLECTION_BONUS_1;
+    items.push({
+      label: "Detailed observations",
+      value: `+${SCORING.REFLECTION_BONUS_1}`,
+    });
+  }
+
+  if (reflectionChars > GAMIFICATION.REFLECTION_THRESHOLD_2) {
+    pts += SCORING.REFLECTION_BONUS_2;
+    items.push({
+      label: "Strong reflection",
+      value: `+${SCORING.REFLECTION_BONUS_2}`,
+    });
+  }
+
+  if (hasEvidence) {
+    pts += SCORING.EVIDENCE_BONUS;
+    items.push({
+      label: "Evidence attached",
+      value: `+${SCORING.EVIDENCE_BONUS}`,
+    });
+  }
+
+  if (hasTeamwork) {
+    pts += SCORING.TEAMWORK_BONUS;
+    items.push({
+      label: "Teamwork evidence",
+      value: `+${SCORING.TEAMWORK_BONUS}`,
+    });
+  }
+
+  if (difficulty === "highSchool") {
+    pts = Math.floor(pts * SCORING.HIGH_SCHOOL_MULTIPLIER);
+    items.push({ label: "High school multiplier", value: "x1.3" });
+  }
+
+  if (hasTimeExpired) {
+    pts = Math.floor(pts * SCORING.TIME_PENALTY_MULTIPLIER);
+    items.push({ label: "Time penalty", value: "-20%", isPenalty: true });
+  }
+
+  return { items, total: pts };
+}
 
 export default function ResultsScreen() {
   const { id, timeExpired } = useLocalSearchParams<{
@@ -72,6 +225,7 @@ export default function ResultsScreen() {
   const [observations, setObservations] = useState<Record<number, string>>({});
   const [rating, setRating] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showAllQuestions, setShowAllQuestions] = useState(false);
 
   const hasTimeExpired = timeExpired === "true";
 
@@ -80,33 +234,52 @@ export default function ResultsScreen() {
     "Were your predictions correct? What was different?",
     "What would you change if you ran the experiment again?",
   ];
+  const visibleObservationQuestions = showAllQuestions
+    ? observationQuestions
+    : observationQuestions.slice(0, 3);
 
-  const combinedReflection = observationQuestions
+  const combinedReflection = visibleObservationQuestions
     .map((q, i) => `${q}\n${observations[i] ?? ""}`)
     .join("\n\n");
   const totalReflectionChars = combinedReflection.length;
 
   const scoringDifficulty = draft.difficulty ?? "primary";
-
-  const { items: breakdownItems, total: predictedPoints } = useMemo(() => {
-    const input = buildPointsInputFromDraft({
-      challengeId: challenge?.id ?? Number(id),
-      difficulty: scoringDifficulty,
-      prototypes: draft.prototypes,
-      reflectionChars: totalReflectionChars,
-      draftLocation: draft.location,
-      completedInTime: !hasTimeExpired,
-    });
-    return buildChallengePointsBreakdown(input);
-  }, [
-    challenge?.id,
-    id,
+  const hasCompleteData = hasCompleteRequiredData(
+    challenge,
     draft.prototypes,
-    draft.location,
-    totalReflectionChars,
     scoringDifficulty,
-    hasTimeExpired,
-  ]);
+  );
+  const hasEvidence = hasEvidenceAttached(
+    challenge,
+    draft.prototypes,
+    scoringDifficulty,
+    !!draft.location,
+  );
+  const hasTeamwork = hasTeamworkEvidence(draft.prototypes);
+
+  const { items: breakdownItems, total: predictedPoints } = useMemo(
+    () =>
+      buildPointsBreakdown(
+        draft.prototypes.length,
+        (draft.prediction ?? "").trim().length,
+        totalReflectionChars,
+        hasCompleteData,
+        hasEvidence,
+        hasTeamwork,
+        scoringDifficulty,
+        hasTimeExpired,
+      ),
+    [
+      draft.prototypes.length,
+      draft.prediction,
+      totalReflectionChars,
+      hasCompleteData,
+      hasEvidence,
+      hasTeamwork,
+      scoringDifficulty,
+      hasTimeExpired,
+    ],
+  );
 
   if (!challenge || !team) {
     return (
@@ -121,7 +294,7 @@ export default function ResultsScreen() {
     if (rating === 0) {
       blockers.push("Select a star rating (1–5 stars).");
     }
-    observationQuestions.forEach((_, i) => {
+    visibleObservationQuestions.forEach((_, i) => {
       const len = (observations[i] ?? "").trim().length;
       if (len < GAMIFICATION.OBSERVATION_MIN_CHARS) {
         blockers.push(
@@ -264,27 +437,26 @@ export default function ResultsScreen() {
             toyMassKg:
               parseFloat(String(p.measurements.toyMassKg ?? "")) || undefined,
             contactTimeSeconds:
-              parseFloat(String(p.measurements.contactTimeSeconds ?? "")) ||
+              parseFloat(
+                String(
+                  p.measurements.contactTimeSeconds ??
+                    p.measurements.contactTime ??
+                    "",
+                ),
+              ) ||
               undefined,
             bounced: String(p.measurements.bounced) === "Yes",
+            timeToMaxHeightSeconds:
+              parseFloat(
+                String(
+                  p.measurements.timeToMaxHeightSeconds ??
+                    p.measurements.timeToBouncePeak ??
+                    "",
+                ),
+              ) || undefined,
           }),
         )
       : null;
-
-  const movementAnalysis =
-    challenge.id === 5
-      ? draft.prototypes
-          .map((p, index) => ({
-            label: String(p.measurements.movementType ?? `Trial ${index + 1}`),
-            smoothness: parseFloat(String(p.measurements.smoothness ?? "")),
-            peakRotation: parseFloat(
-              String(p.measurements.smoothnessPeakRotation ?? ""),
-            ),
-          }))
-          .filter(
-            (item) => !isNaN(item.smoothness) || !isNaN(item.peakRotation),
-          )
-      : [];
 
   const tableKeys = challenge.measurements
     .filter(
@@ -300,7 +472,7 @@ export default function ResultsScreen() {
     )
     .slice(0, 3);
 
-  const hasVideoEvidence = draft.prototypes.some((p) => p.measurements.video);
+  const hasVideoEvidence = draft.prototypes.some((p) => getVideoEvidenceUri(p));
 
   const soundMapPoints = parseSoundMapPoints(challenge.id, draft.prototypes);
 
@@ -317,9 +489,9 @@ export default function ResultsScreen() {
 
       <View style={styles.header}>
         <View style={styles.headerIconCircle}>
-          <Ionicons name={challenge.icon as any} size={36} color="#2F80ED" />
+          <Ionicons name={challenge.icon as any} size={36} color="#2563EB" />
         </View>
-        <Text style={styles.headerTitle}>Reflect</Text>
+        <Text style={styles.headerTitle}>Step 3: Reflect</Text>
         <Text style={styles.headerSubtitle}>{challenge.title}</Text>
       </View>
 
@@ -335,8 +507,8 @@ export default function ResultsScreen() {
 
       <View style={styles.card}>
         <View style={styles.cardTitleRow}>
-          <Ionicons name="help-circle-outline" size={16} color="#12343B" />
-          <Text style={styles.cardTitle}>Your Prediction</Text>
+          <Ionicons name="help-circle-outline" size={16} color="#0F172A" />
+          <Text style={styles.cardTitle}>Prediction</Text>
         </View>
         <View style={styles.predictionBubble}>
           <Text style={styles.predictionText}>
@@ -348,7 +520,7 @@ export default function ResultsScreen() {
       {draft.prototypes.length > 0 && tableKeys.length > 0 && (
         <View style={styles.card}>
           <View style={styles.cardTitleRow}>
-            <Ionicons name="bar-chart-outline" size={16} color="#12343B" />
+            <Ionicons name="bar-chart-outline" size={16} color="#0F172A" />
             <Text style={styles.cardTitle}>Results</Text>
           </View>
 
@@ -402,42 +574,17 @@ export default function ResultsScreen() {
       {soundMapPoints.length > 0 && (
         <View style={styles.mapCard}>
           <View style={styles.mapCardHeader}>
-            <Ionicons name="volume-high-outline" size={15} color="#007C7A" />
+            <Ionicons name="volume-high-outline" size={15} color="#0F766E" />
             <Text style={styles.mapCardTitle}>Sound Pollution Zone Map</Text>
           </View>
           <SoundMap points={soundMapPoints} />
         </View>
       )}
 
-      {movementAnalysis.length > 0 && (
-        <View style={styles.card}>
-          <View style={styles.cardTitleRow}>
-            <Ionicons name="sync-outline" size={16} color="#12343B" />
-            <Text style={styles.cardTitle}>Movement Control</Text>
-          </View>
-
-          {movementAnalysis.map((movement, index) => (
-            <View key={index} style={styles.physicsBlock}>
-              <Text style={styles.physicsBlockLabel}>{movement.label}</Text>
-              {!isNaN(movement.smoothness) && (
-                <Text style={styles.physicsRow}>
-                  Smoothness score: {movement.smoothness.toFixed(0)}%
-                </Text>
-              )}
-              {!isNaN(movement.peakRotation) && (
-                <Text style={styles.physicsRow}>
-                  Peak rotation: {movement.peakRotation.toFixed(2)} rad/s
-                </Text>
-              )}
-            </View>
-          ))}
-        </View>
-      )}
-
       {hasVideoEvidence && (
         <View style={styles.card}>
           <View style={styles.cardTitleRow}>
-            <Ionicons name="videocam-outline" size={16} color="#12343B" />
+            <Ionicons name="videocam-outline" size={16} color="#0F172A" />
             <Text style={styles.cardTitle}>Media Evidence</Text>
           </View>
 
@@ -446,7 +593,7 @@ export default function ResultsScreen() {
           </Text>
 
           {draft.prototypes.map((p, index) => {
-            const videoUri = p.measurements.video;
+            const videoUri = getVideoEvidenceUri(p);
 
             if (!videoUri) return null;
 
@@ -470,7 +617,7 @@ export default function ResultsScreen() {
       {fanPhysics && fanPhysics.some((f) => f.force != null) && (
         <View style={styles.card}>
           <View style={styles.cardTitleRow}>
-            <Ionicons name="flask-outline" size={16} color="#12343B" />
+            <Ionicons name="flask-outline" size={16} color="#0F172A" />
             <Text style={styles.cardTitle}>Air Force Calculations</Text>
           </View>
           <Text style={styles.physicsRow}>
@@ -517,7 +664,7 @@ export default function ResultsScreen() {
       {parachutePhysics && (
         <View style={styles.card}>
           <View style={styles.cardTitleRow}>
-            <Ionicons name="flask-outline" size={16} color="#12343B" />
+            <Ionicons name="flask-outline" size={16} color="#0F172A" />
             <Text style={styles.cardTitle}>Physics Calculations</Text>
           </View>
 
@@ -543,6 +690,12 @@ export default function ResultsScreen() {
                 </Text>
               )}
 
+              {calc.dragForce != null && (
+                <Text style={styles.physicsRow}>
+                  Drag force: {calc.dragForce.toFixed(3)} N
+                </Text>
+              )}
+
               {calc.gForce != null && (
                 <Text style={styles.physicsRow}>
                   G-force on impact: {calc.gForce.toFixed(1)} g —{" "}
@@ -559,14 +712,21 @@ export default function ResultsScreen() {
       {draft.location && (
         <View style={styles.mapCard}>
           <View style={styles.mapCardHeader}>
-            <Ionicons name="location" size={15} color="#007C7A" />
+            <Ionicons name="location" size={15} color="#0F766E" />
             <Text style={styles.mapCardTitle}>Experiment Location</Text>
             <View style={styles.gpsBonusBadge}>
               <Text style={styles.gpsBonusText}>+{SCORING.EVIDENCE_BONUS} XP</Text>
             </View>
           </View>
 
-          <GPSMapView lat={draft.location.lat} lng={draft.location.lng} />
+          <ResultLocationMap
+            lat={draft.location.lat}
+            lng={draft.location.lng}
+            title="Experiment site"
+            description={challenge.title}
+            interactive={false}
+            regionDelta={0.005}
+          />
 
           <Text style={styles.mapCoords}>
             {draft.location.lat.toFixed(5)}, {draft.location.lng.toFixed(5)}
@@ -576,16 +736,17 @@ export default function ResultsScreen() {
 
       <View style={styles.card}>
         <View style={styles.cardTitleRow}>
-          <Ionicons name="document-text-outline" size={16} color="#12343B" />
-          <Text style={styles.cardTitle}>Your Observations</Text>
+          <Ionicons name="document-text-outline" size={16} color="#0F172A" />
+            <Text style={styles.cardTitle}>Reflect</Text>
         </View>
 
         <Text style={styles.observationsSubtitle}>
           Answer each question as a team (at least{" "}
-          {GAMIFICATION.OBSERVATION_MIN_CHARS} characters each)
+          {GAMIFICATION.OBSERVATION_MIN_CHARS} characters each). Short answers
+          are fine to start.
         </Text>
 
-        {observationQuestions.map((question, i) => {
+        {visibleObservationQuestions.map((question, i) => {
           const answerLen = (observations[i] ?? "").trim().length;
           const answerReady =
             answerLen >= GAMIFICATION.OBSERVATION_MIN_CHARS;
@@ -619,6 +780,18 @@ export default function ResultsScreen() {
           </View>
           );
         })}
+
+        {observationQuestions.length > 3 && (
+          <TouchableOpacity
+            style={styles.moreQuestionsBtn}
+            onPress={() => setShowAllQuestions((value) => !value)}
+            activeOpacity={0.75}
+          >
+            <Text style={styles.moreQuestionsText}>
+              {showAllQuestions ? "Show fewer questions" : "Add more reflection"}
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <View style={styles.card}>
@@ -679,9 +852,7 @@ export default function ResultsScreen() {
         disabled={isSubmitting}
       >
         <Text style={styles.claimBtnText}>
-          {isSubmitting
-            ? "Submitting..."
-            : `CLAIM REWARD  +${predictedPoints} XP`}
+          {isSubmitting ? "Submitting..." : `Claim +${predictedPoints} XP`}
         </Text>
       </Pressable>
 
@@ -702,7 +873,7 @@ export default function ResultsScreen() {
             [
               { text: "Keep Reflecting", style: "cancel" },
               {
-                text: "Save Draft & Exit",
+                text: "Save and exit",
                 onPress: () => {
                   router.replace("/(tabs)/activity");
                 },
@@ -711,7 +882,7 @@ export default function ResultsScreen() {
           );
         }}
       >
-        <Text style={styles.exitLinkText}>Save Draft & Exit</Text>
+        <Text style={styles.exitLinkText}>Save and exit</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -783,14 +954,14 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: "#EEF5FF",
+    backgroundColor: "#EFF6FF",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 8,
     borderWidth: 2,
-    borderColor: "#2F80ED",
+    borderColor: "#2563EB",
   },
-  headerTitle: { fontSize: 28, fontWeight: "800", color: "#12343B" },
+  headerTitle: { fontSize: 28, fontWeight: "800", color: "#0F172A" },
   headerSubtitle: { fontSize: 14, color: "#64748B", marginTop: 2 },
 
   penaltyBanner: {
@@ -826,7 +997,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 16,
     fontWeight: "800",
-    color: "#12343B",
+    color: "#0F172A",
   },
 
   predictionBubble: {
@@ -852,7 +1023,7 @@ const styles = StyleSheet.create({
   tableRowAlt: { backgroundColor: "#F8FAFC" },
   tableCell: { flex: 1, fontSize: 12, color: "#334155", textAlign: "center" },
   designCell: { flex: 1.2, textAlign: "left" },
-  tableCellBold: { fontWeight: "700", color: "#12343B" },
+  tableCellBold: { fontWeight: "700", color: "#0F172A" },
   tableHeaderCell: { fontWeight: "700", color: "#64748B", fontSize: 11 },
 
   mediaSubtitle: {
@@ -872,7 +1043,7 @@ const styles = StyleSheet.create({
   mediaLabel: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#12343B",
+    color: "#0F172A",
     marginBottom: 8,
   },
   mediaVideo: {
@@ -884,14 +1055,14 @@ const styles = StyleSheet.create({
 
   physicsBlock: {
     borderLeftWidth: 3,
-    borderLeftColor: "#2F80ED",
+    borderLeftColor: "#2563EB",
     paddingLeft: 12,
     marginBottom: 14,
   },
   physicsBlockLabel: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#12343B",
+    color: "#0F172A",
     marginBottom: 4,
   },
   physicsRow: { fontSize: 13, color: "#334155", marginBottom: 2 },
@@ -904,7 +1075,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "#BFD8FF",
+    borderColor: "#BFDBFE",
   },
   mapCardHeader: {
     flexDirection: "row",
@@ -912,16 +1083,16 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: "#EEF5FF",
+    backgroundColor: "#EFF6FF",
   },
   mapCardTitle: {
     flex: 1,
     fontSize: 14,
     fontWeight: "700",
-    color: "#007C7A",
+    color: "#0F766E",
   },
   gpsBonusBadge: {
-    backgroundColor: "#2F80ED",
+    backgroundColor: "#0F766E",
     paddingHorizontal: 10,
     paddingVertical: 3,
     borderRadius: 999,
@@ -961,12 +1132,25 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 14,
     minHeight: 70,
-    color: "#12343B",
+    color: "#0F172A",
     backgroundColor: "#F8FAFC",
   },
   observationInputValid: {
-    borderColor: "#2F80ED",
-    backgroundColor: "#EEF5FF",
+    borderColor: "#2563EB",
+    backgroundColor: "#EFF6FF",
+  },
+  moreQuestionsBtn: {
+    alignSelf: "center",
+    marginTop: 2,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 999,
+    backgroundColor: "#FFEDD5",
+  },
+  moreQuestionsText: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: "#F97316",
   },
   observationCount: {
     fontSize: 12,
@@ -985,26 +1169,26 @@ const styles = StyleSheet.create({
   ratingNote: {
     alignSelf: "center",
     marginTop: 10,
-    backgroundColor: "#EEF5FF",
+    backgroundColor: "#EFF6FF",
     paddingHorizontal: 14,
     paddingVertical: 7,
     borderRadius: 12,
   },
-  ratingNoteText: { fontSize: 13, color: "#007C7A", fontWeight: "700" },
+  ratingNoteText: { fontSize: 13, color: "#0F766E", fontWeight: "700" },
 
   pointsCard: {
-    backgroundColor: "#EEF5FF",
+    backgroundColor: "#EFF6FF",
     borderRadius: 20,
     padding: 20,
     marginHorizontal: 20,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: "#2F80ED",
+    borderColor: "#2563EB",
   },
   pointsTitle: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#2F80ED",
+    color: "#2563EB",
     marginBottom: 14,
     textTransform: "uppercase",
     letterSpacing: 0.8,
@@ -1015,10 +1199,10 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
   },
   pointsLabel: { fontSize: 14, color: "#374151" },
-  pointsValue: { fontSize: 14, fontWeight: "700", color: "#2F80ED" },
+  pointsValue: { fontSize: 14, fontWeight: "700", color: "#2563EB" },
   pointsDivider: {
     height: 1,
-    backgroundColor: "#BFD8FF",
+    backgroundColor: "#BFDBFE",
     marginVertical: 10,
   },
   pointsTotalRow: {
@@ -1026,11 +1210,11 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
-  pointsTotalLabel: { fontSize: 15, fontWeight: "700", color: "#12343B" },
-  pointsTotalValue: { fontSize: 32, fontWeight: "800", color: "#2F80ED" },
+  pointsTotalLabel: { fontSize: 15, fontWeight: "700", color: "#0F172A" },
+  pointsTotalValue: { fontSize: 32, fontWeight: "800", color: "#2563EB" },
 
   claimBtn: {
-    backgroundColor: "#2F80ED",
+    backgroundColor: "#F97316",
     marginHorizontal: 20,
     paddingVertical: 20,
     borderRadius: 20,

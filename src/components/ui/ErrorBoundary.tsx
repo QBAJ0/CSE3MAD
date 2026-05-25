@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontWeight: "800",
-    color: "#12343B",
+    color: "#0F172A",
     marginBottom: 10,
     textAlign: "center",
     marginTop: 16,
@@ -62,7 +62,7 @@ const styles = StyleSheet.create({
     marginBottom: 28,
   },
   button: {
-    backgroundColor: "#2F80ED",
+    backgroundColor: "#2563EB",
     paddingHorizontal: 28,
     paddingVertical: 14,
     borderRadius: 16,
