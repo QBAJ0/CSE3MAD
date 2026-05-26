@@ -1,6 +1,12 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { getTrialLabelForPrototype } from "../../data/humanPerformanceTrials";
 import { Prototype } from "../../types";
 import {
@@ -79,9 +85,6 @@ export function HumanPerformanceReflect({
               <Text style={styles.outcomeLine}>
                 Time: {formatReflectNumber(hp.durationSeconds, 2)} seconds
               </Text>
-              <Text style={styles.outcomeHighlight}>
-                Outcome: {hp.outcomeText || "—"}
-              </Text>
               <Text style={styles.outcomeLine}>
                 Smoothness: {smoothnessDisplay}
               </Text>
@@ -90,6 +93,9 @@ export function HumanPerformanceReflect({
                 {Number.isFinite(hp.peakG)
                   ? ` (${formatReflectNumber(hp.peakG, 2)} g peak)`
                   : ""}
+              </Text>
+              <Text style={styles.outcomeLine}>
+                Outcome: {hp.outcomeText || "—"}
               </Text>
             </View>
 
@@ -126,44 +132,87 @@ export function HumanPerformanceReflect({
           <Text style={styles.cardTitle}>Results table</Text>
         </View>
 
-        <View style={[styles.tableRow, styles.tableHeaderRow]}>
-          <Text style={[styles.tableCell, styles.tableHeader, styles.designCol]}>
-            Movement
-          </Text>
-          <Text style={[styles.tableCell, styles.tableHeader]}>Units</Text>
-          <Text style={[styles.tableCell, styles.tableHeader]}>Time (s)</Text>
-          <Text style={[styles.tableCell, styles.tableHeader]}>Smooth %</Text>
-          <Text style={[styles.tableCell, styles.tableHeader]}>Vibration</Text>
-        </View>
-
-        {prototypes.map((p, idx) => {
-          const hp = parseHumanPerformancePrototype(p);
-          return (
-            <View
-              key={p.index}
-              style={[styles.tableRow, idx % 2 === 1 && styles.tableRowAlt]}
-            >
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator
+          contentContainerStyle={styles.tableScrollContent}
+        >
+          <View>
+            <View style={[styles.tableRow, styles.tableHeaderRow]}>
               <Text
-                style={[styles.tableCell, styles.designCol, styles.bold]}
-                numberOfLines={2}
+                style={[
+                  styles.tableCell,
+                  styles.tableHeader,
+                  styles.colMovement,
+                ]}
               >
-                {hp.movementType || getTrialLabelForPrototype(p.index)}
+                Movement
               </Text>
-              <Text style={styles.tableCell}>
-                {formatReflectNumber(hp.movementUnits, 2)}
+              <Text
+                style={[styles.tableCell, styles.tableHeader, styles.colUnits]}
+              >
+                Units
               </Text>
-              <Text style={styles.tableCell}>
-                {formatReflectNumber(hp.durationSeconds, 2)}
+              <Text
+                style={[styles.tableCell, styles.tableHeader, styles.colTime]}
+              >
+                Time (s)
               </Text>
-              <Text style={styles.tableCell}>
-                {Number.isFinite(hp.smoothnessScore)
-                  ? formatReflectNumber(hp.smoothnessScore, 2)
-                  : "—"}
+              <Text
+                style={[
+                  styles.tableCell,
+                  styles.tableHeader,
+                  styles.colSmooth,
+                ]}
+              >
+                Smooth %
               </Text>
-              <Text style={styles.tableCell}>{hp.vibrationLabel || "—"}</Text>
+              <Text
+                style={[
+                  styles.tableCell,
+                  styles.tableHeader,
+                  styles.colVibration,
+                ]}
+              >
+                Vibration
+              </Text>
             </View>
-          );
-        })}
+
+            {prototypes.map((p, idx) => {
+              const hp = parseHumanPerformancePrototype(p);
+              return (
+                <View
+                  key={p.index}
+                  style={[styles.tableRow, idx % 2 === 1 && styles.tableRowAlt]}
+                >
+                  <Text
+                    style={[
+                      styles.tableCell,
+                      styles.colMovement,
+                      styles.bold,
+                    ]}
+                  >
+                    {hp.movementType || getTrialLabelForPrototype(p.index)}
+                  </Text>
+                  <Text style={[styles.tableCell, styles.colUnits]}>
+                    {formatReflectNumber(hp.movementUnits, 2)}
+                  </Text>
+                  <Text style={[styles.tableCell, styles.colTime]}>
+                    {formatReflectNumber(hp.durationSeconds, 2)}
+                  </Text>
+                  <Text style={[styles.tableCell, styles.colSmooth]}>
+                    {Number.isFinite(hp.smoothnessScore)
+                      ? formatReflectNumber(hp.smoothnessScore, 2)
+                      : "—"}
+                  </Text>
+                  <Text style={[styles.tableCell, styles.colVibration]}>
+                    {hp.vibrationLabel || "—"}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+        </ScrollView>
       </View>
     </>
   );
@@ -196,12 +245,6 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   outcomeLine: { fontSize: 14, color: "#334155" },
-  outcomeHighlight: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#0F766E",
-    marginVertical: 4,
-  },
   fieldLabel: {
     fontSize: 13,
     fontWeight: "600",
@@ -220,11 +263,16 @@ const styles = StyleSheet.create({
   choiceBtnActive: { backgroundColor: "#0F766E", borderColor: "#0F766E" },
   choiceBtnText: { fontWeight: "600", color: "#475569" },
   choiceBtnTextActive: { color: "#FFFFFF" },
-  tableRow: { flexDirection: "row", paddingVertical: 8 },
+  tableScrollContent: { paddingBottom: 4 },
+  tableRow: { flexDirection: "row", paddingVertical: 8, alignItems: "center" },
   tableHeaderRow: { borderBottomWidth: 1, borderBottomColor: "#E2E8F0" },
   tableRowAlt: { backgroundColor: "#F8FAFC" },
-  tableCell: { flex: 1, fontSize: 12, color: "#334155", textAlign: "center" },
+  tableCell: { fontSize: 12, color: "#334155", textAlign: "center" },
   tableHeader: { fontWeight: "700", color: "#0F172A" },
-  designCol: { flex: 0.7 },
+  colMovement: { width: 132, paddingHorizontal: 6, textAlign: "left" },
+  colUnits: { width: 64, paddingHorizontal: 4 },
+  colTime: { width: 64, paddingHorizontal: 4 },
+  colSmooth: { width: 72, paddingHorizontal: 4 },
+  colVibration: { width: 80, paddingHorizontal: 4 },
   bold: { fontWeight: "700" },
 });

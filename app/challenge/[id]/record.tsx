@@ -406,7 +406,7 @@ export default function RecordScreen() {
         <HumanPerformanceMovementDiagram prototypeIndex={current.index} />
       )}
 
-      {draft.prototypes.length > 1 && (
+      {draft.prototypes.length > 1 && !isHumanPerformance && (
         <View style={styles.protoRow}>
           {draft.prototypes.map((p, i) => {
             const protoDone = isPrototypeComplete(
@@ -414,15 +414,11 @@ export default function RecordScreen() {
               requiredMeasurements,
               challenge.id,
             );
-            const chipLabel = isHumanPerformance
-              ? getTrialLabelForPrototype(p.index)
-              : `#${p.index}`;
             return (
               <TouchableOpacity
                 key={p.index}
                 style={[
                   styles.protoChip,
-                  isHumanPerformance && styles.protoChipWide,
                   current.index === p.index && styles.protoActive,
                   !protoDone && styles.protoIncomplete,
                 ]}
@@ -431,12 +427,10 @@ export default function RecordScreen() {
                 <Text
                   style={[
                     styles.protoText,
-                    isHumanPerformance && styles.protoTextSmall,
                     current.index === p.index && styles.protoActiveText,
                   ]}
-                  numberOfLines={2}
                 >
-                  {chipLabel}
+                  #{p.index}
                 </Text>
               </TouchableOpacity>
             );
@@ -564,7 +558,9 @@ export default function RecordScreen() {
       >
         <Text style={styles.nextText}>
           {currentNum < max
-            ? `Test Next Design (${currentNum}/${max})`
+            ? isHumanPerformance
+              ? `Next movement (${currentNum + 1}/${max})`
+              : `Test Next Design (${currentNum}/${max})`
             : "Reflect"}
         </Text>
         {!canProceed && (
@@ -636,25 +632,15 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    minWidth: 44,
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
     borderColor: "#FED7AA",
     alignItems: "center",
     justifyContent: "center",
   },
-  protoChipWide: {
-    width: undefined,
-    flex: 1,
-    minHeight: 44,
-    height: undefined,
-    paddingHorizontal: 6,
-    borderRadius: 12,
-  },
   protoActive: { backgroundColor: "#2F80ED" },
   protoIncomplete: { borderWidth: 2, borderColor: "#F59E0B" },
   protoText: { fontSize: 16, fontWeight: "700", color: "#64748B" },
-  protoTextSmall: { fontSize: 11, textAlign: "center" },
   protoActiveText: { color: "#FFF" },
   multiProtoHint: {
     fontSize: 13,
