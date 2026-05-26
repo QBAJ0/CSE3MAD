@@ -26,6 +26,7 @@ import {
   getRequiredMeasurements,
   isPrototypeComplete,
 } from "../../../src/utils/challengeRecordValidation";
+import { HUMAN_PERFORMANCE_CHALLENGE_ID } from "../../../src/utils/humanPerformance";
 
 export default function ChallengeBriefScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -74,7 +75,7 @@ export default function ChallengeBriefScreen() {
   const reflectReady =
     hasDraft &&
     draft.prototypes.every((p) =>
-      isPrototypeComplete(p, requiredForDraft),
+      isPrototypeComplete(p, requiredForDraft, challenge.id),
     );
 
   // True if this challenge has a harder high school mode
@@ -385,15 +386,21 @@ export default function ChallengeBriefScreen() {
             </View>
           </View>
           <Text style={styles.predictionHint}>
-            {challenge.predictionPrompt ??
-              "What do you think will happen? Write one team guess."}
+            {challenge.id === HUMAN_PERFORMANCE_CHALLENGE_ID
+              ? "What movement do you think will score best? You can also predict movement units (optional)."
+              : (challenge.predictionPrompt ??
+                "What do you think will happen? Write one team guess.")}
           </Text>
           <TextInput
             style={[
               styles.predictionInput,
               prediction.trim().length > 0 && styles.predictionInputFilled,
             ]}
-            placeholder="e.g. We think the bigger design will fall slower…"
+            placeholder={
+              challenge.id === HUMAN_PERFORMANCE_CHALLENGE_ID
+                ? "e.g. Hand circles will score highest with about 6 movement units…"
+                : "e.g. We think the bigger design will fall slower…"
+            }
             placeholderTextColor="#94A3B8"
             value={prediction}
             onChangeText={setPredictionText}

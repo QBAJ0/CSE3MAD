@@ -15,6 +15,7 @@ import {
   View,
 } from "react-native";
 import { ResultLocationMap } from "@/src/components/ResultLocationMap";
+import { HumanPerformanceReflect } from "../../../src/components/challenge/HumanPerformanceReflect";
 import { ChallengeTabBar } from "../../../src/components/challenge/ChallengeTabBar";
 import { SoundMap } from "../../../src/components/challenge/SoundMap";
 import { parseSoundMapPoints } from "../../../src/utils/soundMap";
@@ -36,6 +37,10 @@ import {
   Prototype,
 } from "../../../src/types";
 import { storage } from "../../../src/utils/storage";
+import {
+  HUMAN_PERFORMANCE_CHALLENGE_ID,
+  isHumanPerformancePrototypeComplete,
+} from "../../../src/utils/humanPerformance";
 
 const G_FORCE_LABELS: Record<
   "none" | "minor" | "serious" | "severe" | "lifeThreatening",
@@ -83,11 +88,17 @@ const hasCompleteRequiredData = (
   prototypes: Prototype[],
   difficulty: DifficultyMode,
 ) => {
+  if (!challenge || prototypes.length === 0) return false;
+
+  if (challenge.id === HUMAN_PERFORMANCE_CHALLENGE_ID) {
+    return prototypes.every(isHumanPerformancePrototypeComplete);
+  }
+
   const requiredMeasurements = getActiveMeasurements(challenge, difficulty).filter(
     (measurement) => !EVIDENCE_RECORDERS.has(measurement.recorder) && !measurement.optional,
   );
 
-  if (prototypes.length === 0 || requiredMeasurements.length === 0) {
+  if (requiredMeasurements.length === 0) {
     return false;
   }
 
@@ -219,7 +230,8 @@ export default function ResultsScreen() {
   }>();
 
   const challenge = getChallengeById(Number(id));
-  const { draft, finalize, clearDraft } = useActivity();
+  const { draft, finalize, clearDraft, updatePrototype } = useActivity();
+  const isHumanPerformance = challenge?.id === HUMAN_PERFORMANCE_CHALLENGE_ID;
   const { team, updateTeamPoints } = useTeam();
 
   const [observations, setObservations] = useState<Record<number, string>>({});
@@ -505,19 +517,27 @@ export default function ResultsScreen() {
         </View>
       )}
 
-      <View style={styles.card}>
-        <View style={styles.cardTitleRow}>
-          <Ionicons name="help-circle-outline" size={16} color="#0F172A" />
-          <Text style={styles.cardTitle}>Prediction</Text>
+      {isHumanPerformance ? (
+        <HumanPerformanceReflect
+          prototypes={draft.prototypes}
+          teamPrediction={draft.prediction ?? ""}
+          onUpdatePrototype={updatePrototype}
+        />
+      ) : (
+        <View style={styles.card}>
+          <View style={styles.cardTitleRow}>
+            <Ionicons name="help-circle-outline" size={16} color="#0F172A" />
+            <Text style={styles.cardTitle}>Prediction</Text>
+          </View>
+          <View style={styles.predictionBubble}>
+            <Text style={styles.predictionText}>
+              {draft.prediction || "Not recorded"}
+            </Text>
+          </View>
         </View>
-        <View style={styles.predictionBubble}>
-          <Text style={styles.predictionText}>
-            {draft.prediction || "Not recorded"}
-          </Text>
-        </View>
-      </View>
+      )}
 
-      {draft.prototypes.length > 0 && tableKeys.length > 0 && (
+      {!isHumanPerformance && draft.prototypes.length > 0 && tableKeys.length > 0 && (
         <View style={styles.card}>
           <View style={styles.cardTitleRow}>
             <Ionicons name="bar-chart-outline" size={16} color="#0F172A" />

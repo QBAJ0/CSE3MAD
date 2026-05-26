@@ -3,6 +3,7 @@ import { Gyroscope } from "expo-sensors";
 import { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useHaptic } from "../../hooks/useHaptic";
+import { computeSmoothnessScore } from "../../utils/humanPerformance";
 
 interface GyroscopeRecorderProps {
   onCapture: (data: { smoothness: number; range: number }) => void;
@@ -68,11 +69,7 @@ export function GyroscopeRecorder({
       subscriptionRef.current = null;
     }
 
-    // Calculate smoothness (lower change = smoother movement)
-    const avgChange =
-      velocityChangesRef.current.reduce((a, b) => a + b, 0) /
-      velocityChangesRef.current.length;
-    const smoothnessScore = Math.max(0, Math.min(100, 100 - avgChange * 100));
+    const smoothnessScore = computeSmoothnessScore(velocityChangesRef.current);
 
     // Calculate range of motion (max - min of any axis)
     setSmoothness(smoothnessScore);

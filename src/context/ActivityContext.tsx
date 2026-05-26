@@ -17,6 +17,11 @@ import {
   Prototype,
 } from "../types";
 import { storage } from "../utils/storage";
+import { HUMAN_PERFORMANCE_TRIALS } from "../data/humanPerformanceTrials";
+import {
+  HUMAN_PERFORMANCE_CHALLENGE_ID,
+  isHumanPerformancePrototypeComplete,
+} from "../utils/humanPerformance";
 
 type Draft = Partial<ActivityResult> & {
   prototypes: Prototype[];
@@ -83,6 +88,10 @@ const getScoredMeasurements = (
 const hasCompleteRequiredData = (result: Omit<ActivityResult, "points">) => {
   const challenge = getChallengeById(result.challengeId);
   if (!challenge || result.prototypes.length === 0) return false;
+
+  if (result.challengeId === HUMAN_PERFORMANCE_CHALLENGE_ID) {
+    return result.prototypes.every(isHumanPerformancePrototypeComplete);
+  }
 
   const requiredMeasurements = getScoredMeasurements(
     challenge.measurements,
@@ -189,6 +198,7 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
     teamName,
     difficulty,
   }) => {
+    const isHumanPerformance = challengeId === HUMAN_PERFORMANCE_CHALLENGE_ID;
     setDraft({
       id: `draft-${Date.now()}`,
       challengeId,
@@ -197,7 +207,13 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
       difficulty,
       prediction: "",
       prototypes: [
-        { index: 1, measurements: {}, capturedAt: new Date().toISOString() },
+        {
+          index: 1,
+          measurements: isHumanPerformance
+            ? { movementType: HUMAN_PERFORMANCE_TRIALS[0].movementType }
+            : {},
+          capturedAt: new Date().toISOString(),
+        },
       ],
       derivedByPrototype: {},
       currentPrototypeIndex: 0,
@@ -232,13 +248,19 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
   const addPrototype = () =>
     setDraft((prev) => {
       const nextIndex = prev.prototypes.length + 1;
+      const hpTrial =
+        prev.challengeId === HUMAN_PERFORMANCE_CHALLENGE_ID
+          ? HUMAN_PERFORMANCE_TRIALS.find((t) => t.prototypeIndex === nextIndex)
+          : undefined;
       return {
         ...prev,
         prototypes: [
           ...prev.prototypes,
           {
             index: nextIndex,
-            measurements: {},
+            measurements: hpTrial
+              ? { movementType: hpTrial.movementType }
+              : {},
             capturedAt: new Date().toISOString(),
           },
         ],
