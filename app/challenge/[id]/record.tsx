@@ -6,6 +6,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -31,6 +32,12 @@ import { getChallengeById } from "../../../src/data/challenges";
 import { useHaptic } from "../../../src/hooks/useHaptic";
 import { TapReactionGame } from "../../../src/components/recorders/TapReactionGame";
 import { Measurement } from "../../../src/types";
+import {
+  buildOutcomeTextForChallenge,
+  getPredictionUiConfig,
+  getPrototypeOutcomeText,
+} from "../../../src/utils/prototypePrediction";
+import { exitToTabFromChallenge } from "../../../src/utils/exitToTabFromChallenge";
 
 // GPS, video, photo and frame-analysis are optional bonuses — don't block completion
 const OPTIONAL_RECORDERS = new Set<Measurement["recorder"]>([
@@ -131,12 +138,20 @@ export default function RecordScreen() {
 
   const currentNum = draft.currentPrototypeIndex + 1;
   const max = challenge.maxPrototypes;
+  const predictionConfig = getPredictionUiConfig(challenge.id);
   const measurements = challenge.measurements.filter(
     (m) => !m.difficulty || m.difficulty === draft.difficulty,
   );
 
   const saveMeasurement = (key: string, value: string | number) => {
-    updatePrototype(current.index, { measurements: { [key]: value } });
+    const nextMeasurements = { ...current.measurements, [key]: value };
+    const outcomeText = buildOutcomeTextForChallenge(challenge.id, nextMeasurements);
+    updatePrototype(current.index, {
+      measurements: {
+        [key]: value,
+        outcomeText,
+      },
+    });
   };
 
   const handleGPSCapture = (lat: number, lng: number) => {
@@ -197,7 +212,7 @@ export default function RecordScreen() {
         {
           text: "Save and exit",
           onPress: () => {
-            router.replace("/(tabs)/activity");
+            exitToTabFromChallenge("/(tabs)/activity");
           },
         },
       ],
@@ -257,6 +272,8 @@ export default function RecordScreen() {
     }
   };
 
+  const currentOutcomeText = getPrototypeOutcomeText(challenge.id, current);
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Tab Bar */}
@@ -308,12 +325,53 @@ export default function RecordScreen() {
                   current.index === p.index && styles.protoActiveText,
                 ]}
               >
-                #{p.index}
+                #{i + 1}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
       )}
+
+      <View style={styles.measureCard}>
+        {!predictionConfig.valueOnly && (
+          <>
+            <Text style={styles.predictionTitle}>
+              {predictionConfig.predictionLabel}
+            </Text>
+            <TextInput
+              style={styles.predictionInput}
+              placeholder={predictionConfig.predictionPlaceholder}
+              placeholderTextColor="#94A3B8"
+              value={String(current.measurements.predictedOutcomeText ?? "")}
+              onChangeText={(text) => saveMeasurement("predictedOutcomeText", text)}
+              multiline
+              numberOfLines={3}
+              textAlignVertical="top"
+            />
+          </>
+        )}
+        <Text style={styles.predictionValueHint}>
+          {predictionConfig.predictionValueLabel}
+          {predictionConfig.predictionValueUnit
+            ? ` (${predictionConfig.predictionValueUnit})`
+            : ""}
+        </Text>
+        <TextInput
+          style={styles.predictionInput}
+          placeholder={predictionConfig.predictionValuePlaceholder}
+          placeholderTextColor="#94A3B8"
+          value={String(current.measurements.predictedOutcomeValue ?? "")}
+          onChangeText={(text) => saveMeasurement("predictedOutcomeValue", text)}
+          keyboardType="decimal-pad"
+        />
+        {currentOutcomeText ? (
+          <Text style={styles.outcomePreview}>Outcome: {currentOutcomeText}</Text>
+        ) : (
+          <Text style={styles.outcomePreviewMuted}>
+            Outcome appears once key measurements are recorded.
+          </Text>
+        )}
+      </View>
 
       <View style={styles.measureCard}>
         {measurements.map((m) => (
@@ -430,6 +488,26 @@ const styles = StyleSheet.create({
   },
   nextDisabled: { backgroundColor: "#CBD5E1" },
   nextText: { color: "#FFF", fontSize: 16, fontWeight: "700" },
+  predictionTitle: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: "#0F766E",
+    marginBottom: 8,
+  },
+  predictionInput: {
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    borderRadius: 12,
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 10,
+    fontSize: 14,
+    color: "#0F172A",
+  },
+  predictionValueHint: { fontSize: 12, color: "#64748B", marginBottom: 6 },
+  outcomePreview: { fontSize: 13, color: "#0F766E", fontWeight: "700" },
+  outcomePreviewMuted: { fontSize: 12, color: "#64748B" },
   penaltyWarning: {
     marginTop: 12,
     backgroundColor: "#FEE2E2",

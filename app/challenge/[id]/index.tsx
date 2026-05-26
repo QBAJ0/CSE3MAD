@@ -13,7 +13,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -26,15 +25,12 @@ export default function ChallengeBriefScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const challenge = getChallengeById(Number(id));
   const { team } = useTeam();
-  const { startDraft, setPrediction, draft } = useActivity();
+  const { startDraft, draft } = useActivity();
 
   // Which difficulty level is selected
   const [difficulty, setDifficulty] = useState<"primary" | "highSchool">(
     "primary"
   );
-
-  // The team's prediction text (optional, earns bonus XP)
-  const [prediction, setPredictionText] = useState("");
 
   // Whether to show all steps or just the first 3
   const [showAllSteps, setShowAllSteps] = useState(false);
@@ -86,9 +82,6 @@ export default function ChallengeBriefScreen() {
       teamName: team.teamName,
       difficulty,
     });
-
-    // Save the prediction if they wrote one
-    setPrediction(prediction.trim());
 
     router.push(`/challenge/${challenge.id}/record`);
   };
@@ -343,36 +336,6 @@ export default function ChallengeBriefScreen() {
             )}
           </>
         )}
-
-        {/* ── Prediction (optional, earns bonus XP) ── */}
-        <View style={styles.section}>
-          <View style={styles.predictionHeader}>
-            <View style={styles.sectionTitleRow}>
-              <Ionicons name="help-circle-outline" size={17} color="#0F172A" />
-              <Text style={styles.sectionTitle}>Predict</Text>
-            </View>
-            <View style={styles.optionalPill}>
-              <Text style={styles.optionalText}>optional +XP</Text>
-            </View>
-          </View>
-          <Text style={styles.predictionHint}>
-            {challenge.predictionPrompt ??
-              "What do you think will happen? Write one team guess."}
-          </Text>
-          <TextInput
-            style={[
-              styles.predictionInput,
-              prediction.trim().length > 0 && styles.predictionInputFilled,
-            ]}
-            placeholder="e.g. We think the bigger design will fall slower…"
-            placeholderTextColor="#94A3B8"
-            value={prediction}
-            onChangeText={setPredictionText}
-            multiline
-            numberOfLines={3}
-            textAlignVertical="top"
-          />
-        </View>
 
         {/* ── Start / Resume buttons ── */}
         <View style={styles.ctaSection}>

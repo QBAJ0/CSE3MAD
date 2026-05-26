@@ -18,6 +18,11 @@ import { CommentsSection } from "../../../src/components/challenge/CommentsSecti
 import { SoundMap } from "../../../src/components/challenge/SoundMap";
 import { getChallengeById } from "../../../src/data/challenges";
 import { parseSoundMapPoints } from "../../../src/utils/soundMap";
+import {
+  formatPredictionDisplay,
+  getPrototypeOutcomeText,
+  getPrototypeWereYouRight,
+} from "../../../src/utils/prototypePrediction";
 import { useTeam } from "../../../src/context/TeamContext";
 import { ActivityResult } from "../../../src/types";
 import { storage } from "../../../src/utils/storage";
@@ -210,7 +215,7 @@ export default function ActivityDetailsScreen() {
         </View>
       </View>
 
-      {/* Prediction Section */}
+      {/* Prediction / Outcome Section */}
       <View style={styles.sectionCard}>
         <TouchableOpacity
           style={styles.sectionHeader}
@@ -219,7 +224,7 @@ export default function ActivityDetailsScreen() {
         >
           <View style={styles.sectionTitleRow}>
             <Ionicons name="bulb-outline" size={18} color="#F59E0B" />
-            <Text style={styles.sectionTitle}>Prediction</Text>
+            <Text style={styles.sectionTitle}>Prediction & Outcome</Text>
           </View>
           <Ionicons
             name={
@@ -234,10 +239,34 @@ export default function ActivityDetailsScreen() {
 
         {expandedSections.has("prediction") && (
           <View style={styles.sectionContent}>
-            {activity.prediction ? (
-              <Text style={styles.predictionText}>{activity.prediction}</Text>
+            {activity.prototypes.length > 0 ? (
+              activity.prototypes.map((prototype, idx) => {
+                const predictionDisplay = formatPredictionDisplay(
+                  challenge.id,
+                  prototype,
+                );
+                const outcome = getPrototypeOutcomeText(challenge.id, prototype);
+                const right = getPrototypeWereYouRight(prototype);
+                return (
+                  <View key={prototype.index} style={styles.predictionAttemptCard}>
+                    <Text style={styles.predictionAttemptTitle}>
+                      #{idx + 1}
+                    </Text>
+                    <Text style={styles.predictionText}>
+                      Outcome: {outcome || "Not recorded"}
+                    </Text>
+                    <Text style={styles.predictionText}>
+                      Prediction: {predictionDisplay || "Not recorded"}
+                    </Text>
+                    <Text style={styles.predictionText}>
+                      Were you right?:{" "}
+                      {right === "yes" ? "Yes" : right === "no" ? "No" : "Not answered"}
+                    </Text>
+                  </View>
+                );
+              })
             ) : (
-              <Text style={styles.emptyText}>No prediction recorded</Text>
+              <Text style={styles.emptyText}>No attempt data recorded</Text>
             )}
           </View>
         )}
@@ -698,6 +727,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     color: "#1E293B",
+  },
+  predictionAttemptCard: {
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    borderRadius: 12,
+    padding: 10,
+    marginBottom: 8,
+    gap: 4,
+  },
+  predictionAttemptTitle: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#0F172A",
+    marginBottom: 2,
   },
 
   emptyText: {

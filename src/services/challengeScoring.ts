@@ -1,5 +1,6 @@
 import { GAMIFICATION, SCORING } from "../config/constants";
 import { getChallengeById } from "../data/challenges";
+import { getPredictionCharsFromPrototypes } from "../utils/prototypePrediction";
 import {
   ActivityResult,
   DifficultyMode,
@@ -239,6 +240,7 @@ export function scoreActivityResult(
 
   return calculateChallengePoints({
     prototypeCount: result.prototypes.length,
+    predictionChars: getPredictionCharsFromPrototypes(result.prototypes),
     reflectionChars: result.reflection.length,
     ...signals,
     difficulty: result.difficulty,

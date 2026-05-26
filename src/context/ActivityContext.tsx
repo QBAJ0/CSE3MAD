@@ -3,6 +3,7 @@ import { GAMIFICATION, SCORING } from "../config/constants";
 import { getChallengeById } from "../data/challenges";
 import { pushActivityToCloud, pushResultToCloud } from "../services/leaderboard";
 import { deriveFanForce, deriveParachute } from "../services/physics";
+import { getPredictionCharsFromPrototypes } from "../utils/prototypePrediction";
 import {
   ActivityResult,
   DifficultyMode,
@@ -58,9 +59,6 @@ const EVIDENCE_RECORDERS = new Set<Measurement["recorder"]>([
 
 const hasMeasurementValue = (value: unknown) =>
   value !== undefined && value !== null && String(value).trim().length > 0;
-
-const hasMeaningfulPrediction = (prediction: string | undefined) =>
-  (prediction ?? "").trim().length >= GAMIFICATION.PREDICTION_MIN_CHARS;
 
 const getScoredMeasurements = (
   measurements: Measurement[],
@@ -264,7 +262,10 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
     completedInTime: boolean,
   ): number => {
     let points: number = SCORING.BASE_XP;
-    if (hasMeaningfulPrediction(result.prediction))
+    if (
+      getPredictionCharsFromPrototypes(result.prototypes) >=
+      GAMIFICATION.PREDICTION_MIN_CHARS
+    )
       points += SCORING.PREDICTION_BONUS;
     if (result.prototypes.length >= 2) points += SCORING.MULTI_DESIGN_2;
     if (result.prototypes.length >= 3) points += SCORING.MULTI_DESIGN_3;
