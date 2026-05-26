@@ -310,17 +310,33 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
       const points = scoreActivityResult(baseResult, completedInTime);
       const result: ActivityResult = { ...baseResult, points, completedInTime };
 
+      console.log("[claim] saving challenge result to sqlite", {
+        resultId: result.id,
+        teamId: result.teamId,
+        challengeId: result.challengeId,
+      });
       const sqliteSaved = await persistChallengeResultToSqlite(result);
-      if (!sqliteSaved) return null;
+      if (!sqliteSaved) {
+        console.warn("[claim] sqlite save failed; aborting claim", {
+          resultId: result.id,
+        });
+        return null;
+      }
+      console.log("[claim] sqlite save ok", { resultId: result.id });
 
       const saved = await storage.saveCompletedActivity(result);
       if (!saved) return null;
 
       void (async () => {
         try {
+          console.log("[claim] starting cloud sync", {
+            resultId: result.id,
+            teamId: result.teamId,
+          });
           await ensureFirebaseAuth();
           await syncChallengeResultToCloud(result);
           void enqueueMediaUploadsForResult(result);
+          console.log("[claim] cloud sync completed", { resultId: result.id });
         } catch (e) {
           console.warn("[ActivityContext] cloud sync after claim:", e);
         }

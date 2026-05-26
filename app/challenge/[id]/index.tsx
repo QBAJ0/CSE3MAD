@@ -47,12 +47,16 @@ export default function ChallengeBriefScreen() {
   // Whether to show extra detail sections (equipment, science info)
   const [showDetails, setShowDetails] = useState(false);
 
+  const goBackToChallenges = () => {
+    router.replace("/(tabs)/activity");
+  };
+
   // Safety check — shouldn't happen, but handles bad URLs
   if (!challenge) {
     return (
       <View style={styles.errorScreen}>
         <Text style={styles.errorText}>Challenge not found</Text>
-        <Pressable style={styles.backBtn} onPress={() => router.back()}>
+        <Pressable style={styles.backBtn} onPress={goBackToChallenges}>
           <Text style={styles.backBtnText}>← Go Back</Text>
         </Pressable>
       </View>

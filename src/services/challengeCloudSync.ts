@@ -90,11 +90,21 @@ async function enqueueOrUpdate(
 export async function syncChallengeResultToCloud(
   result: ActivityResult,
 ): Promise<void> {
-  if (!isFirebaseConfigured || !db) return;
+  if (!isFirebaseConfigured || !db) {
+    console.warn("[challengeCloudSync] firebase unavailable; skip cloud write", {
+      resultId: result.id,
+      teamId: result.teamId,
+    });
+    return;
+  }
 
   try {
     await ensureFirebaseAuth();
   } catch {
+    console.warn("[challengeCloudSync] auth unavailable; queueing result", {
+      resultId: result.id,
+      teamId: result.teamId,
+    });
     await enqueueOrUpdate(result, false, false);
     return;
   }
