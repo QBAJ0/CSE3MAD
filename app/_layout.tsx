@@ -7,6 +7,7 @@ import { processPendingMediaUploads } from "../src/services/mediaUploadQueue";
 import { ErrorBoundary } from "../src/components/ui/ErrorBoundary";
 import { ActivityProvider } from "../src/context/ActivityContext";
 import { TeamProvider } from "../src/context/TeamContext";
+import { ThemeProvider } from "../src/theme/themeContext";
 import { initializeMobileAds } from "../src/utils/mobileAds";
 import {
   addNotificationUrlListener,
@@ -53,17 +54,18 @@ export default function RootLayout() {
   return (
     <ErrorBoundary>
       <GestureHandlerRootView style={{ flex: 1 }}>
+        <ThemeProvider>
         <TeamProvider>
           <ActivityProvider>
             <Stack screenOptions={{ headerShown: false }}>
               <Stack.Screen name="index" />
               <Stack.Screen name="(onboarding)" />
               <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="activity" options={{ headerShown: false }} />
-              <Stack.Screen name="challenge" options={{ headerShown: false }} />
+<Stack.Screen name="challenge" options={{ headerShown: false }} />
             </Stack>
           </ActivityProvider>
         </TeamProvider>
+        </ThemeProvider>
       </GestureHandlerRootView>
     </ErrorBoundary>
   );

@@ -290,9 +290,7 @@ export function TapReactionGame({
             ]}
           >
             <View style={styles.targetInner}>
-              <Ionicons name="flash" size={18} color="#FFF" />
               <Text style={styles.targetText}>TAP</Text>
-              <Ionicons name="flash" size={18} color="#FFF" />
             </View>
           </Animated.View>
         ) : (

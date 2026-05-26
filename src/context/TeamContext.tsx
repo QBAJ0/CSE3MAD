@@ -1,11 +1,13 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { TeamData } from "../types";
+import { DifficultyMode, TeamData } from "../types";
+import { getDifficultyFromYearLevels } from "../utils/difficulty";
 import { storage } from "../utils/storage";
 
 type NewTeamInput = Pick<TeamData, "teamName" | "discriminator" | "members">;
 
 type TeamContextType = {
   team: TeamData | null;
+  computedDifficulty: DifficultyMode;
   setTeamData: (data: NewTeamInput) => Promise<void>;
   updateTeamPoints: (points: number) => Promise<void>;
   clearTeamData: () => Promise<void>;
@@ -49,9 +51,13 @@ export function TeamProvider({ children }: { children: React.ReactNode }) {
     await storage.clearTeam();
   };
 
+  const computedDifficulty: DifficultyMode = team
+    ? getDifficultyFromYearLevels(team.members)
+    : "primary";
+
   return (
     <TeamContext.Provider
-      value={{ team, setTeamData, updateTeamPoints, clearTeamData, loading }}
+      value={{ team, computedDifficulty, setTeamData, updateTeamPoints, clearTeamData, loading }}
     >
       {children}
     </TeamContext.Provider>

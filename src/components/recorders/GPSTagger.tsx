@@ -1,7 +1,9 @@
 import * as Location from "expo-location";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Alert, StyleSheet, Text, TouchableOpacity } from "react-native";
 import { useHaptic } from "../../hooks/useHaptic";
+import type { ColorTokens } from "../../theme/colors";
+import { useTheme } from "../../theme/themeContext";
 
 interface Props {
   onLocationCapture: (lat: number, lng: number) => void;
@@ -14,6 +16,8 @@ export function GPSTagger({ onLocationCapture, initialLocation }: Props) {
     initialLocation ?? null,
   );
   const { haptic } = useHaptic();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const captureLocation = async () => {
     haptic("medium");
@@ -67,19 +71,21 @@ export function GPSTagger({ onLocationCapture, initialLocation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  button: {
-    backgroundColor: "#FFFFFF",
-    padding: 14,
-    borderRadius: 12,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  buttonCaptured: {
-    backgroundColor: "#EFF6FF",
-    borderColor: "#2563EB",
-  },
-  buttonText: { color: "#0F172A", fontSize: 15, fontWeight: "600" },
-  buttonTextCaptured: { color: "#0F766E" },
-});
+function createStyles(c: ColorTokens) {
+  return StyleSheet.create({
+    button: {
+      backgroundColor: c.surface,
+      padding: 14,
+      borderRadius: 12,
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+    buttonCaptured: {
+      backgroundColor: c.infoLight,
+      borderColor: c.info,
+    },
+    buttonText: { color: c.text, fontSize: 15, fontWeight: "600" },
+    buttonTextCaptured: { color: c.primary },
+  });
+}

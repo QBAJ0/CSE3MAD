@@ -1,26 +1,34 @@
+// app/challenge/[id]/record.tsx
+// "Do It" tab — measurement recording screen.
+// All business logic lives here; all layout is delegated to ChallengeScreenShell.
+
 import { router, useLocalSearchParams } from "expo-router";
-import { ReactNode, useState } from "react";
+import { ReactNode, useMemo, useState } from "react";
 import {
   Alert,
-  Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import { ChallengeTabBar } from "../../../src/components/challenge/ChallengeTabBar";
-import { ChallengeTimer } from "../../../src/components/challenge/ChallengeTimer";
+import ChallengeScreenShell, {
+  FieldWrapper,
+  PrototypeDot,
+  SectionCard,
+} from "../../../src/components/challenge/ChallengeScreenShell";
 import { VideoFrameAnalyzer } from "../../../src/components/challenge/VideoFrameAnalyzer";
 import { AccelerometerRecorder } from "../../../src/components/recorders/AccelerometerRecorder";
 import { BreathingRecorder } from "../../../src/components/recorders/BreathingRecorder";
 import { ChoiceRecorder } from "../../../src/components/recorders/ChoiceRecorder";
 import { GPSTagger } from "../../../src/components/recorders/GPSTagger";
 import { GyroscopeRecorder } from "../../../src/components/recorders/GyroscopeRecorder";
+import { MovementTestRecorder } from "../../../src/components/recorders/MovementTestRecorder";
 import { NumberRecorder } from "../../../src/components/recorders/NumberRecorder";
 import { PhotoRecorder } from "../../../src/components/recorders/PhotoRecorder";
 import { SoundMeterRecorder } from "../../../src/components/recorders/SoundMeterRecorder";
 import { StopwatchRecorder } from "../../../src/components/recorders/StopwatchRecorder";
+import { TapReactionGame } from "../../../src/components/recorders/TapReactionGame";
+import { TeamBreathingBoard } from "../../../src/components/recorders/TeamBreathingBoard";
 import { TeamReactionBoard } from "../../../src/components/recorders/TeamReactionBoard";
 import { TextRecorder } from "../../../src/components/recorders/TextRecorder";
 import { TracingRecorder } from "../../../src/components/recorders/TracingRecorder";
@@ -29,7 +37,8 @@ import { useActivity } from "../../../src/context/ActivityContext";
 import { useTeam } from "../../../src/context/TeamContext";
 import { getChallengeById } from "../../../src/data/challenges";
 import { useHaptic } from "../../../src/hooks/useHaptic";
-import { TapReactionGame } from "../../../src/components/recorders/TapReactionGame";
+import type { ColorTokens } from "../../../src/theme/colors";
+import { useTheme } from "../../../src/theme/themeContext";
 import { Measurement } from "../../../src/types";
 import {
   buildIncompleteSummary,
@@ -38,9 +47,12 @@ import {
   isPrototypeComplete,
 } from "../../../src/utils/challengeRecordValidation";
 
+// ── Recorder renderer map ────────────────────────────────────────────────────
+// Maps recorder type → render function for recorders that need no extra state.
+// Recorders that need access to draft state are handled in the switch below.
+
 type SaveFn = (key: string, val: string | number) => void;
 
-// Recorders whose props are fully derivable from (measurement, value, save) — no component state needed
 const RECORDER_RENDERERS: Partial<Record<
   Measurement["recorder"],
   (m: Measurement, value: string, save: SaveFn) => ReactNode
@@ -66,6 +78,12 @@ const RECORDER_RENDERERS: Partial<Record<
   teamReaction: (_m, _v, save) => (
     <TeamReactionBoard onComplete={(results) => save("teamResults", JSON.stringify(results))} />
   ),
+  teamBreathing: (m, v, save) => (
+    <TeamBreathingBoard
+      onComplete={(results) => save(m.key, JSON.stringify(results))}
+      existingValue={v || undefined}
+    />
+  ),
   soundMeter: (m, v, save) => (
     <SoundMeterRecorder onCapture={(db) => save(m.key, db)} existingValue={parseFloat(v)} />
   ),
@@ -90,94 +108,94 @@ const RECORDER_RENDERERS: Partial<Record<
   ),
 };
 
+// ── Screen ───────────────────────────────────────────────────────────────────
+
 export default function RecordScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const challenge = getChallengeById(Number(id));
-  const {
-    draft,
-    updatePrototype,
-    addPrototype,
-    setCurrentPrototypeIndex,
-    setLocation,
-  } = useActivity();
+  const { draft, updatePrototype, addPrototype, setCurrentPrototypeIndex, setLocation } =
+    useActivity();
   const { team } = useTeam();
   const { haptic } = useHaptic();
   const [timeExpired, setTimeExpired] = useState(false);
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
-  if (!challenge || !team)
+  // ── Guards ─────────────────────────────────────────────────────────────────
+
+  if (!challenge || !team) {
     return (
-      <View style={styles.container}>
-        <Text>Loading...</Text>
+      <View style={styles.center}>
+        <Text style={styles.centerText}>Loading...</Text>
       </View>
     );
+  }
 
   const current = draft.prototypes[draft.currentPrototypeIndex];
 
-  // Guard: draft not initialised (e.g. page refresh on web resets React state)
   if (!current) {
     return (
-      <View style={styles.container}>
-        <Text style={{ textAlign: "center", marginBottom: 16 }}>
+      <View style={styles.center}>
+        <Text style={styles.centerText}>
           Session expired. Restart this challenge to keep going.
         </Text>
         <TouchableOpacity
-          style={styles.nextBtn}
+          style={styles.goBackBtn}
           onPress={() => router.replace(`/challenge/${challenge.id}`)}
         >
-          <Text style={styles.nextText}>Go Back</Text>
+          <Text style={styles.goBackText}>Go Back</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
+  // ── Derived state ──────────────────────────────────────────────────────────
+
   const currentNum = draft.currentPrototypeIndex + 1;
   const max = challenge.maxPrototypes;
+
   const measurements = challenge.measurements.filter(
     (m) => !m.difficulty || m.difficulty === draft.difficulty,
   );
+  const requiredMeasurements = getRequiredMeasurements(measurements);
 
-  const saveMeasurement = (key: string, value: string | number) => {
+  const currentComplete = isPrototypeComplete(current, requiredMeasurements);
+  const allPrototypesComplete =
+    draft.prototypes.length >= max &&
+    draft.prototypes.every((p) => isPrototypeComplete(p, requiredMeasurements));
+  const onLastPrototype = currentNum >= max;
+  const canProceed = onLastPrototype ? allPrototypesComplete : currentComplete;
+
+  const missingOnCurrent = getMissingMeasurementLabels(current, requiredMeasurements);
+  const incompleteSummary = buildIncompleteSummary(draft.prototypes, requiredMeasurements);
+
+  const prototypeDots: PrototypeDot[] = draft.prototypes.map((p) => ({
+    index: p.index,
+    isActive: current.index === p.index,
+    isComplete: isPrototypeComplete(p, requiredMeasurements),
+  }));
+
+  // ── Handlers ───────────────────────────────────────────────────────────────
+
+  const saveMeasurement = (key: string, value: string | number) =>
     updatePrototype(current.index, { measurements: { [key]: value } });
-  };
 
   const handleGPSCapture = (lat: number, lng: number) => {
     setLocation(lat, lng);
     saveMeasurement("location", `${lat.toFixed(4)}, ${lng.toFixed(4)}`);
   };
 
-  const requiredMeasurements = getRequiredMeasurements(measurements);
-  const currentComplete = isPrototypeComplete(current, requiredMeasurements);
-  const allPrototypesComplete = draft.prototypes.every((p) =>
-    isPrototypeComplete(p, requiredMeasurements),
-  );
-  const onLastPrototype = currentNum >= max;
-  const canProceed = onLastPrototype ? allPrototypesComplete : currentComplete;
-  const missingOnCurrent = getMissingMeasurementLabels(
-    current,
-    requiredMeasurements,
-  );
-  const incompleteSummary = buildIncompleteSummary(
-    draft.prototypes,
-    requiredMeasurements,
-  );
-
-  const showIncompleteAlert = (title: string) => {
-    haptic("warning");
-    Alert.alert(title, incompleteSummary);
-  };
-
-  const goToReflect = () => {
+  const goToReflect = () =>
     router.push(
       `/challenge/${challenge.id}/results${timeExpired ? "?timeExpired=true" : ""}`,
     );
-  };
 
   const handleTimeout = () => {
     haptic("error");
     setTimeExpired(true);
     Alert.alert(
       "Time's Up!",
-      `Your ${challenge.estimatedMinutes}-minute challenge has ended. Points will be reduced by 20%.`,
+      `Your ${challenge.estimatedMinutes}-minute challenge time has ended. You can still submit.`,
       [
         {
           text: "Continue",
@@ -190,18 +208,16 @@ export default function RecordScreen() {
 
   const handleNext = () => {
     if (!canProceed) {
-      const title = onLastPrototype
-        ? "Complete all designs first"
-        : "Complete this design first";
-      showIncompleteAlert(title);
+      haptic("warning");
+      Alert.alert(
+        onLastPrototype ? "Complete all designs first" : "Complete this design first",
+        incompleteSummary,
+      );
       return;
     }
     haptic("success");
-    if (currentNum < max) {
-      addPrototype();
-    } else {
-      goToReflect();
-    }
+    if (currentNum < max) addPrototype();
+    else goToReflect();
   };
 
   const handleSaveDraft = () => {
@@ -213,21 +229,21 @@ export default function RecordScreen() {
         { text: "Keep Working", style: "cancel" },
         {
           text: "Save and exit",
-          onPress: () => {
-            router.replace("/(tabs)/activity");
-          },
+          onPress: () => router.replace("/(tabs)/activity"),
         },
       ],
     );
   };
 
-  const renderRecorder = (measurement: Measurement) => {
+  // ── Recorder renderer ──────────────────────────────────────────────────────
+
+  const renderRecorder = (measurement: Measurement): ReactNode => {
     const value = String(current.measurements[measurement.key] || "");
 
     const renderer = RECORDER_RENDERERS[measurement.recorder];
     if (renderer) return renderer(measurement, value, saveMeasurement);
 
-    // Cases that need component-level state (current.measurements, draft.location)
+    // Recorders that need draft state not available in the static map
     switch (measurement.recorder) {
       case "videoAnalyzer": {
         const videoUri = String(current.measurements["slowMotionVideo"] || "");
@@ -239,9 +255,8 @@ export default function RecordScreen() {
               saveMeasurement(measurement.key, "analyzed");
               saveMeasurement("contactTimeSeconds", marks.contactTime);
               saveMeasurement("bounced", marks.bounced ? "Yes" : "No");
-              if (marks.timeToBouncePeak) {
+              if (marks.timeToBouncePeak)
                 saveMeasurement("timeToMaxHeightSeconds", marks.timeToBouncePeak);
-              }
             }}
           />
         );
@@ -255,8 +270,11 @@ export default function RecordScreen() {
             existingTimes={
               value
                 ? (() => {
-                    try { return JSON.parse(value).times; }
-                    catch { return undefined; }
+                    try {
+                      return JSON.parse(value).times;
+                    } catch {
+                      return undefined;
+                    }
                   })()
                 : undefined
             }
@@ -274,249 +292,120 @@ export default function RecordScreen() {
     }
   };
 
-  return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Tab Bar */}
-      <ChallengeTabBar
-        active="doit"
-        onBrief={() => router.back()}
-        onDoit={() => {}}
-        onReflect={goToReflect}
-        onReflectDisabledPress={() =>
-          showIncompleteAlert(
-            max > 1
-              ? "Reflect unlocks when every design is complete"
-              : "Complete required measurements first",
-          )
+  // ── Measurement content ────────────────────────────────────────────────────
+  // Injected into the shell's children slot. All recorder logic stays here;
+  // the shell only receives the already-rendered output.
+
+  const measurementContent = (
+    <SectionCard>
+      {measurements.map((m) => {
+        // Activity 5: bundle smoothness + vibration + time into one widget
+        if (
+          challenge.id === 5 &&
+          ["smoothness", "vibrationData", "timeSeconds"].includes(m.key)
+        ) {
+          if (m.key !== "smoothness") return null;
+          return (
+            <FieldWrapper key="movementTest" label="Movement Test">
+              <MovementTestRecorder
+                existingValues={{
+                  timeSeconds: current.measurements.timeSeconds,
+                  vibrationData: current.measurements.vibrationData,
+                  smoothness: current.measurements.smoothness,
+                }}
+                onCapture={(data) => {
+                  saveMeasurement("timeSeconds", data.timeSeconds);
+                  saveMeasurement("vibrationData", data.vibrationPeak);
+                  saveMeasurement("smoothness", data.smoothness);
+                }}
+              />
+            </FieldWrapper>
+          );
         }
-        doitEnabled={true}
-        reflectEnabled={allPrototypesComplete}
-      />
 
-      <ChallengeTimer
-        minutes={challenge.estimatedMinutes}
-        onTimeout={handleTimeout}
-        autoStart={!timeExpired}
-      />
-
-      <View style={styles.badge}>
-        <Text style={styles.badgeText}>
-          Step 2: Test {currentNum} of {max}
-        </Text>
-      </View>
-      <Text style={styles.title}>Record results</Text>
-      <Text style={styles.helperText}>
-        Fill the required fields. Photos, videos, and GPS add evidence XP.
-      </Text>
-
-      <TouchableOpacity style={styles.exitBtn} onPress={handleSaveDraft}>
-        <Text style={styles.exitText}>Save and exit</Text>
-      </TouchableOpacity>
-
-      {max > 1 && (
-        <Text style={styles.multiProtoHint}>
-          {allPrototypesComplete
-            ? `All ${max} designs complete — you can go to Reflect.`
-            : `Complete required measurements for each design (${draft.prototypes.length} of ${max} started).`}
-        </Text>
-      )}
-
-      {draft.prototypes.length > 1 && (
-        <View style={styles.protoRow}>
-          {draft.prototypes.map((p, i) => {
-            const protoDone = isPrototypeComplete(p, requiredMeasurements);
-            return (
-            <TouchableOpacity
-              key={p.index}
-              style={[
-                styles.protoChip,
-                current.index === p.index && styles.protoActive,
-                !protoDone && styles.protoIncomplete,
-              ]}
-              onPress={() => setCurrentPrototypeIndex(i)}
-            >
-              <Text
-                style={[
-                  styles.protoText,
-                  current.index === p.index && styles.protoActiveText,
-                ]}
-              >
-                #{p.index}
-              </Text>
-            </TouchableOpacity>
-            );
-          })}
-        </View>
-      )}
-
-      {!canProceed && missingOnCurrent.length > 0 && (
-        <View style={styles.validationHint}>
-          <Text style={styles.validationHintTitle}>
-            Still needed for Design #{current.index}:
-          </Text>
-          <Text style={styles.validationHintText}>
-            {missingOnCurrent.join(", ")}
-          </Text>
-        </View>
-      )}
-
-      <View style={styles.measureCard}>
-        {measurements.map((m) => (
-          <View key={m.key} style={styles.field}>
-            <Text style={styles.label}>
-              {m.label} {m.unit ? `(${m.unit})` : ""}
-            </Text>
+        return (
+          <FieldWrapper key={m.key} label={m.label} unit={m.unit}>
             {renderRecorder(m)}
-          </View>
-        ))}
-      </View>
+          </FieldWrapper>
+        );
+      })}
+    </SectionCard>
+  );
 
-      <Pressable
-        style={[styles.nextBtn, !canProceed && styles.nextDisabled]}
-        onPress={handleNext}
-      >
-        <Text style={styles.nextText}>
-          {currentNum < max
-            ? `Test Next Design (${currentNum}/${max})`
-            : "Reflect"}
-        </Text>
-        {!canProceed && (
-          <Text style={styles.nextHint}>
-            {onLastPrototype && max > 1 && !allPrototypesComplete
-              ? "Finish every design tab before Reflect"
-              : "Complete required fields above"}
-          </Text>
-        )}
-      </Pressable>
+  // ── Render ─────────────────────────────────────────────────────────────────
 
-      {timeExpired && (
-        <View style={styles.penaltyWarning}>
-          <Text style={styles.penaltyWarningText}>
-            Time expired. A 20% XP penalty applies.
-          </Text>
-        </View>
-      )}
-    </ScrollView>
+  return (
+    <ChallengeScreenShell
+      challengeId={challenge.id}
+      activeTab="doit"
+      doitEnabled
+      reflectEnabled={allPrototypesComplete}
+      onBrief={() => router.back()}
+      onDoit={() => {}}
+      onReflect={goToReflect}
+      onReflectDisabledPress={() => {
+        haptic("warning");
+        Alert.alert(
+          max > 1
+            ? "Reflect unlocks when every design is complete"
+            : "Complete required measurements first",
+          incompleteSummary,
+        );
+      }}
+      timerMinutes={challenge.estimatedMinutes}
+      onTimeout={handleTimeout}
+      timerAutoStart={!timeExpired}
+      timeExpired={timeExpired}
+      currentDesignNum={currentNum}
+      maxDesigns={max}
+      challengeColor={challenge.color}
+      prototypeDots={prototypeDots}
+      onSelectPrototype={(i) => setCurrentPrototypeIndex(i)}
+      allPrototypesComplete={allPrototypesComplete}
+      missingFields={!canProceed ? missingOnCurrent : []}
+      currentDesignIndex={current.index}
+      canProceed={canProceed}
+      onNext={handleNext}
+      nextLabel={
+        currentNum < max
+          ? `Next Design (${currentNum} / ${max})`
+          : "Go to Reflect"
+      }
+      onSaveAndExit={handleSaveDraft}
+    >
+      {measurementContent}
+    </ChallengeScreenShell>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#FFF7ED" },
-  content: { padding: 20, paddingBottom: 40 },
-  badge: {
-    alignSelf: "flex-start",
-    backgroundColor: "#FED7AA",
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 999,
-    marginBottom: 16,
-  },
-  badgeText: { fontSize: 13, fontWeight: "800", color: "#0F766E" },
-  title: {
-    fontSize: 26,
-    fontWeight: "800",
-    marginBottom: 6,
-    color: "#0F766E",
-  },
-  helperText: {
-    fontSize: 13,
-    color: "#64748B",
-    lineHeight: 18,
-    marginBottom: 14,
-  },
-  exitBtn: {
-    alignSelf: "flex-start",
-    borderWidth: 1,
-    borderColor: "#FCA5A5",
-    backgroundColor: "#FEF2F2",
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    marginBottom: 16,
-  },
-  exitText: {
-    color: "#B91C1C",
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  protoRow: {
-    flexDirection: "row",
-    gap: 10,
-    marginBottom: 16,
-    flexWrap: "wrap",
-  },
-  protoChip: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#FED7AA",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  protoActive: { backgroundColor: "#2F80ED" },
-  protoIncomplete: { borderWidth: 2, borderColor: "#F59E0B" },
-  protoText: { fontSize: 16, fontWeight: "700", color: "#64748B" },
-  protoActiveText: { color: "#FFF" },
-  multiProtoHint: {
-    fontSize: 13,
-    color: "#64748B",
-    marginBottom: 12,
-    lineHeight: 18,
-  },
-  validationHint: {
-    backgroundColor: "#FFFBEB",
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "#FDE68A",
-  },
-  validationHintTitle: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#92400E",
-    marginBottom: 4,
-  },
-  validationHintText: { fontSize: 13, color: "#78350F" },
-  measureCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "#FED7AA",
-  },
-  field: { marginBottom: 20 },
-  label: {
-    fontSize: 14,
-    fontWeight: "800",
-    marginBottom: 8,
-    color: "#0F766E",
-  },
-  nextBtn: {
-    backgroundColor: "#F97316",
-    paddingVertical: 16,
-    borderRadius: 16,
-    alignItems: "center",
-  },
-  nextDisabled: { backgroundColor: "#CBD5E1" },
-  nextText: { color: "#FFF", fontSize: 16, fontWeight: "700" },
-  nextHint: {
-    color: "#E2E8F0",
-    fontSize: 12,
-    fontWeight: "600",
-    marginTop: 4,
-    textAlign: "center",
-  },
-  penaltyWarning: {
-    marginTop: 12,
-    backgroundColor: "#FEE2E2",
-    padding: 12,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  penaltyWarningText: { color: "#DC2626", fontWeight: "700", fontSize: 13 },
+// ── Styles (guard screens only — layout is owned by ChallengeScreenShell) ────
 
-});
+function createStyles(c: ColorTokens) {
+  return StyleSheet.create({
+    center: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 24,
+      backgroundColor: c.background,
+      gap: 16,
+    },
+    centerText: {
+      fontSize: 15,
+      color: c.textSecondary,
+      textAlign: "center",
+      lineHeight: 22,
+    },
+    goBackBtn: {
+      backgroundColor: c.cta,
+      paddingVertical: 14,
+      paddingHorizontal: 28,
+      borderRadius: 14,
+    },
+    goBackText: {
+      color: "#FFFFFF",
+      fontSize: 15,
+      fontWeight: "700",
+    },
+  });
+}

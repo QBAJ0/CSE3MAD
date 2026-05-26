@@ -36,6 +36,7 @@ export type Measurement = {
     | "soundMeter"
     | "accelerometer"
     | "breathing"
+    | "teamBreathing"
     | "tapReaction"
     | "teamReaction"
     | "gyroscope"

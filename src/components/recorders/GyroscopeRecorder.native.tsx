@@ -1,8 +1,10 @@
 // components/recorders/GyroscopeRecorder.tsx
 import { Gyroscope } from "expo-sensors";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useHaptic } from "../../hooks/useHaptic";
+import type { ColorTokens } from "../../theme/colors";
+import { useTheme } from "../../theme/themeContext";
 
 interface GyroscopeRecorderProps {
   onCapture: (data: { smoothness: number; range: number }) => void;
@@ -18,6 +20,8 @@ export function GyroscopeRecorder({
   const [currentValues, setCurrentValues] = useState({ x: 0, y: 0, z: 0 });
   const [smoothness, setSmoothness] = useState(0);
   const { haptic } = useHaptic();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const subscriptionRef = useRef<any>(null);
   const velocityChangesRef = useRef<number[]>([]);
 
@@ -49,7 +53,6 @@ export function GyroscopeRecorder({
     subscriptionRef.current = Gyroscope.addListener((data) => {
       setCurrentValues(data);
 
-      // Calculate change in rotation velocity (jerk)
       const deltaX = Math.abs(data.x - lastValues.x);
       const deltaY = Math.abs(data.y - lastValues.y);
       const deltaZ = Math.abs(data.z - lastValues.z);
@@ -68,18 +71,14 @@ export function GyroscopeRecorder({
       subscriptionRef.current = null;
     }
 
-    // Calculate smoothness (lower change = smoother movement)
     const avgChange =
       velocityChangesRef.current.reduce((a, b) => a + b, 0) /
       velocityChangesRef.current.length;
     const smoothnessScore = Math.max(0, Math.min(100, 100 - avgChange * 100));
 
-    // Calculate range of motion (max - min of any axis)
     setSmoothness(smoothnessScore);
-
     haptic("success");
     setRecording(false);
-
     onCapture({ smoothness: smoothnessScore, range: 0 });
   };
 
@@ -87,10 +86,7 @@ export function GyroscopeRecorder({
     return (
       <View style={styles.container}>
         <Text style={styles.permissionText}>🔄 Gyroscope access required</Text>
-        <TouchableOpacity
-          style={styles.permissionButton}
-          onPress={requestPermissions}
-        >
+        <TouchableOpacity style={styles.permissionButton} onPress={requestPermissions}>
           <Text style={styles.permissionButtonText}>Grant Permission</Text>
         </TouchableOpacity>
       </View>
@@ -124,18 +120,12 @@ export function GyroscopeRecorder({
                 {
                   width: `${smoothness}%`,
                   backgroundColor:
-                    smoothness > 70
-                      ? "#2563EB"
-                      : smoothness > 40
-                        ? "#F59E0B"
-                        : "#EF4444",
+                    smoothness > 70 ? "#2563EB" : smoothness > 40 ? "#F59E0B" : "#EF4444",
                 },
               ]}
             />
           </View>
-          <Text style={styles.smoothnessValue}>
-            {smoothness.toFixed(0)}/100
-          </Text>
+          <Text style={styles.smoothnessValue}>{smoothness.toFixed(0)}/100</Text>
         </View>
       )}
 
@@ -151,52 +141,54 @@ export function GyroscopeRecorder({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    padding: 16,
-  },
-  permissionText: { color: "#0F172A", textAlign: "center", marginBottom: 12 },
-  permissionButton: {
-    backgroundColor: "#2563EB",
-    padding: 12,
-    borderRadius: 10,
-    alignItems: "center",
-  },
-  permissionButtonText: { color: "#EFF6FF", fontWeight: "700" },
-  valuesContainer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    marginBottom: 20,
-  },
-  valueItem: { alignItems: "center" },
-  valueLabel: { color: "#64748B", fontSize: 12, fontWeight: "600" },
-  valueText: { color: "#0F172A", fontSize: 16, fontWeight: "700" },
-  smoothnessContainer: { marginBottom: 20, alignItems: "center" },
-  smoothnessLabel: { color: "#64748B", fontSize: 12, marginBottom: 8 },
-  smoothnessBar: {
-    width: "100%",
-    height: 20,
-    backgroundColor: "#E2E8F0",
-    borderRadius: 10,
-    overflow: "hidden",
-  },
-  smoothnessFill: { height: "100%", borderRadius: 10 },
-  smoothnessValue: {
-    color: "#0F172A",
-    fontSize: 18,
-    fontWeight: "700",
-    marginTop: 8,
-  },
-  recordButton: {
-    backgroundColor: "#2563EB",
-    padding: 16,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  recordButtonActive: { backgroundColor: "#EF4444" },
-  recordButtonText: { color: "#FFF", fontSize: 16, fontWeight: "700" },
-});
+function createStyles(c: ColorTokens) {
+  return StyleSheet.create({
+    container: {
+      backgroundColor: c.surface,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: c.border,
+      padding: 16,
+    },
+    permissionText: { color: c.text, textAlign: "center", marginBottom: 12 },
+    permissionButton: {
+      backgroundColor: c.info,
+      padding: 12,
+      borderRadius: 10,
+      alignItems: "center",
+    },
+    permissionButtonText: { color: c.infoLight, fontWeight: "700" },
+    valuesContainer: {
+      flexDirection: "row",
+      justifyContent: "space-around",
+      marginBottom: 20,
+    },
+    valueItem: { alignItems: "center" },
+    valueLabel: { color: c.textSecondary, fontSize: 12, fontWeight: "600" },
+    valueText: { color: c.text, fontSize: 16, fontWeight: "700" },
+    smoothnessContainer: { marginBottom: 20, alignItems: "center" },
+    smoothnessLabel: { color: c.textSecondary, fontSize: 12, marginBottom: 8 },
+    smoothnessBar: {
+      width: "100%",
+      height: 20,
+      backgroundColor: c.border,
+      borderRadius: 10,
+      overflow: "hidden",
+    },
+    smoothnessFill: { height: "100%", borderRadius: 10 },
+    smoothnessValue: {
+      color: c.text,
+      fontSize: 18,
+      fontWeight: "700",
+      marginTop: 8,
+    },
+    recordButton: {
+      backgroundColor: c.info,
+      padding: 16,
+      borderRadius: 12,
+      alignItems: "center",
+    },
+    recordButtonActive: { backgroundColor: c.danger },
+    recordButtonText: { color: "#FFF", fontSize: 16, fontWeight: "700" },
+  });
+}

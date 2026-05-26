@@ -193,18 +193,18 @@ export function VideoRecorder({
 
         <View style={styles.videoActions}>
           <TouchableOpacity style={styles.retakeButton} onPress={retakeVideo}>
-            <Text style={styles.retakeButtonText}>🔄 Retake</Text>
+            <Text style={styles.retakeButtonText}>Retake</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.secondaryActionButton}
             onPress={pickVideoFromGallery}
           >
-            <Text style={styles.secondaryActionButtonText}>📁 Replace</Text>
+            <Text style={styles.secondaryActionButtonText}>Replace</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.deleteButton} onPress={deleteVideo}>
-            <Text style={styles.deleteButtonText}>🗑️ Delete</Text>
+            <Text style={styles.deleteButtonText}>Delete</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -272,7 +272,7 @@ export function VideoRecorder({
                     ]}
                   >
                     <Text style={styles.torchButtonText}>
-                      {torchOn ? "🔦" : "💡"}
+                      {torchOn ? "Off" : "Light"}
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -280,7 +280,7 @@ export function VideoRecorder({
                   onPress={toggleCameraFacing}
                   style={styles.flipButton}
                 >
-                  <Text style={styles.flipButtonText}>🔄</Text>
+                  <Text style={styles.flipButtonText}>Flip</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -476,7 +476,9 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(250,204,21,0.85)",
   },
   torchButtonText: {
-    fontSize: 22,
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#FFF",
   },
   flipButton: {
     width: 44,
@@ -488,7 +490,8 @@ const styles = StyleSheet.create({
   },
   flipButtonText: {
     color: "#FFF",
-    fontSize: 24,
+    fontSize: 13,
+    fontWeight: "700",
   },
   cameraFooter: {
     position: "absolute",

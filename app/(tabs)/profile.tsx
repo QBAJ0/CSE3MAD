@@ -2,7 +2,7 @@
 
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router, useFocusEffect } from "expo-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -13,34 +13,31 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import {
-  BADGES,
-  RARITY_BG,
-  RARITY_BORDER,
-  RARITY_COLOR,
-} from "../../src/config/badges";
 import { BatteryStatusCard } from "../../src/components/BatteryStatusCard";
 import { useTeam } from "../../src/context/TeamContext";
-import { getChallengeById } from "../../src/data/challenges";
+import { CHALLENGES, getChallengeById } from "../../src/data/challenges";
+import type { ColorTokens } from "../../src/theme/colors";
+import { AppearanceSetting, useTheme } from "../../src/theme/themeContext";
 import { ActivityResult } from "../../src/types";
 import { scheduleStreakReminder, cancelStreakReminder } from "../../src/utils/notifications";
 import { DEFAULT_REMINDER_HOUR, DEFAULT_REMINDER_MINUTE, storage } from "../../src/utils/storage";
 
 const AVATAR_COLORS = [
-  "#0F766E",
-  "#2563EB",
-  "#FED7AA",
-  "#F97316",
-  "#0F766E",
-  "#2563EB",
+  "#0F766E", "#2563EB", "#FED7AA", "#F97316", "#0F766E", "#2563EB",
+];
+
+const APPEARANCE_OPTIONS: { value: AppearanceSetting; label: string; icon: string }[] = [
+  { value: "light", label: "Light", icon: "sunny-outline" },
+  { value: "dark",  label: "Dark",  icon: "moon-outline" },
+  { value: "system",label: "System",icon: "phone-portrait-outline" },
 ];
 
 export default function ProfileScreen() {
   const { team, clearTeamData } = useTeam();
+  const { colors, appearance, setAppearance } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
-  const [earnedBadgeIds, setEarnedBadgeIds] = useState<Set<string>>(new Set());
   const [recentActivities, setRecentActivities] = useState<ActivityResult[]>([]);
-  const [totalXP, setTotalXP] = useState(0);
   const [loading, setLoading] = useState(true);
   const [reminderHour, setReminderHour] = useState(DEFAULT_REMINDER_HOUR);
   const [reminderMinute, setReminderMinute] = useState(DEFAULT_REMINDER_MINUTE);
@@ -52,24 +49,19 @@ export default function ProfileScreen() {
       const load = async () => {
         if (isFirstLoad.current) setLoading(true);
 
-        const [badges, activities, savedHour, savedMinute] = await Promise.all([
-          storage.getEarnedBadges(),
+        const [activities, savedHour, savedMinute] = await Promise.all([
           storage.getCompletedActivities(),
           storage.getReminderHour(),
           storage.getReminderMinute(),
         ]);
 
         const sorted = [...activities].sort(
-          (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
         );
 
-        setEarnedBadgeIds(new Set(badges));
         setRecentActivities(sorted);
-        setTotalXP(activities.reduce((sum, a) => sum + (a.points ?? 0), 0));
         setReminderHour(savedHour);
         setReminderMinute(savedMinute);
-
         setLoading(false);
         isFirstLoad.current = false;
       };
@@ -118,7 +110,7 @@ export default function ProfileScreen() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2563EB" />
+        <ActivityIndicator size="large" color={colors.info} />
       </View>
     );
   }
@@ -129,6 +121,7 @@ export default function ProfileScreen() {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
+      {/* ── Profile header ── */}
       <View style={styles.header}>
         <View style={styles.avatarCircle}>
           <Ionicons name="flask" size={40} color="#FED7AA" />
@@ -139,29 +132,60 @@ export default function ProfileScreen() {
 
         <View style={styles.statsRow}>
           <View style={styles.stat}>
-            <Text style={styles.statValue}>{totalXP}</Text>
-            <Text style={styles.statLabel}>Total XP</Text>
-          </View>
-
-          <View style={styles.statDivider} />
-
-          <View style={styles.stat}>
             <Text style={styles.statValue}>{recentActivities.length}</Text>
             <Text style={styles.statLabel}>Experiments</Text>
           </View>
-
           <View style={styles.statDivider} />
-
           <View style={styles.stat}>
-            <Text style={styles.statValue}>{earnedBadgeIds.size}</Text>
-            <Text style={styles.statLabel}>Badges</Text>
+            <Text style={styles.statValue}>
+              {new Set(recentActivities.map((a) => a.challengeId)).size}
+            </Text>
+            <Text style={styles.statLabel}>Challenges</Text>
           </View>
         </View>
       </View>
 
+      {/* ── Preferences (Appearance) ── */}
       <View style={styles.card}>
         <View style={styles.cardTitleRow}>
-          <Ionicons name="construct-outline" size={16} color="#0F172A" />
+          <Ionicons name="settings-outline" size={16} color={colors.primary} />
+          <Text style={styles.cardTitle}>Preferences</Text>
+        </View>
+
+        <Text style={styles.prefLabel}>Appearance</Text>
+        <View style={styles.segmentedControl}>
+          {APPEARANCE_OPTIONS.map((opt) => {
+            const isActive = appearance === opt.value;
+            return (
+              <TouchableOpacity
+                key={opt.value}
+                style={[styles.segmentOption, isActive && styles.segmentOptionActive]}
+                onPress={() => setAppearance(opt.value)}
+                activeOpacity={0.8}
+              >
+                <Ionicons
+                  name={opt.icon as any}
+                  size={14}
+                  color={isActive ? "#FFFFFF" : colors.textSecondary}
+                />
+                <Text
+                  style={[
+                    styles.segmentText,
+                    isActive && styles.segmentTextActive,
+                  ]}
+                >
+                  {opt.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </View>
+
+      {/* ── Data & tools ── */}
+      <View style={styles.card}>
+        <View style={styles.cardTitleRow}>
+          <Ionicons name="construct-outline" size={16} color={colors.text} />
           <Text style={styles.cardTitle}>Data & tools</Text>
         </View>
         <Text style={styles.toolsHint}>
@@ -172,98 +196,81 @@ export default function ProfileScreen() {
           style={({ pressed }) => [styles.toolRow, pressed && styles.pressed]}
           onPress={() => router.push("/(tabs)/activities")}
         >
-          <Ionicons name="flask-outline" size={20} color="#0F172A" />
+          <Ionicons name="flask-outline" size={20} color={colors.text} />
           <Text style={styles.toolLabel}>Lab activities</Text>
-          <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
+          <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
         </Pressable>
 
         <Pressable
           style={({ pressed }) => [styles.toolRow, pressed && styles.pressed]}
           onPress={() => router.push("/(tabs)/results")}
         >
-          <Ionicons name="document-text-outline" size={20} color="#0F172A" />
+          <Ionicons name="document-text-outline" size={20} color={colors.text} />
           <Text style={styles.toolLabel}>Lab results (SQLite)</Text>
-          <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
+          <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
         </Pressable>
 
         <Pressable
           style={({ pressed }) => [styles.toolRow, pressed && styles.pressed]}
           onPress={() => router.push("/(tabs)/sqlite-test")}
         >
-          <Ionicons name="hardware-chip-outline" size={20} color="#0F172A" />
+          <Ionicons name="hardware-chip-outline" size={20} color={colors.text} />
           <Text style={styles.toolLabel}>SQLite check</Text>
-          <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
+          <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
         </Pressable>
 
         <Pressable
           style={({ pressed }) => [styles.toolRow, pressed && styles.pressed]}
           onPress={() => router.push("/(tabs)/auth")}
         >
-          <Ionicons name="log-in-outline" size={20} color="#0F172A" />
+          <Ionicons name="log-in-outline" size={20} color={colors.text} />
           <Text style={styles.toolLabel}>Email sign-in</Text>
-          <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
+          <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
         </Pressable>
       </View>
 
       <BatteryStatusCard />
 
+      {/* ── Completed challenges ── */}
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <View style={styles.cardTitleRow}>
-            <Ionicons name="ribbon-outline" size={16} color="#0F766E" />
-            <Text style={styles.cardTitle}>Badge Collection</Text>
+            <Ionicons name="checkmark-circle-outline" size={16} color={colors.primary} />
+            <Text style={styles.cardTitle}>Completed Challenges</Text>
           </View>
-
           <Text style={styles.cardSubtitle}>
-            {earnedBadgeIds.size}/{BADGES.length} earned
+            {new Set(recentActivities.map((a) => a.challengeId)).size}/{CHALLENGES.length} done
           </Text>
         </View>
 
         <View style={styles.badgeGrid}>
-          {BADGES.map((badge) => {
-            const isEarned = earnedBadgeIds.has(badge.id);
-
+          {CHALLENGES.map((challenge) => {
+            const isDone = recentActivities.some((a) => a.challengeId === challenge.id);
             return (
               <View
-                key={badge.id}
+                key={challenge.id}
                 style={[
                   styles.badgeTile,
                   {
-                    backgroundColor: isEarned
-                      ? RARITY_BG[badge.rarity]
-                      : "#FFF7ED",
-                    borderColor: isEarned
-                      ? RARITY_BORDER[badge.rarity]
-                      : "#FFF7ED",
-                    opacity: isEarned ? 1 : 0.5,
+                    backgroundColor: isDone ? colors.successLight : colors.backgroundSecondary,
+                    borderColor: isDone ? colors.success : colors.border,
+                    opacity: isDone ? 1 : 0.45,
                   },
                 ]}
               >
                 <Ionicons
-                  name={badge.icon as any}
+                  name={challenge.icon as any}
                   size={24}
-                  color={isEarned ? RARITY_COLOR[badge.rarity] : "#94A3B8"}
+                  color={isDone ? colors.primary : colors.textMuted}
                 />
-
                 <Text
-                  style={[
-                    styles.badgeName,
-                    {
-                      color: isEarned ? RARITY_COLOR[badge.rarity] : "#94A3B8",
-                    },
-                  ]}
+                  style={[styles.badgeName, { color: isDone ? colors.primary : colors.textMuted }]}
                   numberOfLines={2}
                 >
-                  {badge.name}
+                  {challenge.title}
                 </Text>
-
-                {isEarned && (
-                  <View
-                    style={[
-                      styles.rarityDot,
-                      { backgroundColor: RARITY_COLOR[badge.rarity] },
-                    ]}
-                  />
+                {isDone && (
+                  <View style={[styles.rarityDot, { backgroundColor: colors.primary }]} />
                 )}
               </View>
             );
@@ -271,9 +278,10 @@ export default function ProfileScreen() {
         </View>
       </View>
 
+      {/* ── Team members ── */}
       <View style={styles.card}>
         <View style={styles.cardTitleRow}>
-          <Ionicons name="people-outline" size={16} color="#0F766E" />
+          <Ionicons name="people-outline" size={16} color={colors.primary} />
           <Text style={styles.cardTitle}>Team Members</Text>
         </View>
 
@@ -282,16 +290,13 @@ export default function ProfileScreen() {
             <View
               style={[
                 styles.memberAvatar,
-                {
-                  backgroundColor: AVATAR_COLORS[index % AVATAR_COLORS.length],
-                },
+                { backgroundColor: AVATAR_COLORS[index % AVATAR_COLORS.length] },
               ]}
             >
               <Text style={styles.memberInitial}>
                 {member.name.charAt(0).toUpperCase()}
               </Text>
             </View>
-
             <View style={styles.memberInfo}>
               <Text style={styles.memberName}>{member.name}</Text>
               <Text style={styles.memberGrade}>
@@ -302,15 +307,16 @@ export default function ProfileScreen() {
         ))}
       </View>
 
+      {/* ── Results history ── */}
       <View style={styles.card}>
         <View style={styles.cardTitleRow}>
-          <Ionicons name="time-outline" size={16} color="#0F766E" />
+          <Ionicons name="time-outline" size={16} color={colors.primary} />
           <Text style={styles.cardTitle}>Results History</Text>
         </View>
 
         {recentActivities.length === 0 ? (
           <View style={styles.emptyActivity}>
-            <Ionicons name="flask-outline" size={32} color="#CBD5E1" />
+            <Ionicons name="flask-outline" size={32} color={colors.border} />
             <Text style={styles.emptyActivityText}>No experiments yet</Text>
             <Text style={styles.emptyActivitySub}>
               Complete a challenge to see saved results here.
@@ -321,14 +327,11 @@ export default function ProfileScreen() {
             const challenge = getChallengeById(activity.challengeId);
             if (!challenge) return null;
 
-            const date = new Date(activity.createdAt).toLocaleDateString(
-              "en-AU",
-              {
-                day: "numeric",
-                month: "short",
-                year: "numeric",
-              },
-            );
+            const date = new Date(activity.createdAt).toLocaleDateString("en-AU", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+            });
 
             const videoAttached = hasVideoEvidence(activity);
             const gpsAttached = Boolean(activity.location);
@@ -338,68 +341,44 @@ export default function ProfileScreen() {
                 key={activity.id}
                 style={styles.historyCard}
                 onPress={() =>
-                  router.push(`/challenge/${activity.challengeId}/details?resultId=${activity.id}`)
+                  router.push(
+                    `/challenge/${activity.challengeId}/details?resultId=${activity.id}`,
+                  )
                 }
                 activeOpacity={0.85}
               >
                 <View style={styles.historyTopRow}>
                   <View style={styles.historyIcon}>
-                    <Ionicons
-                      name={challenge.icon as any}
-                      size={22}
-                      color="#2563EB"
-                    />
+                    <Ionicons name={challenge.icon as any} size={22} color={colors.info} />
                   </View>
-
                   <View style={styles.historyInfo}>
                     <Text style={styles.historyName}>{challenge.title}</Text>
-                    <Text style={styles.historyMeta}>
-                      {date} ·{" "}
-                      {activity.difficulty === "highSchool"
-                        ? "High School"
-                        : "Primary"}
-                    </Text>
-                  </View>
-
-                  <View style={styles.historyXP}>
-                    <Text style={styles.historyXPValue}>
-                      +{activity.points ?? 0}
-                    </Text>
-                    <Text style={styles.historyXPLabel}>XP</Text>
+                    <Text style={styles.historyMeta}>{date}</Text>
                   </View>
                 </View>
 
                 <View style={styles.historyDetailsRow}>
                   <View style={styles.historyBadge}>
-                    <Ionicons name="star" size={13} color="#F97316" />
-                    <Text style={styles.historyBadgeText}>
-                      {activity.rating}/5
-                    </Text>
+                    <Ionicons name="star" size={13} color={colors.cta} />
+                    <Text style={styles.historyBadgeText}>{activity.rating}/5</Text>
                   </View>
-
                   <View style={styles.historyBadge}>
-                    <Ionicons
-                      name="construct-outline"
-                      size={13}
-                      color="#64748B"
-                    />
+                    <Ionicons name="construct-outline" size={13} color={colors.textSecondary} />
                     <Text style={styles.historyBadgeText}>
                       {activity.prototypes.length} design
                       {activity.prototypes.length === 1 ? "" : "s"}
                     </Text>
                   </View>
-
                   {videoAttached && (
-                    <View style={styles.videoBadge}>
-                      <Ionicons name="videocam" size={13} color="#0F766E" />
-                      <Text style={styles.videoBadgeText}>Video saved</Text>
+                    <View style={[styles.historyBadge, { borderColor: colors.info }]}>
+                      <Ionicons name="videocam" size={13} color={colors.primary} />
+                      <Text style={styles.historyBadgeText}>Video saved</Text>
                     </View>
                   )}
-
                   {gpsAttached && (
-                    <View style={styles.gpsBadge}>
-                      <Ionicons name="location" size={13} color="#0F766E" />
-                      <Text style={styles.gpsBadgeText}>GPS</Text>
+                    <View style={[styles.historyBadge, { borderColor: colors.info }]}>
+                      <Ionicons name="location" size={13} color={colors.primary} />
+                      <Text style={styles.historyBadgeText}>GPS</Text>
                     </View>
                   )}
                 </View>
@@ -415,24 +394,28 @@ export default function ProfileScreen() {
         )}
       </View>
 
+      {/* ── Notification reminder ── */}
       <NotificationTimeCard
         initialHour={reminderHour}
         initialMinute={reminderMinute}
         onSave={handleSaveReminderTime}
       />
 
+      {/* ── Reset ── */}
       <Pressable
         style={({ pressed }) => [styles.resetBtn, pressed && styles.pressed]}
         onPress={handleReset}
       >
         <View style={styles.resetBtnRow}>
-          <Ionicons name="warning-outline" size={15} color="#DC2626" />
+          <Ionicons name="warning-outline" size={15} color={colors.danger} />
           <Text style={styles.resetBtnText}>Reset App Data</Text>
         </View>
       </Pressable>
     </ScrollView>
   );
 }
+
+// ── NotificationTimeCard ──────────────────────────────────────────────────────
 
 function fmt12(hour: number, minute: number) {
   const period = hour >= 12 ? "PM" : "AM";
@@ -450,8 +433,10 @@ function NotificationTimeCard({
   initialMinute: number;
   onSave: (hour: number, minute: number) => void;
 }) {
-  const [mode, setMode] = useState<"time" | "duration">("time");
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
+  const [mode, setMode] = useState<"time" | "duration">("time");
   const toH12 = (h: number) => h % 12 || 12;
   const [hour12, setHour12] = useState(toH12(initialHour));
   const [minute, setMinute] = useState(initialMinute);
@@ -487,11 +472,10 @@ function NotificationTimeCard({
   return (
     <View style={styles.card}>
       <View style={styles.cardTitleRow}>
-        <Ionicons name="notifications-outline" size={16} color="#0F766E" />
-        <Text style={styles.cardTitle}>Streak Reminder Time</Text>
+        <Ionicons name="notifications-outline" size={16} color={colors.primary} />
+        <Text style={styles.cardTitle}>Challenge Reminder</Text>
       </View>
 
-      {/* Mode toggle */}
       <View style={styles.modeToggle}>
         <TouchableOpacity
           style={[styles.modeBtn, mode === "time" && styles.modeBtnActive]}
@@ -515,31 +499,28 @@ function NotificationTimeCard({
 
       {mode === "time" ? (
         <View style={styles.pickerRow}>
-          {/* Hour */}
           <View style={styles.spinnerCol}>
             <TouchableOpacity onPress={() => stepHour(1)} style={styles.spinnerBtn}>
-              <Ionicons name="chevron-up" size={20} color="#0F766E" />
+              <Ionicons name="chevron-up" size={20} color={colors.primary} />
             </TouchableOpacity>
             <Text style={styles.spinnerValue}>{hour12.toString().padStart(2, "0")}</Text>
             <TouchableOpacity onPress={() => stepHour(-1)} style={styles.spinnerBtn}>
-              <Ionicons name="chevron-down" size={20} color="#0F766E" />
+              <Ionicons name="chevron-down" size={20} color={colors.primary} />
             </TouchableOpacity>
           </View>
 
           <Text style={styles.timeSeparator}>:</Text>
 
-          {/* Minute */}
           <View style={styles.spinnerCol}>
             <TouchableOpacity onPress={() => stepMinute(1)} style={styles.spinnerBtn}>
-              <Ionicons name="chevron-up" size={20} color="#0F766E" />
+              <Ionicons name="chevron-up" size={20} color={colors.primary} />
             </TouchableOpacity>
             <Text style={styles.spinnerValue}>{minute.toString().padStart(2, "0")}</Text>
             <TouchableOpacity onPress={() => stepMinute(-1)} style={styles.spinnerBtn}>
-              <Ionicons name="chevron-down" size={20} color="#0F766E" />
+              <Ionicons name="chevron-down" size={20} color={colors.primary} />
             </TouchableOpacity>
           </View>
 
-          {/* AM/PM */}
           <TouchableOpacity
             style={styles.ampmBtn}
             onPress={() => setIsPM((p) => !p)}
@@ -553,16 +534,14 @@ function NotificationTimeCard({
           <Text style={styles.durationLabel}>Remind me in</Text>
           <View style={styles.durationStepper}>
             <TouchableOpacity onPress={() => stepDuration(-1)} style={styles.stepBtn}>
-              <Ionicons name="remove" size={20} color="#0F766E" />
+              <Ionicons name="remove" size={20} color={colors.primary} />
             </TouchableOpacity>
             <Text style={styles.stepValue}>{durationHrs}h</Text>
             <TouchableOpacity onPress={() => stepDuration(1)} style={styles.stepBtn}>
-              <Ionicons name="add" size={20} color="#0F766E" />
+              <Ionicons name="add" size={20} color={colors.primary} />
             </TouchableOpacity>
           </View>
-          <Text style={styles.durationResult}>
-            → {fmt12(durationHour(), 0)}
-          </Text>
+          <Text style={styles.durationResult}>→ {fmt12(durationHour(), 0)}</Text>
         </View>
       )}
 
@@ -574,509 +553,297 @@ function NotificationTimeCard({
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: "#FFF7ED",
-  },
+// ── Styles ────────────────────────────────────────────────────────────────────
 
-  content: {
-    paddingBottom: 40,
-  },
+function createStyles(c: ColorTokens) {
+  return StyleSheet.create({
+    screen: { flex: 1, backgroundColor: c.background },
+    content: { paddingBottom: 40 },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: c.background,
+    },
 
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#FFF7ED",
-  },
+    header: {
+      backgroundColor: c.header,
+      paddingTop: 58,
+      paddingBottom: 28,
+      paddingHorizontal: 24,
+      alignItems: "center",
+      borderBottomLeftRadius: 32,
+      borderBottomRightRadius: 32,
+      marginBottom: 16,
+      gap: 6,
+    },
+    avatarCircle: {
+      width: 84,
+      height: 84,
+      borderRadius: 42,
+      backgroundColor: "rgba(255,202,167,0.2)",
+      borderWidth: 3,
+      borderColor: "#FED7AA",
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 10,
+    },
+    teamName: { fontSize: 24, fontWeight: "800", color: "#FFFFFF" },
+    teamId: { fontSize: 13, fontWeight: "700", color: "#FED7AA", marginBottom: 18 },
+    statsRow: {
+      flexDirection: "row",
+      backgroundColor: "rgba(255,255,255,0.15)",
+      borderRadius: 16,
+      paddingVertical: 14,
+      paddingHorizontal: 20,
+      gap: 20,
+      borderWidth: 1,
+      borderColor: "rgba(255,255,255,0.25)",
+    },
+    stat: { alignItems: "center", flex: 1 },
+    statValue: { fontSize: 22, fontWeight: "800", color: "#FFFFFF" },
+    statLabel: { fontSize: 10, color: "rgba(255,255,255,0.7)", marginTop: 2, fontWeight: "600" },
+    statDivider: { width: 1, backgroundColor: "rgba(255,255,255,0.2)" },
 
-  header: {
-    backgroundColor: "#0F766E",
-    paddingTop: 58,
-    paddingBottom: 28,
-    paddingHorizontal: 24,
-    alignItems: "center",
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
-    marginBottom: 16,
-    gap: 6,
-  },
+    card: {
+      backgroundColor: c.surface,
+      borderRadius: 20,
+      padding: 20,
+      marginHorizontal: 16,
+      marginBottom: 14,
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+    cardHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 16,
+    },
+    cardTitleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      marginBottom: 12,
+    },
+    cardTitle: { fontSize: 16, fontWeight: "800", color: c.primary },
+    cardSubtitle: { fontSize: 12, color: c.textMuted, fontWeight: "600" },
 
-  avatarCircle: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
-    backgroundColor: "rgba(255,202,167,0.2)",
-    borderWidth: 3,
-    borderColor: "#FED7AA",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 10,
-  },
+    // Preferences section
+    prefLabel: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: c.textSecondary,
+      marginBottom: 10,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+    },
+    segmentedControl: {
+      flexDirection: "row",
+      backgroundColor: c.backgroundSecondary,
+      borderRadius: 12,
+      padding: 3,
+    },
+    segmentOption: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 5,
+      paddingVertical: 10,
+      borderRadius: 10,
+    },
+    segmentOptionActive: {
+      backgroundColor: c.primary,
+      shadowColor: "#000",
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 2,
+    },
+    segmentText: { fontSize: 13, fontWeight: "600", color: c.textSecondary },
+    segmentTextActive: { color: "#FFFFFF", fontWeight: "700" },
 
-  teamName: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: "#FFFFFF",
-  },
+    toolsHint: { fontSize: 13, color: c.textSecondary, lineHeight: 18, marginBottom: 12 },
+    toolRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      paddingVertical: 14,
+      borderBottomWidth: 1,
+      borderBottomColor: c.borderFaint,
+    },
+    toolLabel: { flex: 1, fontSize: 15, fontWeight: "700", color: c.text },
 
-  teamId: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#FED7AA",
-    marginBottom: 18,
-  },
+    badgeGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+    badgeTile: {
+      width: "22%",
+      borderRadius: 12,
+      padding: 10,
+      alignItems: "center",
+      borderWidth: 1.5,
+      gap: 4,
+      minHeight: 80,
+      justifyContent: "center",
+    },
+    badgeName: { fontSize: 9, fontWeight: "700", textAlign: "center", lineHeight: 12 },
+    rarityDot: { width: 6, height: 6, borderRadius: 3, marginTop: 2 },
 
-  statsRow: {
-    flexDirection: "row",
-    backgroundColor: "rgba(255,255,255,0.15)",
-    borderRadius: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    gap: 20,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.25)",
-  },
+    memberRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: c.borderFaint,
+      gap: 12,
+    },
+    memberAvatar: {
+      width: 42,
+      height: 42,
+      borderRadius: 21,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    memberInitial: { fontSize: 18, fontWeight: "800", color: "#FFFFFF" },
+    memberInfo: { flex: 1 },
+    memberName: { fontSize: 15, fontWeight: "700", color: c.primary },
+    memberGrade: { fontSize: 12, color: c.textMuted, marginTop: 1 },
 
-  stat: {
-    alignItems: "center",
-    flex: 1,
-  },
+    historyCard: {
+      backgroundColor: c.backgroundSecondary,
+      borderRadius: 16,
+      padding: 14,
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+    historyTopRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+    historyIcon: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: c.surface,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    historyInfo: { flex: 1 },
+    historyName: { fontSize: 14, fontWeight: "800", color: c.primary },
+    historyMeta: { fontSize: 11, color: c.textMuted, marginTop: 3 },
+    historyDetailsRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 8,
+      marginTop: 12,
+    },
+    historyBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      backgroundColor: c.surface,
+      borderRadius: 8,
+      paddingHorizontal: 9,
+      paddingVertical: 5,
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+    historyBadgeText: { fontSize: 11, color: c.primary, fontWeight: "700" },
+    historyReflection: {
+      marginTop: 10,
+      fontSize: 12,
+      color: c.textSecondary,
+      lineHeight: 17,
+    },
 
-  statValue: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: "#FFFFFF",
-  },
+    emptyActivity: { alignItems: "center", paddingVertical: 24, gap: 8 },
+    emptyActivityText: { fontSize: 15, fontWeight: "700", color: c.textMuted },
+    emptyActivitySub: { fontSize: 13, color: c.border, textAlign: "center" },
 
-  statLabel: {
-    fontSize: 10,
-    color: "rgba(255,255,255,0.7)",
-    marginTop: 2,
-    fontWeight: "600",
-  },
+    resetBtn: {
+      marginHorizontal: 16,
+      marginTop: 6,
+      padding: 16,
+      backgroundColor: c.dangerLight,
+      borderRadius: 12,
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: c.danger,
+    },
+    resetBtnRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+    resetBtnText: { color: c.danger, fontWeight: "700", fontSize: 15 },
+    pressed: { opacity: 0.8 },
 
-  statDivider: {
-    width: 1,
-    backgroundColor: "rgba(255,255,255,0.2)",
-  },
-
-  card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 20,
-    marginHorizontal: 16,
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: "#FFF7ED",
-  },
-
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-
-  cardTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 12,
-  },
-
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: "#0F766E",
-  },
-
-  cardSubtitle: {
-    fontSize: 12,
-    color: "#94A3B8",
-    fontWeight: "600",
-  },
-
-  toolsHint: {
-    fontSize: 13,
-    color: "#64748B",
-    lineHeight: 18,
-    marginBottom: 12,
-  },
-
-  toolRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
-  },
-
-  toolLabel: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#0F172A",
-  },
-
-  badgeGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-  },
-
-  badgeTile: {
-    width: "22%",
-    borderRadius: 12,
-    padding: 10,
-    alignItems: "center",
-    borderWidth: 1.5,
-    gap: 4,
-    minHeight: 80,
-    justifyContent: "center",
-  },
-
-  badgeName: {
-    fontSize: 9,
-    fontWeight: "700",
-    textAlign: "center",
-    lineHeight: 12,
-  },
-
-  rarityDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginTop: 2,
-  },
-
-  memberRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#FFF7ED",
-    gap: 12,
-  },
-
-  memberAvatar: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  memberInitial: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: "#FFFFFF",
-  },
-
-  memberInfo: {
-    flex: 1,
-  },
-
-  memberName: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#0F766E",
-  },
-
-  memberGrade: {
-    fontSize: 12,
-    color: "#94A3B8",
-    marginTop: 1,
-  },
-
-  historyCard: {
-    backgroundColor: "#FFF7ED",
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "#FFF7ED",
-  },
-
-  historyTopRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-
-  historyIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "#FFFFFF",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  historyInfo: {
-    flex: 1,
-  },
-
-  historyName: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: "#0F766E",
-  },
-
-  historyMeta: {
-    fontSize: 11,
-    color: "#94A3B8",
-    marginTop: 3,
-  },
-
-  historyXP: {
-    alignItems: "flex-end",
-  },
-
-  historyXPValue: {
-    fontSize: 17,
-    fontWeight: "800",
-    color: "#F97316",
-  },
-
-  historyXPLabel: {
-    fontSize: 10,
-    color: "#94A3B8",
-    fontWeight: "600",
-  },
-
-  historyDetailsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginTop: 12,
-  },
-
-  historyBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 8,
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-    borderWidth: 1,
-    borderColor: "#FFF7ED",
-  },
-
-  historyBadgeText: {
-    fontSize: 11,
-    color: "#0F766E",
-    fontWeight: "700",
-  },
-
-  videoBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 8,
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-    borderWidth: 1,
-    borderColor: "#2563EB",
-  },
-
-  videoBadgeText: {
-    fontSize: 11,
-    color: "#0F766E",
-    fontWeight: "800",
-  },
-
-  gpsBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 8,
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-    borderWidth: 1,
-    borderColor: "#2563EB",
-  },
-
-  gpsBadgeText: {
-    fontSize: 11,
-    color: "#0F766E",
-    fontWeight: "800",
-  },
-
-  historyReflection: {
-    marginTop: 10,
-    fontSize: 12,
-    color: "#64748B",
-    lineHeight: 17,
-  },
-
-  emptyActivity: {
-    alignItems: "center",
-    paddingVertical: 24,
-    gap: 8,
-  },
-
-  emptyActivityText: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#94A3B8",
-  },
-
-  emptyActivitySub: {
-    fontSize: 13,
-    color: "#CBD5E1",
-    textAlign: "center",
-  },
-
-  resetBtn: {
-    marginHorizontal: 16,
-    marginTop: 6,
-    padding: 16,
-    backgroundColor: "#FEE2E2",
-    borderRadius: 12,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#FCA5A5",
-  },
-
-  resetBtnRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-
-  resetBtnText: {
-    color: "#DC2626",
-    fontWeight: "700",
-    fontSize: 15,
-  },
-
-  pressed: {
-    opacity: 0.8,
-  },
-
-  modeToggle: {
-    flexDirection: "row",
-    backgroundColor: "#FFF7ED",
-    borderRadius: 12,
-    padding: 3,
-    marginBottom: 16,
-  },
-  modeBtn: {
-    flex: 1,
-    paddingVertical: 8,
-    alignItems: "center",
-    borderRadius: 10,
-  },
-  modeBtnActive: {
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  modeBtnText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#94A3B8",
-  },
-  modeBtnTextActive: {
-    color: "#0F766E",
-    fontWeight: "700",
-  },
-  pickerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    marginBottom: 16,
-  },
-  spinnerCol: {
-    alignItems: "center",
-    gap: 4,
-  },
-  spinnerBtn: {
-    padding: 6,
-  },
-  spinnerValue: {
-    fontSize: 36,
-    fontWeight: "800",
-    color: "#0F766E",
-    minWidth: 54,
-    textAlign: "center",
-  },
-  timeSeparator: {
-    fontSize: 32,
-    fontWeight: "800",
-    color: "#0F766E",
-    marginBottom: 4,
-  },
-  ampmBtn: {
-    backgroundColor: "#FFF7ED",
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginLeft: 4,
-  },
-  ampmText: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: "#0F766E",
-  },
-  durationRow: {
-    alignItems: "center",
-    gap: 10,
-    marginBottom: 16,
-  },
-  durationLabel: {
-    fontSize: 14,
-    color: "#64748B",
-    fontWeight: "600",
-  },
-  durationStepper: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 16,
-  },
-  stepBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: "#FFF7ED",
-    borderWidth: 1.5,
-    borderColor: "#0F766E",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  stepValue: {
-    fontSize: 28,
-    fontWeight: "800",
-    color: "#0F766E",
-    minWidth: 56,
-    textAlign: "center",
-  },
-  durationResult: {
-    fontSize: 13,
-    color: "#F97316",
-    fontWeight: "700",
-  },
-  saveReminderBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    backgroundColor: "#F97316",
-    borderRadius: 12,
-    paddingVertical: 12,
-  },
-  saveReminderText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#FFFFFF",
-  },
-});
+    // Notification card
+    modeToggle: {
+      flexDirection: "row",
+      backgroundColor: c.backgroundSecondary,
+      borderRadius: 12,
+      padding: 3,
+      marginBottom: 16,
+    },
+    modeBtn: { flex: 1, paddingVertical: 8, alignItems: "center", borderRadius: 10 },
+    modeBtnActive: {
+      backgroundColor: c.surface,
+      shadowColor: "#000",
+      shadowOpacity: 0.06,
+      shadowRadius: 4,
+      elevation: 2,
+    },
+    modeBtnText: { fontSize: 13, fontWeight: "600", color: c.textMuted },
+    modeBtnTextActive: { color: c.primary, fontWeight: "700" },
+    pickerRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      marginBottom: 16,
+    },
+    spinnerCol: { alignItems: "center", gap: 4 },
+    spinnerBtn: { padding: 6 },
+    spinnerValue: {
+      fontSize: 36,
+      fontWeight: "800",
+      color: c.primary,
+      minWidth: 54,
+      textAlign: "center",
+    },
+    timeSeparator: { fontSize: 32, fontWeight: "800", color: c.primary, marginBottom: 4 },
+    ampmBtn: {
+      backgroundColor: c.backgroundSecondary,
+      borderRadius: 12,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      marginLeft: 4,
+    },
+    ampmText: { fontSize: 16, fontWeight: "800", color: c.primary },
+    durationRow: { alignItems: "center", gap: 10, marginBottom: 16 },
+    durationLabel: { fontSize: 14, color: c.textSecondary, fontWeight: "600" },
+    durationStepper: { flexDirection: "row", alignItems: "center", gap: 16 },
+    stepBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: 12,
+      backgroundColor: c.backgroundSecondary,
+      borderWidth: 1.5,
+      borderColor: c.primary,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    stepValue: {
+      fontSize: 28,
+      fontWeight: "800",
+      color: c.primary,
+      minWidth: 56,
+      textAlign: "center",
+    },
+    durationResult: { fontSize: 13, color: c.cta, fontWeight: "700" },
+    saveReminderBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 6,
+      backgroundColor: c.cta,
+      borderRadius: 12,
+      paddingVertical: 12,
+    },
+    saveReminderText: { fontSize: 14, fontWeight: "700", color: "#FFFFFF" },
+  });
+}

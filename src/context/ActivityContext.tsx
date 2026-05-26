@@ -7,7 +7,7 @@ import {
 } from "../services/challengeScoring";
 import { syncChallengeResultToCloud } from "../services/challengeCloudSync";
 import { enqueueMediaUploadsForResult } from "../services/mediaUploadQueue";
-import { deriveFanForce, deriveParachute } from "../services/physics";
+import { deriveParachute } from "../services/physics";
 import {
   ActivityResult,
   DifficultyMode,
@@ -160,14 +160,6 @@ function buildDerivedByPrototype(
       Object.entries(calc).forEach(([key, value]) => {
         if (value != null && Number.isFinite(value)) values[key] = value;
       });
-    }
-
-    if (challengeId === 3) {
-      const force = deriveFanForce(
-        String(measurements.material ?? ""),
-        numberFromMeasurement(measurements.bendAngle) ?? NaN,
-      );
-      if (force != null) values.estimatedForce = force;
     }
 
     if (Object.keys(values).length > 0) {
