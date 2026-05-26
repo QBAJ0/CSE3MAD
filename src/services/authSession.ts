@@ -13,13 +13,15 @@ export async function ensureFirebaseAuth(): Promise<void> {
   if (auth.currentUser) return;
 
   if (!ensurePromise) {
-    ensurePromise = signInAnonymously(auth)
-      .then(() => undefined)
-      .catch((e) => {
-        ensurePromise = null;
-        console.warn("[authSession] anonymous sign-in failed:", e);
-        throw e;
-      });
+    const signIn = signInAnonymously(auth).then(() => undefined);
+    const timeout = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error("Firebase auth timed out")), 12_000);
+    });
+
+    ensurePromise = Promise.race([signIn, timeout]).catch((e) => {
+      ensurePromise = null;
+      console.warn("[authSession] anonymous sign-in failed:", e);
+    });
   }
 
   await ensurePromise;

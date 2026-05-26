@@ -1,3 +1,4 @@
+import Constants from "expo-constants";
 import * as BackgroundFetch from "expo-background-fetch";
 import * as TaskManager from "expo-task-manager";
 import { cancelStreakReminder, scheduleStreakReminder } from "../utils/notifications";
@@ -37,6 +38,14 @@ TaskManager.defineTask(STREAK_REMINDER_TASK, async () => {
 });
 
 export async function registerStreakReminderTask(): Promise<void> {
+  // Background fetch is not supported in Expo Go; registering there causes startup errors.
+  if (
+    Constants.appOwnership === "expo" ||
+    Constants.executionEnvironment === "storeClient"
+  ) {
+    return;
+  }
+
   const isRegistered = await TaskManager.isTaskRegisteredAsync(STREAK_REMINDER_TASK);
   if (!isRegistered) {
     await BackgroundFetch.registerTaskAsync(STREAK_REMINDER_TASK, {

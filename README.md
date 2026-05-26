@@ -24,17 +24,17 @@ Install dependencies:
 npm install
 ```
 
-Start Metro (defaults to **Expo Go** so the QR code works on phones):
+Start Metro (always opens **Expo Go** — terminal must show `Using Expo Go` and `exp://…`):
 
 ```bash
 npm start
+# or clear cache:
+npm run start:clean
 ```
 
-For a custom development build (after `expo run:android` / EAS dev build):
+If Expo asks **Log in / Proceed anonymously**, choose one in the terminal (arrow keys + Enter) **before** scanning the QR.
 
-```bash
-npm run start:dev
-```
+On the phone, open **Expo Go** → **Scan QR code** (not the system Camera app). Wait 1–2 minutes on first load until you see `Android Bundled` or `iOS Bundled` in the terminal.
 
 ### Connect your phone
 
@@ -65,7 +65,7 @@ npm run start:tunnel
 
 If you see `ngrok tunnel took too long to connect`: turn off VPN, allow Node/ngrok through Windows Firewall, retry once, or stick with **Option A**.
 
-**Do not use** `npx expo start` alone — it defaults to the **development build** QR (`exp+stemmlab://…`), which the phone Camera app cannot read. Use `npm start` (Expo Go) or `npm run start:dev` (custom dev build).
+Always use `npm start` or `npm run start:clean` (both pass `--go`). Do not scan a QR that says `exp+stemmlab://` or **Using development build** — that will timeout in Expo Go.
 
 ### Web preview (`w` in the terminal)
 
@@ -85,11 +85,16 @@ These features need a development/native build for reliable testing:
 
 Expo Go will intentionally hide or skip unsupported native pieces where possible so the app can still open.
 
-To test native features properly, install and configure `expo-dev-client`, then run a development build:
+To test native features properly, run a development build:
 
 ```bash
-npm install expo-dev-client
 npx expo run:android
+```
+
+For EAS cloud builds, restore `extra.eas.projectId` in `app.json` (removed for local Expo Go to avoid the unverified-app login prompt):
+
+```json
+"eas": { "projectId": "b15991a2-9b12-4d0f-b2cc-bde0dd0707a7" }
 ```
 
 For iOS, use a macOS environment:
