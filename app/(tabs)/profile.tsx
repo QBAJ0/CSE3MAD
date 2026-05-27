@@ -182,19 +182,6 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      {/* ── Data & tools ── */}
-      <View style={styles.card}>
-        <View style={styles.cardTitleRow}>
-          <Ionicons name="construct-outline" size={16} color={colors.text} />
-          <Text style={styles.cardTitle}>Data & tools</Text>
-        </View>
-        <Text style={styles.toolsHint}>
-          Challenge results are saved on this device (SQLite) and sync to the cloud
-          when online. Email sign-in is optional for teachers or advanced accounts.
-        </Text>
-
-      </View>
-
       <BatteryStatusCard />
 
       {/* ── Completed challenges ── */}
@@ -629,16 +616,6 @@ function createStyles(c: ColorTokens) {
     segmentText: { fontSize: 13, fontWeight: "600", color: c.textSecondary },
     segmentTextActive: { color: "#FFFFFF", fontWeight: "700" },
 
-    toolsHint: { fontSize: 13, color: c.textSecondary, lineHeight: 18, marginBottom: 12 },
-    toolRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 12,
-      paddingVertical: 14,
-      borderBottomWidth: 1,
-      borderBottomColor: c.borderFaint,
-    },
-    toolLabel: { flex: 1, fontSize: 15, fontWeight: "700", color: c.text },
 
     badgeGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
     badgeTile: {
