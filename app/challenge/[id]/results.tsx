@@ -42,11 +42,22 @@ const G_FORCE_LABELS: Record<
   "none" | "minor" | "serious" | "severe" | "lifeThreatening",
   string
 > = {
-  none: "No injury risk",
-  minor: "Minor injury risk",
-  serious: "Serious injury possible",
-  severe: "High injury risk",
+  none:            "No injury risk",
+  minor:           "Minor injury risk",
+  serious:         "Serious injury possible",
+  severe:          "High injury risk",
   lifeThreatening: "Life-threatening",
+};
+
+const G_FORCE_COLORS: Record<
+  "none" | "minor" | "serious" | "severe" | "lifeThreatening",
+  string
+> = {
+  none:            "#0F766E",
+  minor:           "#F59E0B",
+  serious:         "#F97316",
+  severe:          "#DC2626",
+  lifeThreatening: "#7C3AED",
 };
 
 const EVIDENCE_RECORDERS = new Set<Measurement["recorder"]>([
@@ -527,47 +538,103 @@ export default function ResultsScreen() {
         <View style={styles.card}>
           <View style={styles.cardTitleRow}>
             <Ionicons name="flask-outline" size={16} color={colors.text} />
-            <Text style={styles.cardTitle}>Physics Calculations</Text>
+            <Text style={styles.cardTitle}>Step-by-Step Physics</Text>
           </View>
 
-          {parachutePhysics.map((calc, i) => (
-            <View key={i} style={styles.physicsBlock}>
-              <Text style={styles.physicsBlockLabel}>Design #{i + 1}</Text>
+          <Text style={styles.physicsIntro}>
+            All formulas from the spec. Values derived from your recorded measurements.
+          </Text>
 
-              {calc.finalVelocity != null && (
-                <Text style={styles.physicsRow}>
-                  Final velocity: {calc.finalVelocity.toFixed(2)} m/s
-                </Text>
-              )}
+          {parachutePhysics.map((calc, i) => {
+            const proto = draft.prototypes[i];
+            const h  = parseFloat(String(proto?.measurements.dropHeightMeters ?? ""));
+            const t  = parseFloat(String(proto?.measurements.fallTimeSeconds  ?? ""));
+            const m  = parseFloat(String(proto?.measurements.toyMassKg        ?? ""));
 
-              {calc.acceleration != null && (
-                <Text style={styles.physicsRow}>
-                  Acceleration: {calc.acceleration.toFixed(2)} m/s²
+            return (
+              <View key={i} style={styles.physicsBlock}>
+                <Text style={styles.physicsBlockLabel}>
+                  Design {i + 1}{proto?.measurements.designName ? ` — ${proto.measurements.designName}` : ""}
                 </Text>
-              )}
 
-              {calc.netForce != null && (
-                <Text style={styles.physicsRow}>
-                  Net force: {calc.netForce.toFixed(3)} N
-                </Text>
-              )}
+                {/* Step 3 */}
+                {calc.finalVelocity != null && (
+                  <View style={styles.physicsStep}>
+                    <Text style={styles.physicsStepNum}>Step 3</Text>
+                    <Text style={styles.physicsFormula}>
+                      v = distance ÷ time = {isNaN(h) ? "?" : h} ÷ {isNaN(t) ? "?" : t}
+                    </Text>
+                    <Text style={styles.physicsResult}>
+                      Final velocity = {calc.finalVelocity.toFixed(2)} m/s
+                    </Text>
+                  </View>
+                )}
 
-              {calc.dragForce != null && (
-                <Text style={styles.physicsRow}>
-                  Drag force: {calc.dragForce.toFixed(3)} N
-                </Text>
-              )}
+                {/* Step 4 */}
+                {calc.acceleration != null && (
+                  <View style={styles.physicsStep}>
+                    <Text style={styles.physicsStepNum}>Step 4</Text>
+                    <Text style={styles.physicsFormula}>
+                      a = v ÷ t = {calc.finalVelocity?.toFixed(2)} ÷ {isNaN(t) ? "?" : t}
+                    </Text>
+                    <Text style={styles.physicsResult}>
+                      Acceleration = {calc.acceleration.toFixed(2)} m/s²
+                    </Text>
+                  </View>
+                )}
 
-              {calc.gForce != null && (
-                <Text style={styles.physicsRow}>
-                  G-force on impact: {calc.gForce.toFixed(1)} g —{" "}
-                  <Text style={styles.physicsRisk}>
-                    {G_FORCE_LABELS[gForceRiskCategory(calc.gForce)]}
-                  </Text>
-                </Text>
-              )}
-            </View>
-          ))}
+                {/* Step 5 */}
+                {calc.netForce != null && (
+                  <View style={styles.physicsStep}>
+                    <Text style={styles.physicsStepNum}>Step 5</Text>
+                    <Text style={styles.physicsFormula}>
+                      F = m × a = {isNaN(m) ? "?" : m} × {calc.acceleration?.toFixed(2)}
+                    </Text>
+                    <Text style={styles.physicsResult}>
+                      Net force = {calc.netForce.toFixed(3)} N
+                    </Text>
+                  </View>
+                )}
+
+                {/* Step 6 */}
+                {calc.dragForce != null && (
+                  <View style={styles.physicsStep}>
+                    <Text style={styles.physicsStepNum}>Step 6</Text>
+                    <Text style={styles.physicsFormula}>
+                      Drag = weight − net force = {(m * 9.8).toFixed(3)} − {calc.netForce?.toFixed(3)}
+                    </Text>
+                    <Text style={styles.physicsResult}>
+                      Drag force = {calc.dragForce.toFixed(3)} N
+                    </Text>
+                  </View>
+                )}
+
+                {/* G-force */}
+                {calc.gForce != null && (
+                  <View style={[styles.physicsStep, styles.physicsStepGForce]}>
+                    <Text style={styles.physicsStepNum}>G-Force</Text>
+                    <Text style={styles.physicsFormula}>
+                      g-force = Δv ÷ t_contact ÷ 9.8
+                    </Text>
+                    <Text style={styles.physicsResult}>
+                      {calc.gForce.toFixed(1)} g
+                    </Text>
+                    <View style={[
+                      styles.gRiskBadge,
+                      { backgroundColor: G_FORCE_COLORS[gForceRiskCategory(calc.gForce)] + "22" },
+                    ]}>
+                      <Text style={[
+                        styles.gRiskText,
+                        { color: G_FORCE_COLORS[gForceRiskCategory(calc.gForce)] },
+                      ]}>
+                        {G_FORCE_LABELS[gForceRiskCategory(calc.gForce)]}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+              </View>
+            );
+          })}
         </View>
       )}
 
@@ -871,21 +938,67 @@ function createStyles(c: ColorTokens) {
       backgroundColor: "#000",
     },
 
-    // Physics block uses blue intentionally (data visualization)
+    physicsIntro: {
+      fontSize: 13,
+      color: c.textMuted,
+      marginBottom: 12,
+      marginTop: -6,
+      lineHeight: 18,
+    },
     physicsBlock: {
       borderLeftWidth: 3,
-      borderLeftColor: "#2563EB",
+      borderLeftColor: c.info,
       paddingLeft: 12,
-      marginBottom: 14,
+      marginBottom: 18,
     },
     physicsBlockLabel: {
-      fontSize: 13,
-      fontWeight: "700",
+      fontSize: 14,
+      fontWeight: "800",
       color: c.text,
-      marginBottom: 4,
+      marginBottom: 8,
     },
     physicsRow: { fontSize: 13, color: c.textSecondary, marginBottom: 2 },
     physicsRisk: { fontWeight: "700", color: c.danger },
+    physicsStep: {
+      backgroundColor: c.backgroundSecondary,
+      borderRadius: 10,
+      padding: 10,
+      marginBottom: 6,
+      gap: 2,
+    },
+    physicsStepGForce: {
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+    physicsStepNum: {
+      fontSize: 10,
+      fontWeight: "800",
+      color: c.textMuted,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+    },
+    physicsFormula: {
+      fontSize: 12,
+      color: c.textSecondary,
+      fontFamily: "monospace",
+      lineHeight: 18,
+    },
+    physicsResult: {
+      fontSize: 14,
+      fontWeight: "700",
+      color: c.text,
+    },
+    gRiskBadge: {
+      alignSelf: "flex-start",
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 8,
+      marginTop: 4,
+    },
+    gRiskText: {
+      fontSize: 12,
+      fontWeight: "800",
+    },
 
     mapCard: {
       marginHorizontal: 20,

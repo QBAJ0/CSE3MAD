@@ -247,16 +247,28 @@ export default function RecordScreen() {
     switch (measurement.recorder) {
       case "videoAnalyzer": {
         const videoUri = String(current.measurements["slowMotionVideo"] || "");
+        if (!videoUri) {
+          return (
+            <View style={styles.analyzerPlaceholder}>
+              <Text style={styles.analyzerPlaceholderText}>
+                Record the slow-motion video above, then frame analysis will appear here.
+              </Text>
+            </View>
+          );
+        }
         return (
           <VideoFrameAnalyzer
             videoUri={videoUri}
             slowMoFactor={4}
-            onComplete={(marks) => {
+            onComplete={(result) => {
               saveMeasurement(measurement.key, "analyzed");
-              saveMeasurement("contactTimeSeconds", marks.contactTime);
-              saveMeasurement("bounced", marks.bounced ? "Yes" : "No");
-              if (marks.timeToBouncePeak)
-                saveMeasurement("timeToMaxHeightSeconds", marks.timeToBouncePeak);
+              saveMeasurement("contactTimeSeconds", result.contactTime);
+              saveMeasurement("bounced", result.bounced ? "Yes" : "No");
+              // Prefer video-derived fall time over manual stopwatch when available
+              if (result.fallTimeSeconds)
+                saveMeasurement("fallTimeSeconds", result.fallTimeSeconds);
+              if (result.timeToBouncePeak)
+                saveMeasurement("timeToMaxHeightSeconds", result.timeToBouncePeak);
             }}
           />
         );
@@ -406,6 +418,21 @@ function createStyles(c: ColorTokens) {
       color: "#FFFFFF",
       fontSize: 15,
       fontWeight: "700",
+    },
+    analyzerPlaceholder: {
+      borderWidth: 1.5,
+      borderColor: c.border,
+      borderStyle: "dashed",
+      borderRadius: 12,
+      padding: 18,
+      alignItems: "center",
+      backgroundColor: c.backgroundSecondary,
+    },
+    analyzerPlaceholderText: {
+      fontSize: 13,
+      color: c.textMuted,
+      textAlign: "center",
+      lineHeight: 19,
     },
   });
 }
