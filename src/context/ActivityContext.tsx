@@ -64,9 +64,6 @@ const EVIDENCE_RECORDERS = new Set<Measurement["recorder"]>([
 const hasMeasurementValue = (value: unknown) =>
   value !== undefined && value !== null && String(value).trim().length > 0;
 
-const hasMeaningfulPrediction = (prediction: string | undefined) =>
-  (prediction ?? "").trim().length >= GAMIFICATION.PREDICTION_MIN_CHARS;
-
 const getScoredMeasurements = (
   measurements: Measurement[],
   difficulty: DifficultyMode,

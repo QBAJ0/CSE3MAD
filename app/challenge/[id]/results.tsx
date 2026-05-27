@@ -36,6 +36,14 @@ import {
   Measurement,
   Prototype,
 } from "../../../src/types";
+import {
+  WereYouRightValue,
+  getPredictionCharsFromPrototypes,
+  getPrototypeOutcomeText,
+  formatPredictionDisplay,
+  getPrototypeWereYouRight,
+} from "../../../src/utils/prototypePrediction";
+import { exitToTabFromChallenge } from "../../../src/utils/exitToTabFromChallenge";
 import { storage } from "../../../src/utils/storage";
 
 const G_FORCE_LABELS: Record<
@@ -147,10 +155,20 @@ export default function ResultsScreen() {
   }>();
 
   const challenge = getChallengeById(Number(id));
-  const { draft, finalize, clearDraft } = useActivity();
+  const { draft, finalize, clearDraft, updatePrototype } = useActivity();
   const { team } = useTeam();
 
   const [observations, setObservations] = useState<Record<number, string>>({});
+  const [wereYouRightByPrototype, setWereYouRightByPrototype] = useState<
+    Record<number, WereYouRightValue | "">
+  >(() =>
+    Object.fromEntries(
+      draft.prototypes.map((prototype) => [
+        prototype.index,
+        getPrototypeWereYouRight(prototype),
+      ]),
+    ),
+  );
   const [rating, setRating] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showAllQuestions, setShowAllQuestions] = useState(false);
@@ -257,30 +275,13 @@ export default function ResultsScreen() {
       }
 
       Alert.alert(
-        "Challenge Complete!",
-        "Great science, team!",
+        "Claim saved.",
+        "Your result has been saved and added to the leaderboard.",
         [
-          {
-            text: "View details",
-            onPress: () => {
-              clearDraft();
-              router.replace(
-                `/challenge/${challenge.id}/details?resultId=${encodeURIComponent(result.id)}`,
-              );
-            },
-          },
-          {
-            text: "Leaderboard",
-            onPress: () => {
-              clearDraft();
-              router.replace("/(tabs)/leaderboard");
-            },
-          },
           {
             text: "Back to Challenges",
             onPress: () => {
-              clearDraft();
-              router.replace("/(tabs)/activity");
+              exitToTabFromChallenge("/(tabs)/activity", clearDraft);
             },
           },
         ],
@@ -352,6 +353,13 @@ export default function ResultsScreen() {
 
   const soundMapPoints = parseSoundMapPoints(challenge.id, draft.prototypes);
 
+  const setWereYouRight = (prototypeIndex: number, value: WereYouRightValue) => {
+    setWereYouRightByPrototype((prev) => ({ ...prev, [prototypeIndex]: value }));
+    updatePrototype(prototypeIndex, {
+      measurements: { wereYouRight: value },
+    });
+  };
+
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <ChallengeTabBar
@@ -377,18 +385,6 @@ export default function ResultsScreen() {
           <Text style={styles.penaltyText}>Time expired</Text>
         </View>
       )}
-
-      <View style={styles.card}>
-        <View style={styles.cardTitleRow}>
-          <Ionicons name="help-circle-outline" size={16} color={colors.text} />
-          <Text style={styles.cardTitle}>Prediction</Text>
-        </View>
-        <View style={styles.predictionBubble}>
-          <Text style={styles.predictionText}>
-            {draft.prediction || "Not recorded"}
-          </Text>
-        </View>
-      </View>
 
       {draft.prototypes.length > 0 && tableKeys.length > 0 && (
         <View style={styles.card}>
@@ -443,6 +439,56 @@ export default function ResultsScreen() {
           ))}
         </View>
       )}
+
+      <View style={styles.card}>
+        <View style={styles.cardTitleRow}>
+          <Ionicons name="help-circle-outline" size={16} color="#0F172A" />
+          <Text style={styles.cardTitle}>Attempt Review</Text>
+        </View>
+        {draft.prototypes.map((prototype, idx) => {
+          const predictionDisplay = formatPredictionDisplay(challenge.id, prototype);
+          const outcomeText = getPrototypeOutcomeText(challenge.id, prototype);
+          const selected = wereYouRightByPrototype[prototype.index];
+
+          return (
+            <View key={prototype.index} style={styles.attemptCard}>
+              <Text style={styles.attemptTitle}>#{idx + 1}</Text>
+              <Text style={styles.attemptLine}>
+                Outcome: {outcomeText || "Not recorded"}
+              </Text>
+              <Text style={styles.attemptLine}>
+                Prediction: {predictionDisplay || "Not recorded"}
+              </Text>
+
+              <Text style={styles.attemptPrompt}>Were you right?</Text>
+              <View style={styles.rightRow}>
+                {([
+                  { id: "yes", label: "Yes" },
+                  { id: "no", label: "No" },
+                ] as const).map((option) => (
+                  <TouchableOpacity
+                    key={option.id}
+                    style={[
+                      styles.rightChoice,
+                      selected === option.id && styles.rightChoiceActive,
+                    ]}
+                    onPress={() => setWereYouRight(prototype.index, option.id)}
+                  >
+                    <Text
+                      style={[
+                        styles.rightChoiceText,
+                        selected === option.id && styles.rightChoiceTextActive,
+                      ]}
+                    >
+                      {option.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          );
+        })}
+      </View>
 
       {soundMapPoints.length > 0 && (
         <View style={styles.mapCard}>
@@ -781,7 +827,7 @@ export default function ResultsScreen() {
               {
                 text: "Save and exit",
                 onPress: () => {
-                  router.replace("/(tabs)/activity");
+                  exitToTabFromChallenge("/(tabs)/activity");
                 },
               },
             ],
@@ -896,6 +942,45 @@ function createStyles(c: ColorTokens) {
       fontStyle: "italic",
       lineHeight: 20,
     },
+
+    attemptCard: {
+      backgroundColor: c.backgroundSecondary,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: c.border,
+      padding: 12,
+      marginBottom: 10,
+    },
+    attemptTitle: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: c.text,
+      marginBottom: 6,
+    },
+    attemptLine: { fontSize: 13, color: c.textSecondary, marginBottom: 4 },
+    attemptPrompt: {
+      fontSize: 12,
+      fontWeight: "700",
+      color: c.textSecondary,
+      marginTop: 6,
+      marginBottom: 6,
+    },
+    rightRow: { flexDirection: "row", gap: 8, marginBottom: 8 },
+    rightChoice: {
+      flex: 1,
+      borderWidth: 1,
+      borderColor: c.border,
+      borderRadius: 10,
+      paddingVertical: 8,
+      alignItems: "center",
+      backgroundColor: c.surface,
+    },
+    rightChoiceActive: {
+      backgroundColor: c.success,
+      borderColor: c.success,
+    },
+    rightChoiceText: { fontSize: 12, color: c.textSecondary, fontWeight: "700" },
+    rightChoiceTextActive: { color: "#FFFFFF" },
 
     tableRow: {
       flexDirection: "row",

@@ -8,6 +8,7 @@ import {
   Alert,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -46,6 +47,7 @@ import {
   getRequiredMeasurements,
   isPrototypeComplete,
 } from "../../../src/utils/challengeRecordValidation";
+import { exitToTabFromChallenge } from "../../../src/utils/exitToTabFromChallenge";
 
 // ── Recorder renderer map ────────────────────────────────────────────────────
 // Maps recorder type → render function for recorders that need no extra state.
@@ -229,7 +231,9 @@ export default function RecordScreen() {
         { text: "Keep Working", style: "cancel" },
         {
           text: "Save and exit",
-          onPress: () => router.replace("/(tabs)/activity"),
+          onPress: () => {
+            exitToTabFromChallenge("/(tabs)/activity");
+          },
         },
       ],
     );

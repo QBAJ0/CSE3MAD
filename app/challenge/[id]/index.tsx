@@ -13,7 +13,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -33,9 +32,8 @@ export default function ChallengeBriefScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const challenge = getChallengeById(Number(id));
   const { team, computedDifficulty } = useTeam();
-  const { startDraft, setPrediction, draft } = useActivity();
+  const { startDraft, draft } = useActivity();
 
-  const [prediction, setPredictionText] = useState("");
   const [showAllSteps, setShowAllSteps] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const { colors } = useTheme();
@@ -93,9 +91,6 @@ export default function ChallengeBriefScreen() {
       teamName: team.teamName,
       difficulty: computedDifficulty,
     });
-
-    // Save the prediction if they wrote one
-    setPrediction(prediction.trim());
 
     router.push(`/challenge/${challenge.id}/record`);
   };
@@ -299,28 +294,6 @@ export default function ChallengeBriefScreen() {
             )}
           </>
         )}
-
-        {/* ── Prediction ── */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Predict</Text>
-          <Text style={styles.predictionHint}>
-            {challenge.predictionPrompt ??
-              "What do you think will happen? Write one team guess."}
-          </Text>
-          <TextInput
-            style={[
-              styles.predictionInput,
-              prediction.trim().length > 0 && styles.predictionInputFilled,
-            ]}
-            placeholder="e.g. We think the bigger design will fall slower…"
-            placeholderTextColor={colors.textMuted}
-            value={prediction}
-            onChangeText={setPredictionText}
-            multiline
-            numberOfLines={3}
-            textAlignVertical="top"
-          />
-        </View>
 
         {/* ── Start / Resume buttons ── */}
         <View style={styles.ctaSection}>
