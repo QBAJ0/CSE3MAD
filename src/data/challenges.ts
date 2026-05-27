@@ -1,5 +1,6 @@
 // data/challenges.ts — canonical XP challenge catalog (Challenges tab, `/challenge/...`).
 
+// Official STEMM challenge definitions for the `/challenge/[id]` flow.
 import { Challenge } from "../types";
 
 export const CHALLENGES: Challenge[] = [
@@ -481,7 +482,7 @@ export const CHALLENGES: Challenge[] = [
         key: "movementType",
         label: "Movement",
         recorder: "manualChoice",
-        choices: ["Wrist circle", "Wrist figure-8", "Side arm raise"],
+        choices: ["Hand circles", "Hand up and down", "Hand side to side"],
       },
       {
         key: "timeSeconds",
@@ -510,7 +511,8 @@ export const CHALLENGES: Challenge[] = [
       "ACPPS054 - Physical performance",
       "ACSSU176 - Structure and function of body systems",
     ],
-    predictionPrompt: "Which movement do you think will have the smoothest score? Do you think practice will improve your results?",
+    predictionPrompt:
+      "Which movement will produce the most movement units in the least time? How smooth do you think it will feel?",
     extensionTip: "Try the same movement with your non-dominant hand. Is there a difference in smoothness?",
     thingsToKnow: [
       {

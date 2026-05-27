@@ -3,9 +3,10 @@
 // All business logic lives here; all layout is delegated to ChallengeScreenShell.
 
 import { router, useLocalSearchParams } from "expo-router";
-import { ReactNode, useMemo, useState } from "react";
+import { ReactNode, useEffect, useMemo, useState } from "react";
 import {
   Alert,
+  Platform,
   StyleSheet,
   Text,
   TextInput,
@@ -17,6 +18,7 @@ import ChallengeScreenShell, {
   PrototypeDot,
   SectionCard,
 } from "../../../src/components/challenge/ChallengeScreenShell";
+import { HumanPerformanceMovementDiagram } from "../../../src/components/challenge/HumanPerformanceMovementDiagram";
 import { VideoFrameAnalyzer } from "../../../src/components/challenge/VideoFrameAnalyzer";
 import { AccelerometerRecorder } from "../../../src/components/recorders/AccelerometerRecorder";
 import { BreathingRecorder } from "../../../src/components/recorders/BreathingRecorder";
@@ -27,6 +29,10 @@ import { MovementTestRecorder } from "../../../src/components/recorders/Movement
 import { NumberRecorder } from "../../../src/components/recorders/NumberRecorder";
 import { PhotoRecorder } from "../../../src/components/recorders/PhotoRecorder";
 import { SoundMeterRecorder } from "../../../src/components/recorders/SoundMeterRecorder";
+import {
+  HumanPerformanceRecorder,
+  HumanPerformanceRecorderWeb,
+} from "../../../src/components/recorders/HumanPerformanceRecorder";
 import { StopwatchRecorder } from "../../../src/components/recorders/StopwatchRecorder";
 import { TapReactionGame } from "../../../src/components/recorders/TapReactionGame";
 import { TeamBreathingBoard } from "../../../src/components/recorders/TeamBreathingBoard";
@@ -37,6 +43,10 @@ import { VideoRecorder } from "../../../src/components/recorders/VideoRecorder";
 import { useActivity } from "../../../src/context/ActivityContext";
 import { useTeam } from "../../../src/context/TeamContext";
 import { getChallengeById } from "../../../src/data/challenges";
+import {
+  getTrialForPrototype,
+  getTrialLabelForPrototype,
+} from "../../../src/data/humanPerformanceTrials";
 import { useHaptic } from "../../../src/hooks/useHaptic";
 import type { ColorTokens } from "../../../src/theme/colors";
 import { useTheme } from "../../../src/theme/themeContext";
@@ -44,16 +54,21 @@ import { Measurement } from "../../../src/types";
 import {
   buildIncompleteSummary,
   getMissingMeasurementLabels,
+  getRecordMeasurements,
   getRequiredMeasurements,
   isPrototypeComplete,
 } from "../../../src/utils/challengeRecordValidation";
 import { exitToTabFromChallenge } from "../../../src/utils/exitToTabFromChallenge";
+import {
+  HUMAN_PERFORMANCE_CHALLENGE_ID,
+  buildHumanPerformanceFields,
+} from "../../../src/utils/humanPerformance";
+
+type SaveFn = (key: string, val: string | number) => void;
 
 // ── Recorder renderer map ────────────────────────────────────────────────────
 // Maps recorder type → render function for recorders that need no extra state.
 // Recorders that need access to draft state are handled in the switch below.
-
-type SaveFn = (key: string, val: string | number) => void;
 
 const RECORDER_RENDERERS: Partial<Record<
   Measurement["recorder"],
@@ -103,7 +118,12 @@ const RECORDER_RENDERERS: Partial<Record<
     />
   ),
   gyroscope: (m, _v, save) => (
-    <GyroscopeRecorder onCapture={(data) => save(m.key, data.smoothness)} />
+    <GyroscopeRecorder
+      onCapture={(data) => {
+        save(m.key, data.smoothness);
+        save("smoothnessScore", data.smoothness);
+      }}
+    />
   ),
   video: (m, v, save) => (
     <VideoRecorder onCapture={(uri) => save(m.key, uri)} existingUri={v} />
@@ -155,26 +175,26 @@ export default function RecordScreen() {
 
   const currentNum = draft.currentPrototypeIndex + 1;
   const max = challenge.maxPrototypes;
-
-  const measurements = challenge.measurements.filter(
-    (m) => !m.difficulty || m.difficulty === draft.difficulty,
+  const measurements = getRecordMeasurements(
+    challenge.id,
+    challenge.measurements.filter(
+      (m) => !m.difficulty || m.difficulty === draft.difficulty,
+    ),
   );
+  const isHumanPerformance = challenge.id === HUMAN_PERFORMANCE_CHALLENGE_ID;
   const requiredMeasurements = getRequiredMeasurements(measurements);
-
-  const currentComplete = isPrototypeComplete(current, requiredMeasurements);
+  const currentComplete = isPrototypeComplete(current, requiredMeasurements, challenge.id);
   const allPrototypesComplete =
     draft.prototypes.length >= max &&
-    draft.prototypes.every((p) => isPrototypeComplete(p, requiredMeasurements));
+    draft.prototypes.every((p) => isPrototypeComplete(p, requiredMeasurements, challenge.id));
   const onLastPrototype = currentNum >= max;
   const canProceed = onLastPrototype ? allPrototypesComplete : currentComplete;
-
-  const missingOnCurrent = getMissingMeasurementLabels(current, requiredMeasurements);
-  const incompleteSummary = buildIncompleteSummary(draft.prototypes, requiredMeasurements);
-
+  const missingOnCurrent = getMissingMeasurementLabels(current, requiredMeasurements, challenge.id);
+  const incompleteSummary = buildIncompleteSummary(draft.prototypes, requiredMeasurements, challenge.id);
   const prototypeDots: PrototypeDot[] = draft.prototypes.map((p) => ({
     index: p.index,
     isActive: current.index === p.index,
-    isComplete: isPrototypeComplete(p, requiredMeasurements),
+    isComplete: isPrototypeComplete(p, requiredMeasurements, challenge.id),
   }));
 
   // ── Handlers ───────────────────────────────────────────────────────────────
@@ -182,9 +202,47 @@ export default function RecordScreen() {
   const saveMeasurement = (key: string, value: string | number) =>
     updatePrototype(current.index, { measurements: { [key]: value } });
 
+  const saveMeasurements = (patch: Record<string, string | number>) => {
+    updatePrototype(current.index, { measurements: patch });
+  };
+
+  const clearHumanPerformanceSession = () => {
+    saveMeasurements({
+      durationSeconds: "",
+      timeSeconds: "",
+      movementUnits: "",
+      vibrationData: "",
+      vibrationLabel: "",
+      outcomeText: "",
+      smoothness: "",
+      smoothnessScore: "",
+    });
+  };
+
+  const handleHumanPerformanceSession = (session: {
+    durationSeconds: number;
+    movementUnits: number;
+    peakG: number;
+    totalMagnitudeSum: number;
+    smoothnessScore: number;
+  }) => {
+    const fields = buildHumanPerformanceFields({
+      durationSeconds: session.durationSeconds,
+      totalMagnitudeSum: session.totalMagnitudeSum,
+      peakG: session.peakG,
+      smoothnessScore: session.smoothnessScore,
+    });
+    saveMeasurements(fields);
+  };
+
   const handleGPSCapture = (lat: number, lng: number) => {
     setLocation(lat, lng);
     saveMeasurement("location", `${lat.toFixed(4)}, ${lng.toFixed(4)}`);
+  };
+
+  const showIncompleteAlert = (title: string) => {
+    haptic("warning");
+    Alert.alert(title, incompleteSummary);
   };
 
   const goToReflect = () =>
@@ -210,17 +268,33 @@ export default function RecordScreen() {
 
   const handleNext = () => {
     if (!canProceed) {
-      haptic("warning");
-      Alert.alert(
-        onLastPrototype ? "Complete all designs first" : "Complete this design first",
-        incompleteSummary,
-      );
+      const title = onLastPrototype
+        ? isHumanPerformance
+          ? "Complete all movements first"
+          : "Complete all designs first"
+        : isHumanPerformance
+          ? "Complete this movement first"
+          : "Complete this design first";
+      showIncompleteAlert(title);
       return;
     }
     haptic("success");
     if (currentNum < max) addPrototype();
     else goToReflect();
   };
+
+  useEffect(() => {
+    if (!isHumanPerformance || !current) return;
+    const trial = getTrialForPrototype(current.index);
+    if (
+      trial &&
+      String(current.measurements.movementType ?? "") !== trial.movementType
+    ) {
+      updatePrototype(current.index, {
+        measurements: { movementType: trial.movementType },
+      });
+    }
+  }, [isHumanPerformance, current.index, draft.currentPrototypeIndex]);
 
   const handleSaveDraft = () => {
     haptic("warning");
@@ -314,6 +388,64 @@ export default function RecordScreen() {
 
   const measurementContent = (
     <SectionCard>
+      {isHumanPerformance && (
+        <HumanPerformanceMovementDiagram prototypeIndex={current.index} />
+      )}
+
+      {isHumanPerformance && (
+        <View style={styles.hpBlock}>
+          <Text style={styles.hpSectionLabel}>Predict this attempt</Text>
+          <TextInput
+            style={styles.hpInput}
+            placeholder={`e.g. ${getTrialForPrototype(current.index)?.movementType ?? "this movement"} will score highest`}
+            placeholderTextColor={colors.textMuted}
+            value={String(current.measurements.predictedMovementText ?? "")}
+            onChangeText={(text) => saveMeasurement("predictedMovementText", text)}
+            multiline
+          />
+          <Text style={styles.optionalHint}>Optional: predicted movement units</Text>
+          <TextInput
+            style={styles.hpInput}
+            placeholder="e.g. 7.5"
+            placeholderTextColor={colors.textMuted}
+            keyboardType="decimal-pad"
+            value={String(current.measurements.predictedMovementUnits ?? "")}
+            onChangeText={(text) => saveMeasurement("predictedMovementUnits", text)}
+          />
+          <Text style={styles.hpSectionLabel}>Movement session</Text>
+          <Text style={styles.hpSessionHint}>
+            One button starts timer, movement units, vibration, and smoothness together.
+          </Text>
+          {Platform.OS === "web" ? (
+            <HumanPerformanceRecorderWeb
+              onComplete={handleHumanPerformanceSession}
+              onReset={clearHumanPerformanceSession}
+              existing={{
+                durationSeconds: parseFloat(String(current.measurements.durationSeconds ?? "")),
+                movementUnits: parseFloat(String(current.measurements.movementUnits ?? "")),
+                smoothnessScore: parseFloat(
+                  String(current.measurements.smoothnessScore ?? current.measurements.smoothness ?? ""),
+                ),
+                outcomeText: String(current.measurements.outcomeText ?? ""),
+              }}
+            />
+          ) : (
+            <HumanPerformanceRecorder
+              onComplete={handleHumanPerformanceSession}
+              onReset={clearHumanPerformanceSession}
+              existing={{
+                durationSeconds: parseFloat(String(current.measurements.durationSeconds ?? "")),
+                movementUnits: parseFloat(String(current.measurements.movementUnits ?? "")),
+                smoothnessScore: parseFloat(
+                  String(current.measurements.smoothnessScore ?? current.measurements.smoothness ?? ""),
+                ),
+                outcomeText: String(current.measurements.outcomeText ?? ""),
+              }}
+            />
+          )}
+        </View>
+      )}
+
       {measurements.map((m) => {
         // Activity 5: bundle smoothness + vibration + time into one widget
         if (
@@ -363,8 +495,12 @@ export default function RecordScreen() {
         haptic("warning");
         Alert.alert(
           max > 1
-            ? "Reflect unlocks when every design is complete"
-            : "Complete required measurements first",
+            ? isHumanPerformance
+              ? "Reflect unlocks when every movement is complete"
+              : "Reflect unlocks when every design is complete"
+            : isHumanPerformance
+              ? "Complete this movement first"
+              : "Complete required measurements first",
           incompleteSummary,
         );
       }}
@@ -384,7 +520,9 @@ export default function RecordScreen() {
       onNext={handleNext}
       nextLabel={
         currentNum < max
-          ? `Next Design (${currentNum} / ${max})`
+          ? isHumanPerformance
+            ? `Next Movement (${currentNum} / ${max})`
+            : `Next Design (${currentNum} / ${max})`
           : "Go to Reflect"
       }
       onSaveAndExit={handleSaveDraft}
@@ -437,6 +575,39 @@ function createStyles(c: ColorTokens) {
       color: c.textMuted,
       textAlign: "center",
       lineHeight: 19,
+    },
+    hpBlock: {
+      marginBottom: 16,
+      paddingBottom: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: c.borderFaint,
+    },
+    hpSectionLabel: {
+      fontSize: 15,
+      fontWeight: "700",
+      color: c.primary,
+      marginBottom: 8,
+      marginTop: 4,
+    },
+    hpInput: {
+      borderWidth: 1,
+      borderColor: c.border,
+      borderRadius: 10,
+      padding: 12,
+      marginBottom: 10,
+      backgroundColor: c.surface,
+      fontSize: 14,
+      color: c.text,
+    },
+    optionalHint: {
+      fontSize: 12,
+      color: c.textSecondary,
+      marginBottom: 6,
+    },
+    hpSessionHint: {
+      fontSize: 12,
+      color: c.textSecondary,
+      marginBottom: 10,
     },
   });
 }

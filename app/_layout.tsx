@@ -55,16 +55,16 @@ export default function RootLayout() {
     <ErrorBoundary>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <ThemeProvider>
-        <TeamProvider>
-          <ActivityProvider>
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="index" />
-              <Stack.Screen name="(onboarding)" />
-              <Stack.Screen name="(tabs)" />
-<Stack.Screen name="challenge" options={{ headerShown: false }} />
-            </Stack>
-          </ActivityProvider>
-        </TeamProvider>
+          <TeamProvider>
+            <ActivityProvider>
+              <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="index" />
+                <Stack.Screen name="(onboarding)" />
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="challenge" options={{ headerShown: false }} />
+              </Stack>
+            </ActivityProvider>
+          </TeamProvider>
         </ThemeProvider>
       </GestureHandlerRootView>
     </ErrorBoundary>

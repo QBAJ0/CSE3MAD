@@ -5,6 +5,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useHaptic } from "../../hooks/useHaptic";
 import type { ColorTokens } from "../../theme/colors";
 import { useTheme } from "../../theme/themeContext";
+import { computeSmoothnessScore } from "../../utils/humanPerformance";
 
 interface GyroscopeRecorderProps {
   onCapture: (data: { smoothness: number; range: number }) => void;
@@ -71,10 +72,7 @@ export function GyroscopeRecorder({
       subscriptionRef.current = null;
     }
 
-    const avgChange =
-      velocityChangesRef.current.reduce((a, b) => a + b, 0) /
-      velocityChangesRef.current.length;
-    const smoothnessScore = Math.max(0, Math.min(100, 100 - avgChange * 100));
+    const smoothnessScore = computeSmoothnessScore(velocityChangesRef.current);
 
     setSmoothness(smoothnessScore);
     haptic("success");

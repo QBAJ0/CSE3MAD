@@ -1,5 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { auth } from "@/src/firebase";
 import { ActivityResult } from "../types";
+import { ensureFirebaseAuth } from "./authSession";
 import { STORAGE_KEYS } from "../utils/storage";
 import {
   buildMediaStoragePath,
@@ -16,7 +18,6 @@ export type PendingMediaUpload = {
   prototypeIndex: number;
   measurementKey: string;
   localUri: string;
-  storagePath: string;
   downloadUrl?: string;
   attempts: number;
   queuedAt: string;
@@ -65,7 +66,6 @@ function toQueueItem(ref: MediaEvidenceRef): PendingMediaUpload {
     prototypeIndex: ref.prototypeIndex,
     measurementKey: ref.measurementKey,
     localUri: ref.localUri,
-    storagePath: buildMediaStoragePath(ref),
     attempts: 0,
     queuedAt: new Date().toISOString(),
   };
@@ -131,6 +131,12 @@ export async function processPendingMediaUploads(options?: {
     return { attempted: 0, completed: 0, remaining: 0 };
   }
 
+  try {
+    await ensureFirebaseAuth();
+  } catch {
+    return { attempted: 0, completed: 0, remaining: pending.length };
+  }
+
   const concurrency = options?.concurrency ?? DEFAULT_CONCURRENCY;
   const outcomes = new Map<string, PendingMediaUpload>();
 
@@ -139,7 +145,24 @@ export async function processPendingMediaUploads(options?: {
   }
 
   await runWithConcurrency(pending, concurrency, async (item) => {
-    const attempt = await uploadLocalMediaToStorage(item.localUri, item.storagePath);
+    const ownerUid = auth?.currentUser?.uid;
+    if (!ownerUid) {
+      outcomes.set(item.id, item);
+      return;
+    }
+
+    const storagePath = buildMediaStoragePath(
+      {
+        resultId: item.resultId,
+        challengeId: item.challengeId,
+        teamId: item.teamId,
+        prototypeIndex: item.prototypeIndex,
+        measurementKey: item.measurementKey,
+        localUri: item.localUri,
+      },
+      ownerUid,
+    );
+    const attempt = await uploadLocalMediaToStorage(item.localUri, storagePath);
     const current = outcomes.get(item.id) ?? item;
 
     if (attempt.ok) {

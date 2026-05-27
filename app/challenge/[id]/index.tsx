@@ -27,6 +27,7 @@ import {
   getRequiredMeasurements,
   isPrototypeComplete,
 } from "../../../src/utils/challengeRecordValidation";
+import { HUMAN_PERFORMANCE_CHALLENGE_ID } from "../../../src/utils/humanPerformance";
 
 export default function ChallengeBriefScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -39,12 +40,16 @@ export default function ChallengeBriefScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
+  const goBackToChallenges = () => {
+    router.replace("/(tabs)/activity");
+  };
+
   // Safety check — shouldn't happen, but handles bad URLs
   if (!challenge) {
     return (
       <View style={styles.errorScreen}>
         <Text style={styles.errorText}>Challenge not found</Text>
-        <Pressable style={styles.backBtn} onPress={() => router.back()}>
+        <Pressable style={styles.backBtn} onPress={goBackToChallenges}>
           <Text style={styles.backBtnText}>← Go Back</Text>
         </Pressable>
       </View>
@@ -63,7 +68,7 @@ export default function ChallengeBriefScreen() {
     hasDraft &&
     draft.prototypes.length >= challenge.maxPrototypes &&
     draft.prototypes.every((p) =>
-      isPrototypeComplete(p, requiredForDraft),
+      isPrototypeComplete(p, requiredForDraft, challenge.id),
     );
 
   // How many steps to show (all or first 3)

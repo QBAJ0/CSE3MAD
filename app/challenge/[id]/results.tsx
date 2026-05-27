@@ -15,6 +15,7 @@ import {
   View,
 } from "react-native";
 import { ResultLocationMap } from "@/src/components/ResultLocationMap";
+import { HumanPerformanceReflect } from "../../../src/components/challenge/HumanPerformanceReflect";
 import { ChallengeTabBar } from "../../../src/components/challenge/ChallengeTabBar";
 import { SoundMap } from "../../../src/components/challenge/SoundMap";
 import { parseSoundMapPoints } from "../../../src/utils/soundMap";
@@ -45,6 +46,10 @@ import {
 } from "../../../src/utils/prototypePrediction";
 import { exitToTabFromChallenge } from "../../../src/utils/exitToTabFromChallenge";
 import { storage } from "../../../src/utils/storage";
+import {
+  HUMAN_PERFORMANCE_CHALLENGE_ID,
+  isHumanPerformancePrototypeComplete,
+} from "../../../src/utils/humanPerformance";
 
 const G_FORCE_LABELS: Record<
   "none" | "minor" | "serious" | "severe" | "lifeThreatening",
@@ -101,11 +106,17 @@ const hasCompleteRequiredData = (
   prototypes: Prototype[],
   difficulty: DifficultyMode,
 ) => {
+  if (!challenge || prototypes.length === 0) return false;
+
+  if (challenge.id === HUMAN_PERFORMANCE_CHALLENGE_ID) {
+    return prototypes.every(isHumanPerformancePrototypeComplete);
+  }
+
   const requiredMeasurements = getActiveMeasurements(challenge, difficulty).filter(
     (measurement) => !EVIDENCE_RECORDERS.has(measurement.recorder) && !measurement.optional,
   );
 
-  if (prototypes.length === 0 || requiredMeasurements.length === 0) {
+  if (requiredMeasurements.length === 0) {
     return false;
   }
 
@@ -156,6 +167,7 @@ export default function ResultsScreen() {
 
   const challenge = getChallengeById(Number(id));
   const { draft, finalize, clearDraft, updatePrototype } = useActivity();
+  const isHumanPerformance = challenge?.id === HUMAN_PERFORMANCE_CHALLENGE_ID;
   const { team } = useTeam();
 
   const [observations, setObservations] = useState<Record<number, string>>({});
@@ -386,7 +398,15 @@ export default function ResultsScreen() {
         </View>
       )}
 
-      {draft.prototypes.length > 0 && tableKeys.length > 0 && (
+      {isHumanPerformance ? (
+        <HumanPerformanceReflect
+          prototypes={draft.prototypes}
+          teamPrediction={draft.prediction ?? ""}
+          onUpdatePrototype={updatePrototype}
+        />
+      ) : null}
+
+      {!isHumanPerformance && draft.prototypes.length > 0 && tableKeys.length > 0 && (
         <View style={styles.card}>
           <View style={styles.cardTitleRow}>
             <Ionicons name="bar-chart-outline" size={16} color={colors.text} />

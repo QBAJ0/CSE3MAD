@@ -9,8 +9,7 @@ import {
   setDoc,
   where,
 } from "firebase/firestore";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
-import { auth, cloudStorage, db } from "@/src/firebase";
+import { auth, db } from "@/src/firebase";
 import { ActivityResult, Comment, LeaderboardEntry } from "../types";
 
 export type SyncFailReason = "offline" | "permission" | "unknown";
@@ -92,8 +91,136 @@ export function buildLocalLeaderboard(
 
 const COLLECTION = "leaderboard";
 
+/** Shape stored at leaderboard/{teamId} in Firestore. */
+export type LeaderboardCloudDoc = {
+  ownerUid: string;
+  teamId: string;
+  teamName: string;
+  discriminator: string;
+  totalPoints: number;
+  challengesCompleted: number;
+  ratingSum?: number;
+  ratingCount?: number;
+  lastActive: string;
+  updatedAt: string;
+};
+
 function currentOwnerUid(): string | null {
   return auth?.currentUser?.uid ?? null;
+}
+
+function cloudDocToEntry(
+  docId: string,
+  data: LeaderboardCloudDoc,
+): Omit<LeaderboardEntry, "rank"> {
+  const ratingCount = data.ratingCount ?? 0;
+  const ratingSum = data.ratingSum ?? 0;
+  return {
+    teamName: data.teamName,
+    discriminator: data.discriminator ?? data.teamId ?? docId,
+    totalPoints: data.totalPoints ?? 0,
+    challengesCompleted: data.challengesCompleted ?? 0,
+    averageRating: ratingCount > 0 ? ratingSum / ratingCount : 0,
+    lastActive: data.lastActive ?? data.updatedAt ?? "",
+  };
+}
+
+function rankEntries(entries: Omit<LeaderboardEntry, "rank">[]): LeaderboardEntry[] {
+  return [...entries]
+    .sort((a, b) => b.totalPoints - a.totalPoints)
+    .map((e, i) => ({ ...e, rank: i + 1 }));
+}
+
+/**
+ * Reads the full leaderboard collection (all teams). Rules: any authenticated user.
+ * Does not filter by ownerUid.
+ */
+export async function fetchLeaderboardFromCloud(
+  cutoff: Date | null,
+): Promise<LeaderboardEntry[]> {
+  const uid = currentOwnerUid();
+  console.log("[leaderboard:fetch] start", {
+    currentUid: uid,
+    collection: COLLECTION,
+    cutoff: cutoff?.toISOString() ?? null,
+  });
+
+  if (!db) {
+    console.warn("[leaderboard:fetch] skipped — Firestore not configured");
+    return [];
+  }
+
+  if (!uid) {
+    console.warn("[leaderboard:fetch] skipped — no auth.currentUser");
+    return [];
+  }
+
+  try {
+    const q = query(collection(db, COLLECTION), orderBy("totalPoints", "desc"));
+    const snap = await getDocs(q);
+    console.log("[leaderboard:fetch] docs fetched", {
+      currentUid: uid,
+      count: snap.size,
+    });
+
+    const entries: Omit<LeaderboardEntry, "rank">[] = [];
+
+    snap.forEach((docSnap) => {
+      const data = docSnap.data() as LeaderboardCloudDoc;
+      const entry = cloudDocToEntry(docSnap.id, data);
+
+      if (cutoff && entry.lastActive) {
+        if (new Date(entry.lastActive) < cutoff) {
+          return;
+        }
+      }
+
+      console.log("[leaderboard:fetch] team", {
+        docId: docSnap.id,
+        teamId: data.teamId ?? docSnap.id,
+        teamName: entry.teamName,
+        score: entry.totalPoints,
+        ownerUid: data.ownerUid,
+      });
+
+      entries.push(entry);
+    });
+
+    const ranked = rankEntries(entries);
+    console.log("[leaderboard:fetch] done", {
+      currentUid: uid,
+      returnedTeams: ranked.length,
+    });
+    return ranked;
+  } catch (e) {
+    console.warn("[leaderboard:fetch] failed", { currentUid: uid, error: e });
+    return [];
+  }
+}
+
+function logWriteStart(args: {
+  op: string;
+  path: string;
+  ownerUid: string | null;
+  resultId?: string;
+  teamId?: string;
+  activityId?: string;
+}) {
+  console.log("[firestore:write:start]", args);
+}
+
+function logWriteEnd(args: {
+  op: string;
+  path: string;
+  ok: boolean;
+  ownerUid: string | null;
+  error?: unknown;
+}) {
+  if (args.ok) {
+    console.log("[firestore:write:ok]", args);
+    return;
+  }
+  console.warn("[firestore:write:fail]", args);
 }
 
 function summarizeEvidence(result: ActivityResult) {
@@ -122,69 +249,43 @@ function summarizeEvidence(result: ActivityResult) {
   };
 }
 
-function isEvidenceKey(key: string): boolean {
-  const normalized = key.toLowerCase();
-  return normalized.includes("video") || normalized.includes("photo");
-}
-
-function extensionFromUri(uri: string): string {
-  const withoutQuery = uri.split("?")[0] ?? uri;
-  const match = withoutQuery.match(/\.([a-zA-Z0-9]+)$/);
-  return match ? `.${match[1].toLowerCase()}` : "";
-}
-
-async function uploadEvidenceFiles(result: ActivityResult, ownerUid: string) {
-  if (!cloudStorage) return [];
-
-  const uploads: {
-    prototypeIndex: number;
-    key: string;
-    localUri: string;
-    downloadUrl: string;
-  }[] = [];
-
-  for (const prototype of result.prototypes) {
-    for (const [key, value] of Object.entries(prototype.measurements)) {
-      if (!isEvidenceKey(key) || typeof value !== "string" || value.trim() === "") {
-        continue;
-      }
-
-      try {
-        const response = await fetch(value);
-        const blob = await response.blob();
-        const fileRef = ref(
-          cloudStorage,
-          `activity-evidence/${ownerUid}/${result.id}/prototype-${prototype.index}-${key}${extensionFromUri(value)}`,
-        );
-        await uploadBytes(fileRef, blob);
-        uploads.push({
-          prototypeIndex: prototype.index,
-          key,
-          localUri: value,
-          downloadUrl: await getDownloadURL(fileRef),
-        });
-      } catch (e) {
-        console.warn(`[leaderboard] uploadEvidenceFiles (${classifyError(e)}):`, e);
-      }
-    }
-  }
-
-  return uploads;
-}
-
 export async function pushResultToCloud(result: ActivityResult): Promise<boolean> {
   const ownerUid = currentOwnerUid();
-  if (!db || !ownerUid) return false;
+  const path = `${COLLECTION}/${result.teamId}`;
+  logWriteStart({
+    op: "pushResultToCloud",
+    path,
+    ownerUid,
+    resultId: result.id,
+    teamId: result.teamId,
+  });
+  if (!db || !ownerUid) {
+    logWriteEnd({
+      op: "pushResultToCloud",
+      path,
+      ok: false,
+      ownerUid,
+      error: "missing db or auth.currentUser",
+    });
+    return false;
+  }
   try {
     const teamRef = doc(db, COLLECTION, result.teamId);
     const snap = await getDoc(teamRef);
 
+    const updatedAt = new Date().toISOString();
+    const baseFields = {
+      ownerUid,
+      teamId: result.teamId,
+      teamName: result.teamName,
+      discriminator: result.teamId,
+      updatedAt,
+    };
+
     if (snap.exists()) {
       const existing = snap.data();
       await setDoc(teamRef, {
-        ownerUid,
-        teamName: result.teamName,
-        discriminator: result.teamId,
+        ...baseFields,
         totalPoints: (existing.totalPoints || 0) + (result.points || 0),
         challengesCompleted: (existing.challengesCompleted || 0) + 1,
         ratingSum: (existing.ratingSum || 0) + result.rating,
@@ -193,9 +294,7 @@ export async function pushResultToCloud(result: ActivityResult): Promise<boolean
       });
     } else {
       await setDoc(teamRef, {
-        ownerUid,
-        teamName: result.teamName,
-        discriminator: result.teamId,
+        ...baseFields,
         totalPoints: result.points || 0,
         challengesCompleted: 1,
         ratingSum: result.rating,
@@ -203,8 +302,21 @@ export async function pushResultToCloud(result: ActivityResult): Promise<boolean
         lastActive: result.createdAt,
       });
     }
+    logWriteEnd({
+      op: "pushResultToCloud",
+      path,
+      ok: true,
+      ownerUid,
+    });
     return true;
   } catch (e) {
+    logWriteEnd({
+      op: "pushResultToCloud",
+      path,
+      ok: false,
+      ownerUid,
+      error: e,
+    });
     console.warn(`[leaderboard] pushResultToCloud (${classifyError(e)}):`, e);
     return false;
   }
@@ -214,10 +326,27 @@ export async function pushResultToCloud(result: ActivityResult): Promise<boolean
 // "activities" collection so teachers can query per-submission data.
 export async function pushActivityToCloud(result: ActivityResult): Promise<boolean> {
   const ownerUid = currentOwnerUid();
-  if (!db || !ownerUid) return false;
+  const path = `activities/${result.id}`;
+  logWriteStart({
+    op: "pushActivityToCloud",
+    path,
+    ownerUid,
+    resultId: result.id,
+    teamId: result.teamId,
+    activityId: result.id,
+  });
+  if (!db || !ownerUid) {
+    logWriteEnd({
+      op: "pushActivityToCloud",
+      path,
+      ok: false,
+      ownerUid,
+      error: "missing db or auth.currentUser",
+    });
+    return false;
+  }
   try {
     const evidence = summarizeEvidence(result);
-    const uploadedEvidence = await uploadEvidenceFiles(result, ownerUid);
     await setDoc(doc(db, "activities", result.id), {
       ownerUid,
       id: result.id,
@@ -234,40 +363,25 @@ export async function pushActivityToCloud(result: ActivityResult): Promise<boole
       completedInTime: result.completedInTime ?? true,
       location: result.location ?? null,
       evidence,
-      uploadedEvidence,
       createdAt: result.createdAt,
+    });
+    logWriteEnd({
+      op: "pushActivityToCloud",
+      path,
+      ok: true,
+      ownerUid,
     });
     return true;
   } catch (e) {
+    logWriteEnd({
+      op: "pushActivityToCloud",
+      path,
+      ok: false,
+      ownerUid,
+      error: e,
+    });
     console.warn(`[leaderboard] pushActivityToCloud (${classifyError(e)}):`, e);
     return false;
-  }
-}
-
-export async function fetchActivitiesByChallenge(
-  challengeId: number,
-): Promise<Pick<ActivityResult, "id" | "teamName" | "teamId" | "rating" | "reflection" | "createdAt">[]> {
-  if (!db) return [];
-  try {
-    const q = query(
-      collection(db, "activities"),
-      where("challengeId", "==", challengeId),
-      orderBy("createdAt", "desc"),
-    );
-    const snap = await getDocs(q);
-    return snap.docs.map((d) => {
-      const data = d.data();
-      return {
-        id: data.id,
-        teamName: data.teamName,
-        teamId: data.teamId,
-        rating: data.rating ?? 0,
-        reflection: data.reflection ?? "",
-        createdAt: data.createdAt,
-      };
-    });
-  } catch (e) {
-    throw new CloudSyncError(classifyError(e), e);
   }
 }
 
@@ -275,11 +389,40 @@ export async function postComment(
   comment: Omit<Comment, "id">,
 ): Promise<boolean> {
   const ownerUid = currentOwnerUid();
-  if (!db || !ownerUid) return false;
+  const path = "comments/<auto-id>";
+  logWriteStart({
+    op: "postComment",
+    path,
+    ownerUid,
+    teamId: comment.discriminator,
+  });
+  if (!db || !ownerUid) {
+    logWriteEnd({
+      op: "postComment",
+      path,
+      ok: false,
+      ownerUid,
+      error: "missing db or auth.currentUser",
+    });
+    return false;
+  }
   try {
     await addDoc(collection(db, "comments"), { ...comment, ownerUid });
+    logWriteEnd({
+      op: "postComment",
+      path,
+      ok: true,
+      ownerUid,
+    });
     return true;
   } catch (e) {
+    logWriteEnd({
+      op: "postComment",
+      path,
+      ok: false,
+      ownerUid,
+      error: e,
+    });
     console.warn(`[leaderboard] postComment (${classifyError(e)}):`, e);
     return false;
   }
@@ -300,28 +443,3 @@ export async function fetchComments(challengeId: number): Promise<Comment[]> {
   }
 }
 
-export async function fetchCloudLeaderboard(): Promise<LeaderboardEntry[]> {
-  if (!db) return [];
-  try {
-    const snap = await getDocs(collection(db, COLLECTION));
-    const entries = snap.docs.map((d) => {
-      const data = d.data();
-      return {
-        teamName: data.teamName,
-        discriminator: data.discriminator,
-        totalPoints: data.totalPoints || 0,
-        challengesCompleted: data.challengesCompleted || 0,
-        averageRating:
-          data.ratingCount > 0 ? data.ratingSum / data.ratingCount : 0,
-        lastActive: data.lastActive || "",
-        rank: 0,
-      } as LeaderboardEntry;
-    });
-
-    return entries
-      .sort((a, b) => b.totalPoints - a.totalPoints)
-      .map((e, i) => ({ ...e, rank: i + 1 }));
-  } catch (e) {
-    throw new CloudSyncError(classifyError(e), e);
-  }
-}

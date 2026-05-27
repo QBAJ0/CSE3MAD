@@ -19,6 +19,7 @@ import {
 import { useTeam } from "../../src/context/TeamContext";
 import type { ColorTokens } from "../../src/theme/colors";
 import { useTheme } from "../../src/theme/themeContext";
+import { ensureFirebaseAuth } from "../../src/services/authSession";
 
 const YEAR_OPTIONS = ["Year 5", "Year 6", "Year 7", "Year 8", "Year 9", "Year 10"];
 
@@ -89,6 +90,7 @@ export default function RegisterScreen() {
       discriminator,
       members: filledMembers,
     });
+    void ensureFirebaseAuth().catch(() => {});
     router.push("/(onboarding)/team-confirmation");
     setIsCreating(false);
   };
