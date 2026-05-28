@@ -171,6 +171,7 @@ export default function ResultsScreen() {
   const { team } = useTeam();
 
   const [observations, setObservations] = useState<Record<number, string>>({});
+  const [comment, setComment] = useState("");
   const [wereYouRightByPrototype, setWereYouRightByPrototype] = useState<
     Record<number, WereYouRightValue | "">
   >(() =>
@@ -216,13 +217,16 @@ export default function ResultsScreen() {
   const getSubmitBlockers = (): string[] => {
     const blockers: string[] = [];
     if (rating === 0) {
-      blockers.push("Select a star rating (1–5 stars).");
+      blockers.push("Tap the stars to rate this activity.");
     }
     visibleObservationQuestions.forEach((_, i) => {
       const len = (observations[i] ?? "").trim().length;
       if (len < GAMIFICATION.OBSERVATION_MIN_CHARS) {
+        const remaining = GAMIFICATION.OBSERVATION_MIN_CHARS - len;
         blockers.push(
-          `Question ${i + 1}: write at least ${GAMIFICATION.OBSERVATION_MIN_CHARS} characters (${len}/${GAMIFICATION.OBSERVATION_MIN_CHARS}).`,
+          len === 0
+            ? `Answer question ${i + 1} before claiming.`
+            : `Question ${i + 1} needs ${remaining} more character${remaining === 1 ? "" : "s"}.`,
         );
       }
     });
@@ -255,7 +259,9 @@ export default function ResultsScreen() {
     try {
       const result = await finalize({
         rating: rating as 1 | 2 | 3 | 4 | 5,
-        reflection: combinedReflection,
+        reflection: comment.trim()
+          ? `${combinedReflection}\n\nTeam comment: ${comment.trim()}`
+          : combinedReflection,
         completedInTime: !hasTimeExpired,
       });
 
@@ -365,6 +371,25 @@ export default function ResultsScreen() {
 
   const soundMapPoints = parseSoundMapPoints(challenge.id, draft.prototypes);
 
+  const SOUND_ZONES = [
+    { max: 60,       label: "Safe",    color: "#2563EB" },
+    { max: 85,       label: "Caution", color: "#F59E0B" },
+    { max: 100,      label: "Warning", color: "#F97316" },
+    { max: Infinity, label: "Danger",  color: "#EF4444" },
+  ];
+  const getSoundZone = (db: number) => SOUND_ZONES.find((z) => db <= z.max) ?? SOUND_ZONES[3];
+
+  const soundRankings =
+    challenge.id === 2
+      ? draft.prototypes
+          .map((p) => ({
+            action: String(p.measurements.action ?? `Scan ${p.index + 1}`),
+            db: parseFloat(String(p.measurements.soundLevel ?? "")),
+          }))
+          .filter((r) => !isNaN(r.db))
+          .sort((a, b) => b.db - a.db)
+      : [];
+
   const setWereYouRight = (prototypeIndex: number, value: WereYouRightValue) => {
     setWereYouRightByPrototype((prev) => ({ ...prev, [prototypeIndex]: value }));
     updatePrototype(prototypeIndex, {
@@ -385,9 +410,9 @@ export default function ResultsScreen() {
 
       <View style={styles.header}>
         <View style={styles.headerIconCircle}>
-          <Ionicons name={challenge.icon as any} size={36} color="#2563EB" />
+          <Ionicons name={challenge.icon as any} size={36} color={colors.primary} />
         </View>
-        <Text style={styles.headerTitle}>Step 3: Reflect</Text>
+        <Text style={styles.headerTitle}>Reflect</Text>
         <Text style={styles.headerSubtitle}>{challenge.title}</Text>
       </View>
 
@@ -462,7 +487,7 @@ export default function ResultsScreen() {
 
       <View style={styles.card}>
         <View style={styles.cardTitleRow}>
-          <Ionicons name="help-circle-outline" size={16} color="#0F172A" />
+          <Ionicons name="help-circle-outline" size={16} color={colors.text} />
           <Text style={styles.cardTitle}>Attempt Review</Text>
         </View>
         {draft.prototypes.map((prototype, idx) => {
@@ -483,14 +508,17 @@ export default function ResultsScreen() {
               <Text style={styles.attemptPrompt}>Were you right?</Text>
               <View style={styles.rightRow}>
                 {([
-                  { id: "yes", label: "Yes" },
-                  { id: "no", label: "No" },
+                  { id: "yes",    label: "Yes" },
+                  { id: "partly", label: "Partly" },
+                  { id: "no",     label: "No" },
                 ] as const).map((option) => (
                   <TouchableOpacity
                     key={option.id}
                     style={[
                       styles.rightChoice,
                       selected === option.id && styles.rightChoiceActive,
+                      selected === option.id && option.id === "partly" && styles.rightChoicePartly,
+                      selected === option.id && option.id === "no" && styles.rightChoiceNo,
                     ]}
                     onPress={() => setWereYouRight(prototype.index, option.id)}
                   >
@@ -517,6 +545,53 @@ export default function ResultsScreen() {
             <Text style={styles.mapCardTitle}>Sound Pollution Zone Map</Text>
           </View>
           <SoundMap points={soundMapPoints} />
+        </View>
+      )}
+
+      {soundRankings.length > 0 && (
+        <View style={styles.card}>
+          <View style={styles.cardTitleRow}>
+            <Ionicons name="podium-outline" size={16} color={colors.text} />
+            <Text style={styles.cardTitle}>Loudness Ranking</Text>
+          </View>
+
+          {soundRankings.map((r, idx) => {
+            const zone = getSoundZone(r.db);
+            return (
+              <View key={idx} style={styles.rankRow}>
+                <View style={styles.rankNum}>
+                  <Text style={styles.rankNumText}>{idx + 1}</Text>
+                </View>
+                <Text style={styles.rankAction} numberOfLines={1}>{r.action}</Text>
+                <View style={[styles.rankZoneBadge, { backgroundColor: zone.color + "22" }]}>
+                  <Text style={[styles.rankZoneText, { color: zone.color }]}>{zone.label}</Text>
+                </View>
+                <Text style={[styles.rankDb, { color: zone.color }]}>{r.db} dB</Text>
+              </View>
+            );
+          })}
+
+          {(() => {
+            const maxDb = soundRankings[0].db;
+            const allSafe = maxDb < 85;
+            return (
+              <View style={[
+                styles.earSafetyBanner,
+                { backgroundColor: allSafe ? "#2563EB22" : "#EF444422", borderColor: allSafe ? "#2563EB" : "#EF4444" },
+              ]}>
+                <Ionicons
+                  name={allSafe ? "ear-outline" : "warning-outline"}
+                  size={16}
+                  color={allSafe ? "#2563EB" : "#EF4444"}
+                />
+                <Text style={[styles.earSafetyText, { color: allSafe ? "#2563EB" : "#EF4444" }]}>
+                  {allSafe
+                    ? "All readings are in the safe zone — no ear protection needed."
+                    : `Loudest reading (${maxDb} dB) exceeds safe limit. Ear protection recommended!`}
+                </Text>
+              </View>
+            );
+          })()}
         </View>
       )}
 
@@ -761,14 +836,13 @@ export default function ResultsScreen() {
               numberOfLines={3}
               textAlignVertical="top"
             />
-            <Text
-              style={[
-                styles.observationCount,
-                answerReady && styles.observationCountReady,
-              ]}
-            >
-              {answerLen}/{GAMIFICATION.OBSERVATION_MIN_CHARS} characters
-            </Text>
+            {answerReady ? (
+              <Text style={styles.observationCountReady}>✓ Good answer</Text>
+            ) : answerLen > 0 ? (
+              <Text style={styles.observationCount}>
+                {GAMIFICATION.OBSERVATION_MIN_CHARS - answerLen} more characters needed
+              </Text>
+            ) : null}
           </View>
           );
         })}
@@ -802,7 +876,7 @@ export default function ResultsScreen() {
               <Ionicons
                 name={rating >= s ? "star" : "star-outline"}
                 size={40}
-                color={rating >= s ? "#FBBF24" : colors.border}
+                color={rating >= s ? colors.warning : colors.border}
               />
             </TouchableOpacity>
           ))}
@@ -813,6 +887,26 @@ export default function ResultsScreen() {
             Your rating helps improve the activity.
           </Text>
         </View>
+      </View>
+
+      <View style={styles.card}>
+        <View style={styles.cardTitleRow}>
+          <Ionicons name="chatbubble-outline" size={16} color={colors.text} />
+          <Text style={styles.cardTitle}>Team Comment (optional)</Text>
+        </View>
+        <Text style={styles.commentHint}>
+          Anything else your team wants to add? Shout-outs, surprises, or what you'd try next time.
+        </Text>
+        <TextInput
+          style={[styles.commentInput, comment.trim() ? styles.commentInputFilled : null]}
+          placeholder="Write a comment here…"
+          placeholderTextColor={colors.textMuted}
+          value={comment}
+          onChangeText={setComment}
+          multiline
+          numberOfLines={3}
+          textAlignVertical="top"
+        />
       </View>
 
       <Pressable
@@ -906,12 +1000,12 @@ function createStyles(c: ColorTokens) {
       width: 80,
       height: 80,
       borderRadius: 40,
-      backgroundColor: c.infoLight,
+      backgroundColor: c.primaryLight,
       alignItems: "center",
       justifyContent: "center",
       marginBottom: 8,
       borderWidth: 2,
-      borderColor: "#2563EB",
+      borderColor: c.primary,
     },
     headerTitle: { fontSize: 28, fontWeight: "800", color: c.text },
     headerSubtitle: { fontSize: 14, color: c.textSecondary, marginTop: 2 },
@@ -951,18 +1045,6 @@ function createStyles(c: ColorTokens) {
       color: c.text,
     },
 
-    predictionBubble: {
-      backgroundColor: c.backgroundSecondary,
-      borderRadius: 14,
-      padding: 14,
-    },
-    predictionText: {
-      fontSize: 14,
-      color: c.textSecondary,
-      fontStyle: "italic",
-      lineHeight: 20,
-    },
-
     attemptCard: {
       backgroundColor: c.backgroundSecondary,
       borderRadius: 14,
@@ -998,6 +1080,14 @@ function createStyles(c: ColorTokens) {
     rightChoiceActive: {
       backgroundColor: c.success,
       borderColor: c.success,
+    },
+    rightChoicePartly: {
+      backgroundColor: c.warning,
+      borderColor: c.warning,
+    },
+    rightChoiceNo: {
+      backgroundColor: c.danger,
+      borderColor: c.danger,
     },
     rightChoiceText: { fontSize: 12, color: c.textSecondary, fontWeight: "700" },
     rightChoiceTextActive: { color: "#FFFFFF" },
@@ -1162,8 +1252,8 @@ function createStyles(c: ColorTokens) {
       backgroundColor: c.input,
     },
     observationInputValid: {
-      borderColor: c.info,
-      backgroundColor: c.infoLight,
+      borderColor: c.success,
+      backgroundColor: c.successLight,
     },
     moreQuestionsBtn: {
       alignSelf: "center",
@@ -1181,10 +1271,16 @@ function createStyles(c: ColorTokens) {
     observationCount: {
       fontSize: 12,
       color: c.textMuted,
-      marginTop: 6,
+      marginTop: 4,
       textAlign: "right",
     },
-    observationCountReady: { color: c.info, fontWeight: "600" },
+    observationCountReady: {
+      fontSize: 12,
+      fontWeight: "600",
+      color: c.success,
+      marginTop: 4,
+      textAlign: "right",
+    },
 
     starsRow: {
       flexDirection: "row",
@@ -1201,6 +1297,28 @@ function createStyles(c: ColorTokens) {
       borderRadius: 12,
     },
     ratingNoteText: { fontSize: 13, color: c.info, fontWeight: "700" },
+
+    commentHint: {
+      fontSize: 13,
+      color: c.textMuted,
+      lineHeight: 18,
+    },
+    commentInput: {
+      borderWidth: 1.5,
+      borderColor: c.inputBorder,
+      borderRadius: 12,
+      padding: 14,
+      fontSize: 14,
+      color: c.text,
+      minHeight: 80,
+      backgroundColor: c.input,
+      lineHeight: 21,
+      marginTop: 8,
+    },
+    commentInputFilled: {
+      borderColor: c.inputFilledBorder,
+      backgroundColor: c.inputFilled,
+    },
 
     claimBtn: {
       backgroundColor: c.cta,
@@ -1229,5 +1347,37 @@ function createStyles(c: ColorTokens) {
     redoLinkText: { fontSize: 14, color: c.textSecondary, fontWeight: "600" },
     exitLink: { alignItems: "center", paddingTop: 14, paddingBottom: 2 },
     exitLinkText: { fontSize: 14, color: c.danger, fontWeight: "700" },
+
+    rankRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      paddingVertical: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: c.borderFaint,
+    },
+    rankNum: {
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      backgroundColor: c.backgroundSecondary,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    rankNumText: { fontSize: 13, fontWeight: "800", color: c.textMuted },
+    rankAction: { flex: 1, fontSize: 14, fontWeight: "600", color: c.text },
+    rankZoneBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+    rankZoneText: { fontSize: 11, fontWeight: "800" },
+    rankDb: { fontSize: 16, fontWeight: "800", minWidth: 56, textAlign: "right" },
+    earSafetyBanner: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      marginTop: 14,
+      padding: 12,
+      borderRadius: 12,
+      borderWidth: 1.5,
+    },
+    earSafetyText: { flex: 1, fontSize: 13, fontWeight: "700", lineHeight: 18 },
   });
 }

@@ -88,7 +88,6 @@ export default function WelcomeScreen() {
           onPress={() => router.push("/(onboarding)/register")}
         >
           <View style={styles.btnRow}>
-            <Ionicons name="rocket" size={18} color="#FFFFFF" />
             <Text style={styles.primaryBtnText}>Create New Team</Text>
           </View>
           <Text style={styles.primaryBtnSub}>Start a new STEMM squad</Text>

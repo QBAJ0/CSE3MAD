@@ -1,4 +1,5 @@
 // components/recorders/PhotoRecorder.tsx
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { CameraType, CameraView, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 import { useRef, useState } from "react";
@@ -79,7 +80,7 @@ export function PhotoRecorder({
   if (!permission) {
     return (
       <View style={styles.container}>
-        <Text style={styles.permissionText}>📷 Camera permission required</Text>
+        <Text style={styles.permissionText}>Camera permission required</Text>
         <TouchableOpacity
           style={styles.permissionButton}
           onPress={requestPermission}
@@ -99,10 +100,10 @@ export function PhotoRecorder({
             style={styles.retakeButton}
             onPress={() => setPhotoUri(null)}
           >
-            <Text style={styles.retakeButtonText}>📷 Retake</Text>
+            <Text style={styles.retakeButtonText}>Retake</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.deleteButton} onPress={deletePhoto}>
-            <Text style={styles.deleteButtonText}>🗑️ Delete</Text>
+            <Text style={styles.deleteButtonText}>Delete</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -119,13 +120,13 @@ export function PhotoRecorder({
             setCameraOpen(true);
           }}
         >
-          <Text style={styles.cameraButtonText}>📷 {label}</Text>
+          <Text style={styles.cameraButtonText}>{label}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.galleryButton}
           onPress={pickFromGallery}
         >
-          <Text style={styles.galleryButtonText}>🖼️ Choose from Gallery</Text>
+          <Text style={styles.galleryButtonText}>Choose from Gallery</Text>
         </TouchableOpacity>
       </View>
 
@@ -152,7 +153,7 @@ export function PhotoRecorder({
                 setTorchOn(false);
               }}
             >
-              <Text style={styles.closeButtonText}>✕</Text>
+              <Ionicons name="close" size={24} color="#FFF" />
             </TouchableOpacity>
             {facing === "back" && (
               <TouchableOpacity
@@ -165,7 +166,7 @@ export function PhotoRecorder({
                   setTorchOn((on) => !on);
                 }}
               >
-                <Text style={styles.torchButtonText}>{torchOn ? "🔦" : "💡"}</Text>
+                <Ionicons name={torchOn ? "flash" : "flash-off"} size={22} color="#FFF" />
               </TouchableOpacity>
             )}
           </View>
@@ -184,7 +185,7 @@ export function PhotoRecorder({
                 });
               }}
             >
-              <Text style={styles.flipButtonText}>🔄</Text>
+              <Ionicons name="camera-reverse-outline" size={26} color="#FFF" />
             </TouchableOpacity>
           </View>
         </View>
@@ -276,9 +277,6 @@ const styles = StyleSheet.create({
   torchButtonActive: {
     backgroundColor: "rgba(250,204,21,0.85)",
   },
-  torchButtonText: {
-    fontSize: 24,
-  },
   closeButton: {
     width: 50,
     height: 50,
@@ -287,7 +285,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  closeButtonText: { color: "#FFF", fontSize: 24 },
   captureButton: {
     width: 70,
     height: 70,
@@ -312,5 +309,4 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  flipButtonText: { color: "#FFF", fontSize: 24 },
 });

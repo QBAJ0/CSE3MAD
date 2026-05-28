@@ -54,7 +54,7 @@ function createStyles(c: ColorTokens) {
     label: { color: c.text, fontSize: 15, fontWeight: "700" },
     hint: { color: c.textSecondary, fontSize: 12 },
     input: {
-      backgroundColor: c.infoLight,
+      backgroundColor: c.primaryLight,
       color: c.text,
       borderRadius: 10,
       padding: 12,
@@ -64,7 +64,7 @@ function createStyles(c: ColorTokens) {
       borderColor: c.inputBorder,
     },
     btn: {
-      backgroundColor: c.info,
+      backgroundColor: c.primary,
       padding: 14,
       borderRadius: 12,
       alignItems: "center",

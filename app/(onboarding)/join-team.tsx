@@ -84,7 +84,7 @@ export default function JoinTeamScreen() {
       >
         {/* ── Header ── */}
         <View style={styles.header}>
-          <Ionicons name="enter-outline" size={32} color="#2563EB" style={styles.headerIcon} />
+          <Ionicons name="enter-outline" size={32} color="#FFFFFF" style={styles.headerIcon} />
           <Text style={styles.headerTitle}>Join a Team</Text>
           <Text style={styles.headerSubtitle}>
             Enter the team name and the ID your team leader shared with you.
@@ -165,7 +165,6 @@ export default function JoinTeamScreen() {
             onPress={() => router.replace("/(onboarding)/register")}
           >
             <View style={styles.createBtnRow}>
-              <Ionicons name="rocket-outline" size={17} color={colors.primary} />
               <Text style={styles.createBtnText}>Create a New Team</Text>
             </View>
           </Pressable>

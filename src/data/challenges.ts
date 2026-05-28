@@ -7,6 +7,7 @@ export const CHALLENGES: Challenge[] = [
   // Activity 1: Parachute Drop
   {
     id: 1,
+    setupImage: require("../../assets/images/Parachute-setup.png"),
     title: "Parachute Drop",
     category: "Engineering Challenges",
     icon: "arrow-down-circle-outline",
@@ -175,6 +176,7 @@ export const CHALLENGES: Challenge[] = [
   // Activity 2: Sound Pollution
   {
     id: 2,
+    setupImage: require("../../assets/images/sound-pollution-setup.png"),
     title: "Sound Pollution Hunter",
     category: "Engineering Challenges",
     icon: "volume-high-outline",
@@ -218,35 +220,50 @@ export const CHALLENGES: Challenge[] = [
     curriculumLinks: [
       "ACSSU073 - Sound and energy",
       "ACSIS125 - Processing and analysing data",
+      "ACPPS053 - Health and wellbeing",
     ],
     predictionPrompt: "Which classroom action do you think makes the most noise? Will the quietest action surprise you?",
     extensionTip: "Compare readings from different rooms or outside. How does distance from the source change the dB level?",
+    discussion:
+      "Sound exposure causes hearing damage when noise levels are too high or exposure time is too long. " +
+      "Use this table to understand the risk zones your team measured:\n\n" +
+      "0–30 dB  — Safe. Library whisper, rustling leaves.\n" +
+      "30–60 dB — Safe. Normal conversation, classroom at work.\n" +
+      "60–85 dB — Moderate. Busy traffic, vacuum cleaner. Safe for short periods.\n" +
+      "85–100 dB — Dangerous. Power tools, motorcycles. Hearing damage possible with prolonged exposure.\n" +
+      "100–120 dB — Very dangerous. Concerts, chainsaws. Ear protection required.\n" +
+      "120–140+ dB — Instant permanent damage. Jet engines, gunshots.\n\n" +
+      "Discussion questions: Which of your measurements fell in the danger zone? " +
+      "Would you recommend ear protection for any activity in your classroom? " +
+      "How could you redesign the classroom or the activity to reduce noise levels?",
     thingsToKnow: [
       {
-        heading: "What is a decibel?",
+        heading: "Your mission: hunt the noise",
         color: "#2563EB",
         bullets: [
-          "Sound is measured in decibels (dB).",
-          "A whisper is ~30 dB; normal conversation is ~60 dB.",
-          "Every 10 dB increase sounds twice as loud to our ears.",
+          "Sound detectives measure decibels (dB) — the unit for sound intensity.",
+          "A whisper is ~30 dB; a normal conversation is ~60 dB.",
+          "Every 10 dB step sounds roughly twice as loud to human ears.",
         ],
       },
       {
-        heading: "How sound travels",
+        heading: "How sound waves work",
         color: "#2563EB",
         bullets: [
-          "Sound travels as vibrations (pressure waves) through air.",
-          "Hard surfaces reflect sound; soft surfaces absorb it.",
-          "Closer to the source = higher dB reading.",
+          "Sound travels as pressure waves radiating outward from the source.",
+          "Hard surfaces (walls, desks) reflect waves and make readings higher.",
+          "Soft surfaces (carpet, curtains) absorb waves — quieter zones.",
+          "Doubling your distance from a source drops the dB level noticeably.",
         ],
       },
       {
-        heading: "Sound safety",
+        heading: "Danger zones — protect your ears",
         color: "#EF4444",
         bullets: [
-          "Sounds above 85 dB can damage hearing over time.",
-          "Ear protection is vital in loud environments.",
-          "Noise pollution affects concentration and wellbeing.",
+          "Above 85 dB: prolonged exposure starts damaging hearing.",
+          "Above 100 dB: even short bursts can cause permanent damage.",
+          "Noise pollution also affects concentration, memory, and wellbeing.",
+          "Real workplaces must keep noise below 85 dB by law.",
         ],
       },
     ],
@@ -260,6 +277,7 @@ export const CHALLENGES: Challenge[] = [
   // Activity 3: Hand Fan
   {
     id: 3,
+    setupImage: require("../../assets/images/fan-setup.png"),
     title: "Hand Fan Challenge",
     category: "Engineering Challenges",
     icon: "aperture-outline",
@@ -309,6 +327,13 @@ export const CHALLENGES: Challenge[] = [
         unit: "cm",
         recorder: "manualChoice",
         choices: ["15", "30", "45"],
+      },
+      {
+        key: "bendAngle",
+        label: "Bend angle",
+        unit: "°",
+        recorder: "manualNumber",
+        placeholder: "e.g. 45",
       },
       {
         key: "photoUri",
@@ -361,6 +386,7 @@ export const CHALLENGES: Challenge[] = [
   // Activity 4: Earthquake
   {
     id: 4,
+    setupImage: require("../../assets/images/earthquake-setup.png"),
     title: "Earthquake-Resistant Structure",
     category: "Engineering Challenges",
     icon: "construct-outline",
@@ -552,6 +578,7 @@ export const CHALLENGES: Challenge[] = [
   // Activity 6: Reaction Board
   {
     id: 6,
+    setupImage: require("../../assets/images/reaction-board-setup.png"),
     title: "Reaction Board",
     category: "Health and Medical Sciences",
     icon: "pulse-outline",
@@ -613,23 +640,24 @@ export const CHALLENGES: Challenge[] = [
       "Did anything surprise you about the results?",
     ],
   },
-  // Activity 7: Breathing Trainer
+  // Activity 7: Breathing Pace Trainer
   {
     id: 7,
-    title: "Breathing Trainer",
-    category: "Health and Medical Sciences",
+    setupImage: require("../../assets/images/breathing-setup.png"),
+    title: "Breathing Pace Trainer",
+    category: "Medical Science / Health Science",
     icon: "heart-outline",
     color: "#0F766E",
     shortDescription: "Analyse breathing patterns before and after exercise.",
     overview:
-      "Analyse breathing patterns using phone sensors to measure chest movement.",
+      "Students analyse breathing patterns at rest and after exercise using the phone's motion sensors.",
     equipment: ["Mobile phone with STEMM Lab app", "Flat surface or mat"],
     instructions: [
-      "Place phone on chest",
-      "Record breathing for 30 seconds",
-      "Perform exercise (jog/star jumps)",
-      "Record again",
-      "Compare rates",
+      "Place the phone gently on your chest",
+      "Record your breathing at rest for 30 seconds",
+      "Perform light exercise — jog on the spot for 1 minute OR do 100 star jumps",
+      "Record breathing again straight after exercise",
+      "Rotate through each team member and compare results",
     ],
     features: ["predictionRequired", "sensors"],
     maxPrototypes: 3,
@@ -643,8 +671,15 @@ export const CHALLENGES: Challenge[] = [
         choices: [
           "At rest",
           "After Exercise 1 – Jog (1 min)",
-          "After Exercise 2 – Star jumps (100)",
+          "After Exercise 2 – 100 Star Jumps",
         ],
+      },
+      {
+        key: "predictedBpm",
+        label: "Predicted Breaths Per Minute",
+        recorder: "manualNumber",
+        placeholder: "e.g. 15",
+        optional: true,
       },
       {
         key: "breathingData",
@@ -654,16 +689,17 @@ export const CHALLENGES: Challenge[] = [
       { key: "location", label: "GPS Location", recorder: "gps" },
     ],
     curriculumLinks: [
-      "ACSSU176 - Body systems",
-      "ACPPS051 - Movement skills",
-      "ACPPS054 - Physical performance",
+      "ACSSU176 – Body systems",
+      "ACPPS054 – Physical activity and health",
     ],
-    predictionPrompt: "How many breaths per minute do you take at rest? How much do you think exercise will change it?",
-    extensionTip: "Try different types of exercise (slow jog vs. star jumps). Does the intensity of exercise change your recovery time?",
+    predictionPrompt: "Predict how your breathing rate will change after exercise.",
+    extensionTip: "Try different types of exercise (slow jog vs. star jumps). Does the intensity affect how long it takes to recover?",
+    discussion:
+      "Breathing rate increases during exercise to supply more oxygen to muscles. Sensors detect chest movement, helping students visualise breathing patterns.",
     thingsToKnow: [
       {
         heading: "Why do we breathe?",
-        color: "#2563EB",
+        color: "#0F766E",
         bullets: [
           "Breathing delivers oxygen to your blood and removes CO₂.",
           "Every cell in your body needs oxygen to produce energy.",
@@ -672,7 +708,7 @@ export const CHALLENGES: Challenge[] = [
       },
       {
         heading: "Breathing rate",
-        color: "#2563EB",
+        color: "#0F766E",
         bullets: [
           "Normal resting breathing rate: 12–20 breaths per minute.",
           "Exercise can double or triple your breathing rate.",
@@ -690,9 +726,9 @@ export const CHALLENGES: Challenge[] = [
       },
     ],
     observationQuestions: [
-      "How many breaths per minute did you predict you would take at rest?",
-      "Were your predictions correct?",
+      "Were you right? How close was your prediction?",
       "Did anything surprise you about the results?",
+      "What changed in your breathing after exercise?",
     ],
   },
 ];

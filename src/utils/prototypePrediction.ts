@@ -1,6 +1,6 @@
 import { Prototype } from "../types";
 
-export type WereYouRightValue = "yes" | "no";
+export type WereYouRightValue = "yes" | "partly" | "no";
 
 type PredictionUiConfig = {
   predictionLabel: string;
@@ -186,7 +186,7 @@ export function getPrototypeWereYouRight(
   prototype: Prototype,
 ): WereYouRightValue | "" {
   const raw = String(prototype.measurements.wereYouRight ?? "").trim();
-  if (raw === "yes" || raw === "no") return raw;
+  if (raw === "yes" || raw === "partly" || raw === "no") return raw;
   return "";
 }
 

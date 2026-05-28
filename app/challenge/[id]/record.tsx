@@ -296,6 +296,20 @@ export default function RecordScreen() {
     }
   }, [isHumanPerformance, current.index, draft.currentPrototypeIndex]);
 
+  const BREATHING_CONDITIONS = [
+    "At rest",
+    "After Exercise 1 – Jog (1 min)",
+    "After Exercise 2 – 100 Star Jumps",
+  ];
+
+  useEffect(() => {
+    if (challenge.id !== 7 || !current) return;
+    const expected = BREATHING_CONDITIONS[current.index - 1] ?? "";
+    if (expected && String(current.measurements.condition ?? "") !== expected) {
+      updatePrototype(current.index, { measurements: { condition: expected } });
+    }
+  }, [challenge.id, current.index, draft.currentPrototypeIndex]);
+
   const handleSaveDraft = () => {
     haptic("warning");
     Alert.alert(
@@ -386,8 +400,16 @@ export default function RecordScreen() {
   // Injected into the shell's children slot. All recorder logic stays here;
   // the shell only receives the already-rendered output.
 
+  const breathingConditionLabel = BREATHING_CONDITIONS[current.index - 1];
+
   const measurementContent = (
     <SectionCard>
+      {challenge.id === 7 && breathingConditionLabel && (
+        <View style={styles.conditionBanner}>
+          <Text style={styles.conditionBannerText}>{breathingConditionLabel}</Text>
+        </View>
+      )}
+
       {isHumanPerformance && (
         <HumanPerformanceMovementDiagram prototypeIndex={current.index} />
       )}
@@ -447,6 +469,9 @@ export default function RecordScreen() {
       )}
 
       {measurements.map((m) => {
+        // Activity 7: condition is auto-set from prototype index — hide the picker
+        if (challenge.id === 7 && m.key === "condition") return null;
+
         // Activity 5: bundle smoothness + vibration + time into one widget
         if (
           challenge.id === 5 &&
@@ -472,7 +497,7 @@ export default function RecordScreen() {
         }
 
         return (
-          <FieldWrapper key={m.key} label={m.label} unit={m.unit}>
+          <FieldWrapper key={`${m.key}-${current.index}`} label={m.label} unit={m.unit}>
             {renderRecorder(m)}
           </FieldWrapper>
         );
@@ -560,6 +585,20 @@ function createStyles(c: ColorTokens) {
       color: "#FFFFFF",
       fontSize: 15,
       fontWeight: "700",
+    },
+    conditionBanner: {
+      backgroundColor: c.primaryLight,
+      borderRadius: 10,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      marginBottom: 12,
+      borderLeftWidth: 4,
+      borderLeftColor: c.primary,
+    },
+    conditionBannerText: {
+      fontSize: 15,
+      fontWeight: "700",
+      color: c.primary,
     },
     analyzerPlaceholder: {
       borderWidth: 1.5,

@@ -1,3 +1,4 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useMemo } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useTheme } from "../../theme/themeContext";
@@ -15,6 +16,12 @@ interface Props {
   reflectEnabled?: boolean;
 }
 
+const TAB_CONFIG: { id: ChallengeTab; label: string; icon: string }[] = [
+  { id: "brief",   label: "Brief",   icon: "book-outline" },
+  { id: "doit",    label: "Do It",   icon: "play-circle-outline" },
+  { id: "reflect", label: "Reflect", icon: "chatbubbles-outline" },
+];
+
 export function ChallengeTabBar({
   active,
   onBrief,
@@ -27,62 +34,58 @@ export function ChallengeTabBar({
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
+  const isEnabled = (id: ChallengeTab) => {
+    if (id === "brief") return true;
+    if (id === "doit") return doitEnabled;
+    return reflectEnabled;
+  };
+
+  const handlePress = (id: ChallengeTab) => {
+    if (id === "brief") return onBrief();
+    if (id === "doit") return doitEnabled ? onDoit?.() : undefined;
+    return reflectEnabled ? onReflect?.() : onReflectDisabledPress?.();
+  };
+
   return (
     <View style={styles.container}>
-      <TouchableOpacity
-        style={[styles.tab, active === "brief" && styles.activeTab]}
-        onPress={onBrief}
-      >
-        <Text style={[styles.label, active === "brief" && styles.activeLabel]}>
-          Brief
-        </Text>
-        {active === "brief" && <View style={styles.dot} />}
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[
-          styles.tab,
-          active === "doit" && styles.activeTab,
-          !doitEnabled && active !== "doit" && styles.disabledTab,
-        ]}
-        onPress={doitEnabled ? onDoit : undefined}
-        activeOpacity={doitEnabled ? 0.7 : 1}
-      >
-        <Text
-          style={[
-            styles.label,
-            active === "doit" && styles.activeLabel,
-            !doitEnabled && active !== "doit" && styles.disabledLabel,
-          ]}
-        >
-          Do It
-        </Text>
-        {active === "doit" && <View style={styles.dot} />}
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[
-          styles.tab,
-          active === "reflect" && styles.activeTab,
-          !reflectEnabled && active !== "reflect" && styles.disabledTab,
-        ]}
-        onPress={() => {
-          if (reflectEnabled) onReflect?.();
-          else onReflectDisabledPress?.();
-        }}
-        activeOpacity={reflectEnabled ? 0.7 : 1}
-      >
-        <Text
-          style={[
-            styles.label,
-            active === "reflect" && styles.activeLabel,
-            !reflectEnabled && active !== "reflect" && styles.disabledLabel,
-          ]}
-        >
-          Reflect
-        </Text>
-        {active === "reflect" && <View style={styles.dot} />}
-      </TouchableOpacity>
+      {TAB_CONFIG.map(({ id, label, icon }) => {
+        const isActive = active === id;
+        const enabled = isEnabled(id);
+        return (
+          <TouchableOpacity
+            key={id}
+            style={[
+              styles.tab,
+              isActive && styles.activeTab,
+              !enabled && active !== id && styles.disabledTab,
+            ]}
+            onPress={() => handlePress(id)}
+            activeOpacity={enabled ? 0.7 : 1}
+          >
+            <Ionicons
+              name={icon as any}
+              size={15}
+              color={
+                isActive
+                  ? colors.primary
+                  : !enabled
+                  ? colors.textMuted
+                  : colors.textSecondary
+              }
+            />
+            <Text
+              style={[
+                styles.label,
+                isActive && styles.activeLabel,
+                !enabled && active !== id && styles.disabledLabel,
+              ]}
+            >
+              {label}
+            </Text>
+            {isActive && <View style={styles.dot} />}
+          </TouchableOpacity>
+        );
+      })}
     </View>
   );
 }
@@ -103,6 +106,7 @@ function createStyles(c: ColorTokens) {
       paddingVertical: 10,
       borderRadius: 10,
       alignItems: "center",
+      gap: 3,
     },
     activeTab: {
       backgroundColor: c.surface,
@@ -112,15 +116,15 @@ function createStyles(c: ColorTokens) {
       elevation: 2,
     },
     disabledTab: { opacity: 0.4 },
-    label: { fontSize: 14, fontWeight: "600", color: c.textSecondary },
+    label: { fontSize: 12, fontWeight: "600", color: c.textSecondary },
     activeLabel: { color: c.text, fontWeight: "700" },
     disabledLabel: { color: c.textMuted },
     dot: {
       width: 5,
       height: 5,
       borderRadius: 3,
-      backgroundColor: c.info,
-      marginTop: 4,
+      backgroundColor: c.primary,
+      marginTop: 2,
     },
   });
 }

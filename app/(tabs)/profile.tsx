@@ -253,7 +253,7 @@ export default function ProfileScreen() {
             <View style={styles.memberInfo}>
               <Text style={styles.memberName}>{member.name}</Text>
               <Text style={styles.memberGrade}>
-                {member.grade || member.year || "Student"}
+                {member.grade || "Student"}
               </Text>
             </View>
           </View>

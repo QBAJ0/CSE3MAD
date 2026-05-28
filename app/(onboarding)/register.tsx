@@ -27,7 +27,6 @@ const AVATAR_COLORS = ["#0F766E", "#2563EB", "#FED7AA", "#F97316", "#0F766E", "#
 
 type Member = {
   name: string;
-  year: string;
   grade: string;
 };
 
@@ -38,7 +37,7 @@ export default function RegisterScreen() {
 
   const [teamName, setTeamName] = useState("");
   const [members, setMembers] = useState<Member[]>([
-    { name: "", year: "", grade: "Year 7" },
+    { name: "", grade: "Year 7" },
   ]);
   const [isCreating, setIsCreating] = useState(false);
 
@@ -59,7 +58,7 @@ export default function RegisterScreen() {
       Alert.alert("Max Members", "Teams can have up to 6 members.");
       return;
     }
-    setMembers((prev) => [...prev, { name: "", year: "", grade: "Year 7" }]);
+    setMembers((prev) => [...prev, { name: "", grade: "Year 7" }]);
   };
 
   const removeMember = (index: number) => {
@@ -200,15 +199,6 @@ export default function RegisterScreen() {
                 value={member.name}
                 onChangeText={(v) => updateMember(index, "name", v)}
                 maxLength={30}
-              />
-
-              <TextInput
-                style={[styles.input, styles.inputSmall]}
-                placeholder="Age or year (optional)"
-                placeholderTextColor={colors.textMuted}
-                value={member.year}
-                onChangeText={(v) => updateMember(index, "year", v)}
-                maxLength={10}
               />
 
               <Text style={styles.gradeLabel}>YEAR LEVEL</Text>

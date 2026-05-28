@@ -227,7 +227,7 @@ export default function LeaderboardScreen() {
 function createStyles(c: ColorTokens) {
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: c.background },
-    content: { padding: 20, paddingBottom: 40 },
+    content: { paddingHorizontal: 20, paddingTop: 58, paddingBottom: 40 },
     center: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: c.background },
 
     hero: {

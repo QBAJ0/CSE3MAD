@@ -7,7 +7,9 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useMemo, useState } from "react";
 import {
   Alert,
+  Image,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -249,6 +251,18 @@ export default function ChallengeBriefScreen() {
           </View>
         </View>
 
+        {/* ── Setup diagram (challenge-specific) ── */}
+        {challenge.setupImage && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Setup</Text>
+            <Image
+              source={challenge.setupImage}
+              style={styles.setupImage}
+              resizeMode="contain"
+            />
+          </View>
+        )}
+
         {/* ── Equipment & science info (collapsed by default) ── */}
         <TouchableOpacity
           style={styles.detailsToggle}
@@ -295,6 +309,56 @@ export default function ChallengeBriefScreen() {
                     ))}
                   </View>
                 ))}
+              </View>
+            )}
+
+            {/* Discussion section */}
+            {challenge.discussion && (
+              <View style={styles.section}>
+                <View style={styles.sectionTitleRow}>
+                  <Ionicons name="chatbubble-ellipses-outline" size={17} color={colors.text} />
+                  <Text style={styles.sectionTitle}>Discussion</Text>
+                </View>
+                <View style={styles.discussionCard}>
+                  <Text style={styles.discussionText}>{challenge.discussion}</Text>
+                </View>
+              </View>
+            )}
+
+            {/* Curriculum links */}
+            {challenge.curriculumLinks && challenge.curriculumLinks.length > 0 && (
+              <View style={styles.section}>
+                <View style={styles.sectionTitleRow}>
+                  <Ionicons name="school-outline" size={17} color={colors.text} />
+                  <Text style={styles.sectionTitle}>Curriculum Links</Text>
+                </View>
+                {challenge.curriculumLinks.map((link, i) => {
+                  const code = link.split(/\s[–-]\s/)[0].trim();
+                  const searchUrl = `https://www.google.com/search?q=Australian+Curriculum+${encodeURIComponent(code)}`;
+                  return (
+                    <TouchableOpacity
+                      key={i}
+                      style={styles.curriculumChip}
+                      activeOpacity={0.7}
+                      onPress={() =>
+                        Alert.alert(
+                          "Open curriculum link?",
+                          `View ${code} on the Australian Curriculum website?`,
+                          [
+                            { text: "Cancel", style: "cancel" },
+                            {
+                              text: "Open",
+                              onPress: () => Linking.openURL(searchUrl),
+                            },
+                          ],
+                        )
+                      }
+                    >
+                      <Ionicons name="open-outline" size={13} color={colors.primary} />
+                      <Text style={styles.curriculumChipText}>{link}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             )}
           </>
@@ -517,6 +581,15 @@ function createStyles(c: ColorTokens) {
       color: c.textSecondary,
     },
 
+    setupImage: {
+      width: "100%",
+      height: 220,
+      borderRadius: 12,
+      backgroundColor: c.surface,
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+
     // Equipment chips
     equipRow: {
       flexDirection: "row",
@@ -575,26 +648,35 @@ function createStyles(c: ColorTokens) {
       lineHeight: 19,
     },
 
-    // Prediction
-    predictionHint: {
-      fontSize: 13,
-      color: c.textMuted,
-      lineHeight: 19,
-    },
-    predictionInput: {
-      borderWidth: 1.5,
-      borderColor: c.inputBorder,
+    discussionCard: {
+      backgroundColor: c.primaryLight,
       borderRadius: 12,
       padding: 14,
+      borderLeftWidth: 4,
+      borderLeftColor: c.primary,
+    },
+    discussionText: {
       fontSize: 14,
       color: c.text,
-      minHeight: 80,
-      backgroundColor: c.input,
       lineHeight: 21,
     },
-    predictionInputFilled: {
-      borderColor: c.inputFilledBorder,
-      backgroundColor: c.inputFilled,
+    curriculumChip: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      backgroundColor: c.surface,
+      borderRadius: 10,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      borderWidth: 1,
+      borderColor: c.border,
+      marginBottom: 6,
+    },
+    curriculumChipText: {
+      fontSize: 13,
+      color: c.primary,
+      fontWeight: "600",
+      flex: 1,
     },
 
     // CTA

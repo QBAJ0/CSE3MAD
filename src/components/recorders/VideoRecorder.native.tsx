@@ -1,7 +1,7 @@
 import { ResizeMode, Video } from "expo-av";
-import { CameraType, CameraView, useCameraPermissions } from "expo-camera";
+import { CameraType, CameraView, useCameraPermissions, useMicrophonePermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Alert,
   Modal,
@@ -24,6 +24,7 @@ export function VideoRecorder({
   maxDuration = 60,
 }: VideoRecorderProps) {
   const [permission, requestPermission] = useCameraPermissions();
+  const [micPermission, requestMicPermission] = useMicrophonePermissions();
   const [cameraOpen, setCameraOpen] = useState(false);
   const [recording, setRecording] = useState(false);
   const [videoUri, setVideoUri] = useState<string | null>(existingUri || null);
@@ -31,6 +32,13 @@ export function VideoRecorder({
   const [torchOn, setTorchOn] = useState(false);
   const cameraRef = useRef<CameraView>(null);
   const { haptic } = useHaptic();
+
+  // Request both camera and microphone permissions on mount.
+  // Without microphone permission, video recording fails silently on some devices.
+  useEffect(() => {
+    requestPermission();
+    requestMicPermission();
+  }, []);
 
   const saveVideo = (uri: string) => {
     setVideoUri(uri);
@@ -146,24 +154,27 @@ export function VideoRecorder({
     haptic("light");
   };
 
-  if (!permission) {
+  if (!permission || !micPermission) {
     return (
       <View style={styles.container}>
-        <Text style={styles.loadingText}>Requesting camera permission...</Text>
+        <Text style={styles.loadingText}>Checking camera permissions...</Text>
       </View>
     );
   }
 
-  if (!permission.granted) {
+  if (!permission.granted || !micPermission.granted) {
     return (
       <View style={styles.container}>
         <Text style={styles.permissionText}>
-          Camera permission is required to record videos.
+          Camera and microphone access are needed to record videos.
         </Text>
 
         <TouchableOpacity
           style={styles.permissionButton}
-          onPress={requestPermission}
+          onPress={async () => {
+            if (!permission.granted) await requestPermission();
+            if (!micPermission.granted) await requestMicPermission();
+          }}
         >
           <Text style={styles.permissionButtonText}>Grant Permission</Text>
         </TouchableOpacity>
@@ -333,11 +344,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#2563EB",
+    borderColor: "#0F766E",
     borderStyle: "dashed",
   },
   captureButtonText: {
-    color: "#2563EB",
+    color: "#0F766E",
     fontSize: 16,
     fontWeight: "700",
   },
@@ -348,13 +359,13 @@ const styles = StyleSheet.create({
   },
   secondaryButton: {
     marginTop: 10,
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#F1F5F9",
     padding: 13,
     borderRadius: 12,
     alignItems: "center",
   },
   secondaryButtonText: {
-    color: "#0369A1",
+    color: "#475569",
     fontSize: 14,
     fontWeight: "700",
   },
@@ -371,7 +382,7 @@ const styles = StyleSheet.create({
   },
   retakeButton: {
     flex: 1,
-    backgroundColor: "#2563EB",
+    backgroundColor: "#0F766E",
     padding: 10,
     borderRadius: 8,
     alignItems: "center",
@@ -382,7 +393,7 @@ const styles = StyleSheet.create({
   },
   secondaryActionButton: {
     flex: 1,
-    backgroundColor: "#0EA5E9",
+    backgroundColor: "#475569",
     padding: 10,
     borderRadius: 8,
     alignItems: "center",
@@ -393,7 +404,7 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     flex: 1,
-    backgroundColor: "#EF4444",
+    backgroundColor: "#DC2626",
     padding: 10,
     borderRadius: 8,
     alignItems: "center",
@@ -412,7 +423,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   permissionButton: {
-    backgroundColor: "#2563EB",
+    backgroundColor: "#0F766E",
     padding: 12,
     borderRadius: 10,
     alignItems: "center",
