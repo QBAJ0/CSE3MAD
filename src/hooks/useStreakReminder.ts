@@ -1,6 +1,7 @@
 import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { useTeam } from "../context/TeamContext";
+import { CHALLENGES } from "../data/challenges";
 import { cancelStreakReminder, scheduleStreakReminder } from "../utils/notifications";
 import { storage } from "../utils/storage";
 
@@ -51,7 +52,9 @@ export function useStreakReminder(): StreakReminder {
               storage.getReminderHour(),
               storage.getReminderMinute(),
             ]);
-            scheduleStreakReminder(streak, hour, minute).catch(console.error);
+            const completedIds = new Set(teamActivities.map((a) => a.challengeId));
+            const nextChallenge = CHALLENGES.find((c) => !completedIds.has(c.id));
+            scheduleStreakReminder(streak, hour, minute, nextChallenge?.title).catch(console.error);
           } else {
             cancelStreakReminder().catch(console.error);
           }

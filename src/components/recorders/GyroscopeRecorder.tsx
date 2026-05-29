@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import type { ColorTokens } from "../../theme/colors";
+import { useTheme } from "../../theme/themeContext";
 
 interface GyroscopeRecorderProps {
   onCapture: (data: { smoothness: number; range: number }) => void;
@@ -23,6 +25,8 @@ export function GyroscopeRecorder({
   const [peakText, setPeakText] = useState(
     existingValue?.range !== undefined ? String(existingValue.range) : "",
   );
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const save = () => {
     const smoothness = parseFloat(smoothnessText);
@@ -68,7 +72,7 @@ export function GyroscopeRecorder({
         style={styles.input}
         keyboardType="decimal-pad"
         placeholder="0–100"
-        placeholderTextColor="#64748B"
+        placeholderTextColor={colors.textSecondary}
         value={smoothnessText}
         onChangeText={setSmoothnessText}
       />
@@ -77,7 +81,7 @@ export function GyroscopeRecorder({
         style={styles.input}
         keyboardType="decimal-pad"
         placeholder="e.g. 1.2"
-        placeholderTextColor="#64748B"
+        placeholderTextColor={colors.textSecondary}
         value={peakText}
         onChangeText={setPeakText}
       />
@@ -88,52 +92,54 @@ export function GyroscopeRecorder({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    padding: 16,
-    gap: 10,
-  },
-  message: {
-    color: "#64748B",
-    fontSize: 14,
-    textAlign: "center",
-    lineHeight: 22,
-  },
-  hint: {
-    color: "#64748B",
-    fontSize: 12,
-    textAlign: "center",
-  },
-  label: { color: "#12343B", fontSize: 14, fontWeight: "700" },
-  input: {
-    backgroundColor: "#F0F6FF",
-    color: "#12343B",
-    borderRadius: 10,
-    padding: 12,
-    fontSize: 18,
-    fontWeight: "600",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  saveButton: {
-    backgroundColor: "#2F80ED",
-    padding: 14,
-    borderRadius: 12,
-    alignItems: "center",
-    marginTop: 4,
-  },
-  saveButtonText: { color: "#FFF", fontWeight: "700", fontSize: 15 },
-  saved: { color: "#2F80ED", fontSize: 14, fontWeight: "700", textAlign: "center" },
-  button: {
-    backgroundColor: "#E2E8F0",
-    paddingVertical: 10,
-    paddingHorizontal: 24,
-    borderRadius: 10,
-    alignItems: "center",
-  },
-  buttonText: { color: "#0F172A", fontWeight: "600" },
-});
+function createStyles(c: ColorTokens) {
+  return StyleSheet.create({
+    container: {
+      backgroundColor: c.surface,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: c.border,
+      padding: 16,
+      gap: 10,
+    },
+    message: {
+      color: c.textSecondary,
+      fontSize: 14,
+      textAlign: "center",
+      lineHeight: 22,
+    },
+    hint: {
+      color: c.textSecondary,
+      fontSize: 12,
+      textAlign: "center",
+    },
+    label: { color: c.text, fontSize: 14, fontWeight: "700" },
+    input: {
+      backgroundColor: c.infoLight,
+      color: c.text,
+      borderRadius: 10,
+      padding: 12,
+      fontSize: 18,
+      fontWeight: "600",
+      borderWidth: 1,
+      borderColor: c.inputBorder,
+    },
+    saveButton: {
+      backgroundColor: c.info,
+      padding: 14,
+      borderRadius: 12,
+      alignItems: "center",
+      marginTop: 4,
+    },
+    saveButtonText: { color: "#FFF", fontWeight: "700", fontSize: 15 },
+    saved: { color: c.info, fontSize: 14, fontWeight: "700", textAlign: "center" },
+    button: {
+      backgroundColor: c.backgroundSecondary,
+      paddingVertical: 10,
+      paddingHorizontal: 24,
+      borderRadius: 10,
+      alignItems: "center",
+    },
+    buttonText: { color: c.text, fontWeight: "600" },
+  });
+}

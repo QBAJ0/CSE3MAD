@@ -1,5 +1,8 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { useMemo } from "react";
 import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
+import type { ColorTokens } from "../theme/colors";
+import { useTheme } from "../theme/themeContext";
 
 export type ResultLocationMapProps = {
   lat: number;
@@ -16,6 +19,9 @@ export function ResultLocationMap({
   title = "Experiment Location",
   description,
 }: ResultLocationMapProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const openInMaps = () => {
     void Linking.openURL(`https://www.google.com/maps?q=${lat},${lng}`);
   };
@@ -26,7 +32,7 @@ export function ResultLocationMap({
       onPress={openInMaps}
     >
       <View style={styles.inner}>
-        <Ionicons name="map-outline" size={36} color="#0F766E" />
+        <Ionicons name="map-outline" size={36} color={colors.primary} />
         <Text style={styles.cardTitle}>{title}</Text>
         <Text style={styles.coords}>
           {lat.toFixed(6)}°, {lng.toFixed(6)}°
@@ -42,45 +48,46 @@ export function ResultLocationMap({
   );
 }
 
-const styles = StyleSheet.create({
-  map: {
-    width: "100%",
-    height: 200,
-    borderRadius: 12,
-    overflow: "hidden",
-    backgroundColor: "#ECFDF5",
-    borderWidth: 1,
-    borderColor: "#99F6E4",
-  },
-  mapPressed: {
-    opacity: 0.92,
-    backgroundColor: "#CCFBF1",
-  },
-  inner: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 12,
-    gap: 4,
-  },
-  cardTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#134E4A",
-  },
-  coords: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#0F766E",
-  },
-  desc: {
-    fontSize: 12,
-    color: "#475569",
-    textAlign: "center",
-  },
-  hint: {
-    fontSize: 12,
-    color: "#64748B",
-    marginTop: 4,
-  },
-});
+function createStyles(c: ColorTokens) {
+  return StyleSheet.create({
+    map: {
+      width: "100%",
+      height: 200,
+      borderRadius: 12,
+      overflow: "hidden",
+      backgroundColor: c.successLight,
+      borderWidth: 1,
+      borderColor: c.success,
+    },
+    mapPressed: {
+      opacity: 0.92,
+    },
+    inner: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 12,
+      gap: 4,
+    },
+    cardTitle: {
+      fontSize: 14,
+      fontWeight: "700",
+      color: c.primary,
+    },
+    coords: {
+      fontSize: 13,
+      fontWeight: "600",
+      color: c.primary,
+    },
+    desc: {
+      fontSize: 12,
+      color: c.textSecondary,
+      textAlign: "center",
+    },
+    hint: {
+      fontSize: 12,
+      color: c.textSecondary,
+      marginTop: 4,
+    },
+  });
+}

@@ -2,7 +2,6 @@ export type DifficultyMode = "primary" | "highSchool";
 
 export type TeamMember = {
   name: string;
-  year: string;
   grade?: string;
 };
 
@@ -36,6 +35,7 @@ export type Measurement = {
     | "soundMeter"
     | "accelerometer"
     | "breathing"
+    | "teamBreathing"
     | "tapReaction"
     | "teamReaction"
     | "gyroscope"
@@ -84,6 +84,8 @@ export type Challenge = {
   observationQuestions?: string[];
   predictionPrompt?: string;
   extensionTip?: string;
+  setupImage?: number;
+  discussion?: string;
 };
 
 export type ActivityResult = {

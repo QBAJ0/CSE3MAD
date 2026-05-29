@@ -1,48 +1,43 @@
+import { getDb, initDatabase } from "@/src/database";
 import type { TeamData } from "@/src/types";
 
-import {
-  fetchAllTeams,
-  fetchTeamWithMembers,
-  insertMember,
-  insertTeam,
-} from "@/src/services/teamDb";
+let ready = false;
 
-function primaryYearLevel(team: TeamData): string {
-  const y = team.members[0]?.year?.trim();
-  if (y && y.length > 0) return y;
-  return "—";
+async function ensureReady() {
+  if (!ready) {
+    await initDatabase();
+    ready = true;
+  }
 }
 
-export async function ensureSqliteTeamIdForContextTeam(
-  team: TeamData,
-): Promise<number> {
-  const yearLevel = primaryYearLevel(team);
-  const teams = await fetchAllTeams();
-  const match = teams.find(
-    (t) => t.teamName === team.teamName && t.yearLevel === yearLevel,
-  );
-  if (match) {
-    const existing = await fetchTeamWithMembers(match.id);
-    if (existing) {
-      const names = new Set(
-        existing.members.map((m) => m.memberName),
-      );
-      for (const m of team.members) {
-        const n = m.name.trim();
-        if (n.length > 0 && !names.has(n)) {
-          await insertMember(match.id, n);
-          names.add(n);
-        }
-      }
-    }
-    return match.id;
-  }
+export async function ensureSqliteTeamIdForContextTeam(team: TeamData): Promise<number> {
+  await ensureReady();
+  const db = getDb();
 
-  const createdAt = team.createdAt || new Date().toISOString();
-  const id = await insertTeam(team.teamName, yearLevel, createdAt);
-  for (const m of team.members) {
-    const n = m.name.trim();
-    if (n.length > 0) await insertMember(id, n);
-  }
-  return id;
+  // Preferred: resolve by unique team discriminator via previously stored results.
+  const byDiscriminator = await db.getFirstAsync<{ sqliteTeamId: number }>(
+    `SELECT sqliteTeamId
+     FROM challenge_results
+     WHERE teamDiscriminator = ?
+     ORDER BY createdAt DESC
+     LIMIT 1`,
+    team.discriminator,
+  );
+  if (byDiscriminator?.sqliteTeamId) return byDiscriminator.sqliteTeamId;
+
+  // Fallback for pre-claim sessions: match by team name + createdAt together.
+  const existing = await db.getFirstAsync<{ id: number }>(
+    "SELECT id FROM teams WHERE teamName = ? AND createdAt = ? LIMIT 1",
+    team.teamName,
+    team.createdAt,
+  );
+  if (existing) return existing.id;
+
+  const result = await db.runAsync(
+    "INSERT INTO teams (teamName, yearLevel, createdAt) VALUES (?, ?, ?)",
+    team.teamName,
+    team.members[0]?.grade ?? "Unknown",
+    team.createdAt,
+  );
+  return result.lastInsertRowId;
 }

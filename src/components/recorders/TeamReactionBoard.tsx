@@ -93,6 +93,14 @@ export function TeamReactionBoard({ onComplete }: TeamReactionBoardProps) {
       setCurrentMemberIndex((prev) => prev + 1);
     } else {
       setPhase("complete");
+      const final =
+        team?.members.map((m) => ({
+          name: m.name,
+          dominantTime: dominantTimes[m.name],
+          nonDominantTime: nonDominantTimes[m.name],
+          tracingScore: updatedTracingScores[m.name],
+        })) ?? [];
+      onComplete(final);
     }
   };
 
@@ -284,20 +292,6 @@ export function TeamReactionBoard({ onComplete }: TeamReactionBoardProps) {
         ))}
       </ScrollView>
 
-      <TouchableOpacity
-        style={styles.completeButton}
-        onPress={() => {
-          const final = finalResults.map((r) => ({
-            name: r.name,
-            dominantTime: r.dominantMs,
-            nonDominantTime: r.nonDominantMs,
-            tracingScore: r.tracingScore,
-          }));
-          onComplete(final);
-        }}
-      >
-        <Text style={styles.completeButtonText}>Save Results</Text>
-      </TouchableOpacity>
     </View>
   );
 }
@@ -409,11 +403,4 @@ const styles = StyleSheet.create({
   },
   slower: { backgroundColor: "#FEE2E2", color: "#DC2626" },
   faster: { backgroundColor: "#EFF6FF", color: "#2563EB" },
-  completeButton: {
-    backgroundColor: "#2563EB",
-    padding: 16,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  completeButtonText: { color: "#FFF", fontWeight: "700", fontSize: 16 },
 });

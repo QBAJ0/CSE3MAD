@@ -1,5 +1,6 @@
 import { GAMIFICATION, SCORING } from "../config/constants";
 import { getChallengeById } from "../data/challenges";
+import { getPredictionCharsFromPrototypes } from "../utils/prototypePrediction";
 import {
   ActivityResult,
   DifficultyMode,

@@ -1,5 +1,8 @@
+import { useMemo } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useHaptic } from "../../hooks/useHaptic";
+import type { ColorTokens } from "../../theme/colors";
+import { useTheme } from "../../theme/themeContext";
 import { Measurement } from "../../types";
 
 interface Props {
@@ -10,6 +13,8 @@ interface Props {
 
 export function ChoiceRecorder({ measurement, value, onChange }: Props) {
   const { haptic } = useHaptic();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const choices = measurement.choices || [];
 
   return (
@@ -37,20 +42,22 @@ export function ChoiceRecorder({ measurement, value, onChange }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
-  choice: {
-    flex: 1,
-    minWidth: 80,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    backgroundColor: "#FFFFFF",
-    alignItems: "center",
-  },
-  choiceSelected: { backgroundColor: "#2563EB", borderColor: "#2563EB" },
-  choiceText: { color: "#0F172A", fontSize: 14 },
-  choiceTextSelected: { color: "#EFF6FF", fontWeight: "700" },
-});
+function createStyles(c: ColorTokens) {
+  return StyleSheet.create({
+    container: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+    choice: {
+      flex: 1,
+      minWidth: 80,
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: c.border,
+      backgroundColor: c.surface,
+      alignItems: "center",
+    },
+    choiceSelected: { backgroundColor: c.info, borderColor: c.info },
+    choiceText: { color: c.text, fontSize: 14 },
+    choiceTextSelected: { color: c.infoLight, fontWeight: "700" },
+  });
+}

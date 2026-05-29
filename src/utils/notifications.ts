@@ -32,13 +32,20 @@ export async function requestNotificationPermissions(): Promise<boolean> {
   return status === "granted";
 }
 
-export async function scheduleStreakReminder(streak: number, hour: number, minute = 0): Promise<void> {
+export async function scheduleStreakReminder(
+  streak: number,
+  hour: number,
+  minute = 0,
+  challengeTitle?: string,
+): Promise<void> {
   await cancelStreakReminder();
   await Notifications.scheduleNotificationAsync({
     identifier: STREAK_REMINDER_ID,
     content: {
-      title: "Don't break your streak! 🔥",
-      body: `You're on a ${streak}-day streak. Complete a challenge today to keep it alive!`,
+      title: "Challenge Reminder",
+      body: challengeTitle
+        ? `Ready for your next challenge: ${challengeTitle}? Complete it today!`
+        : "Complete a challenge today to keep learning!",
       sound: true,
     },
     trigger: {

@@ -140,6 +140,29 @@ class WebMemoryDatabase implements AppSqliteDb {
       return (row ?? null) as T | null;
     }
 
+    if (
+      s.includes("from challenge_results") &&
+      s.includes("where teamdiscriminator =")
+    ) {
+      const disc = String(binds[0]);
+      const row = [...this.challengeResults]
+        .filter((r) => r.teamDiscriminator === disc)
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+      return (row ?? null) as T | null;
+    }
+
+    if (
+      s.includes("from teams") &&
+      s.includes("where teamname =") &&
+      s.includes("and createdat =")
+    ) {
+      const [teamName, createdAt] = binds as [string, string];
+      const row = this.teams.find(
+        (t) => t.teamName === String(teamName) && t.createdAt === String(createdAt),
+      );
+      return (row ?? null) as T | null;
+    }
+
     return null;
   }
 

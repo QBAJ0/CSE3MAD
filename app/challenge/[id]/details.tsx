@@ -18,7 +18,14 @@ import { CommentsSection } from "../../../src/components/challenge/CommentsSecti
 import { SoundMap } from "../../../src/components/challenge/SoundMap";
 import { getChallengeById } from "../../../src/data/challenges";
 import { parseSoundMapPoints } from "../../../src/utils/soundMap";
+import {
+  formatPredictionDisplay,
+  getPrototypeOutcomeText,
+  getPrototypeWereYouRight,
+} from "../../../src/utils/prototypePrediction";
 import { useTeam } from "../../../src/context/TeamContext";
+import type { ColorTokens } from "../../../src/theme/colors";
+import { useTheme } from "../../../src/theme/themeContext";
 import { ActivityResult } from "../../../src/types";
 import { storage } from "../../../src/utils/storage";
 
@@ -35,6 +42,8 @@ export default function ActivityDetailsScreen() {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(["prediction", "measurements", "reflection"]),
   );
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   useEffect(() => {
     const loadActivity = async () => {
@@ -88,7 +97,7 @@ export default function ActivityDetailsScreen() {
   if (loading) {
     return (
       <View style={styles.container}>
-        <ActivityIndicator size="large" color="#2563EB" />
+        <ActivityIndicator size="large" color={colors.info} />
       </View>
     );
   }
@@ -100,12 +109,12 @@ export default function ActivityDetailsScreen() {
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <Ionicons name="chevron-back" size={24} color="#0F172A" />
+          <Ionicons name="chevron-back" size={24} color={colors.text} />
           <Text style={styles.backButtonText}>Back</Text>
         </TouchableOpacity>
 
         <View style={styles.errorContainer}>
-          <Ionicons name="alert-circle-outline" size={48} color="#94A3B8" />
+          <Ionicons name="alert-circle-outline" size={48} color={colors.textMuted} />
           <Text style={styles.errorText}>Activity not found</Text>
         </View>
       </ScrollView>
@@ -142,11 +151,11 @@ export default function ActivityDetailsScreen() {
         style={styles.backButton}
         onPress={() => router.back()}
       >
-        <Ionicons name="chevron-back" size={24} color="#0F172A" />
+        <Ionicons name="chevron-back" size={24} color={colors.text} />
         <Text style={styles.backButtonText}>Back</Text>
       </TouchableOpacity>
 
-      {/* Header */}
+      {/* Header — intentionally blue, as a "completed" design signal */}
       <View style={styles.header}>
         <View
           style={[
@@ -172,15 +181,10 @@ export default function ActivityDetailsScreen() {
 
           <View style={styles.headerStatDivider} />
 
-          <View style={styles.headerStat}>
-            <Ionicons name="flash" size={16} color="#F59E0B" />
-            <Text style={styles.headerStatText}>+{activity.points ?? 0} XP</Text>
-          </View>
-
           <View style={styles.headerStatDivider} />
 
           <View style={styles.headerStat}>
-            <Ionicons name="construct-outline" size={16} color="#64748B" />
+            <Ionicons name="construct-outline" size={16} color="#E2E8F0" />
             <Text style={styles.headerStatText}>
               {activity.prototypes.length}D
             </Text>
@@ -188,12 +192,6 @@ export default function ActivityDetailsScreen() {
         </View>
 
         <View style={styles.headerBadges}>
-          {activity.difficulty === "highSchool" && (
-            <View style={styles.difficultyBadge}>
-              <Text style={styles.difficultyBadgeText}>High School</Text>
-            </View>
-          )}
-
           {hasVideo && (
             <View style={styles.videoBadge}>
               <Ionicons name="videocam" size={12} color="#0369A1" />
@@ -210,7 +208,7 @@ export default function ActivityDetailsScreen() {
         </View>
       </View>
 
-      {/* Prediction Section */}
+      {/* Prediction / Outcome Section */}
       <View style={styles.sectionCard}>
         <TouchableOpacity
           style={styles.sectionHeader}
@@ -219,7 +217,7 @@ export default function ActivityDetailsScreen() {
         >
           <View style={styles.sectionTitleRow}>
             <Ionicons name="bulb-outline" size={18} color="#F59E0B" />
-            <Text style={styles.sectionTitle}>Prediction</Text>
+            <Text style={styles.sectionTitle}>Prediction & Outcome</Text>
           </View>
           <Ionicons
             name={
@@ -228,16 +226,40 @@ export default function ActivityDetailsScreen() {
                 : "chevron-down"
             }
             size={20}
-            color="#64748B"
+            color={colors.textMuted}
           />
         </TouchableOpacity>
 
         {expandedSections.has("prediction") && (
           <View style={styles.sectionContent}>
-            {activity.prediction ? (
-              <Text style={styles.predictionText}>{activity.prediction}</Text>
+            {activity.prototypes.length > 0 ? (
+              activity.prototypes.map((prototype, idx) => {
+                const predictionDisplay = formatPredictionDisplay(
+                  challenge.id,
+                  prototype,
+                );
+                const outcome = getPrototypeOutcomeText(challenge.id, prototype);
+                const right = getPrototypeWereYouRight(prototype);
+                return (
+                  <View key={prototype.index} style={styles.predictionAttemptCard}>
+                    <Text style={styles.predictionAttemptTitle}>
+                      #{idx + 1}
+                    </Text>
+                    <Text style={styles.predictionText}>
+                      Outcome: {outcome || "Not recorded"}
+                    </Text>
+                    <Text style={styles.predictionText}>
+                      Prediction: {predictionDisplay || "Not recorded"}
+                    </Text>
+                    <Text style={styles.predictionText}>
+                      Were you right?:{" "}
+                      {right === "yes" ? "Yes" : right === "no" ? "No" : "Not answered"}
+                    </Text>
+                  </View>
+                );
+              })
             ) : (
-              <Text style={styles.emptyText}>No prediction recorded</Text>
+              <Text style={styles.emptyText}>No attempt data recorded</Text>
             )}
           </View>
         )}
@@ -261,7 +283,7 @@ export default function ActivityDetailsScreen() {
                 : "chevron-down"
             }
             size={20}
-            color="#64748B"
+            color={colors.textMuted}
           />
         </TouchableOpacity>
 
@@ -343,7 +365,7 @@ export default function ActivityDetailsScreen() {
             <Ionicons
               name={expandedSections.has("gps") ? "chevron-up" : "chevron-down"}
               size={20}
-              color="#64748B"
+              color={colors.textMuted}
             />
           </TouchableOpacity>
 
@@ -385,7 +407,7 @@ export default function ActivityDetailsScreen() {
             <Ionicons
               name={expandedSections.has("soundMap") ? "chevron-up" : "chevron-down"}
               size={20}
-              color="#64748B"
+              color={colors.textMuted}
             />
           </TouchableOpacity>
 
@@ -413,7 +435,7 @@ export default function ActivityDetailsScreen() {
                 : "chevron-down"
             }
             size={20}
-            color="#64748B"
+            color={colors.textMuted}
           />
         </TouchableOpacity>
 
@@ -446,7 +468,7 @@ export default function ActivityDetailsScreen() {
                 : "chevron-down"
             }
             size={20}
-            color="#64748B"
+            color={colors.textMuted}
           />
         </TouchableOpacity>
 
@@ -460,7 +482,7 @@ export default function ActivityDetailsScreen() {
                     key={i}
                     name="star"
                     size={14}
-                    color={i <= activity.rating ? "#F59E0B" : "#E2E8F0"}
+                    color={i <= activity.rating ? "#F59E0B" : colors.border}
                   />
                 ))}
               </View>
@@ -502,352 +524,371 @@ export default function ActivityDetailsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: "#F8FAFC",
-  },
+function createStyles(c: ColorTokens) {
+  return StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: c.background,
+    },
 
-  content: {
-    padding: 0,
-    paddingBottom: 40,
-  },
+    content: {
+      paddingTop: 24,
+      paddingBottom: 40,
+    },
 
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#F8FAFC",
-  },
+    container: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: c.background,
+    },
 
-  backButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 8,
-    gap: 4,
-  },
+    backButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 20,
+      paddingTop: 16,
+      paddingBottom: 8,
+      gap: 4,
+    },
 
-  backButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#0F172A",
-  },
+    backButtonText: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: c.text,
+    },
 
-  errorContainer: {
-    alignItems: "center",
-    gap: 12,
-    marginTop: 60,
-  },
+    errorContainer: {
+      alignItems: "center",
+      gap: 12,
+      marginTop: 60,
+    },
 
-  errorText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#64748B",
-  },
+    errorText: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: c.textSecondary,
+    },
 
-  header: {
-    backgroundColor: "#2563EB",
-    paddingHorizontal: 20,
-    paddingVertical: 24,
-    alignItems: "center",
-    gap: 12,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-  },
+    // Intentionally blue header — signals "completed activity" view
+    header: {
+      backgroundColor: "#2563EB",
+      paddingHorizontal: 20,
+      paddingVertical: 24,
+      alignItems: "center",
+      gap: 12,
+      borderBottomLeftRadius: 24,
+      borderBottomRightRadius: 24,
+    },
 
-  headerIconCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 8,
-  },
+    headerIconCircle: {
+      width: 72,
+      height: 72,
+      borderRadius: 36,
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 8,
+    },
 
-  challengeTitle: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: "#FFFFFF",
-    textAlign: "center",
-  },
+    challengeTitle: {
+      fontSize: 24,
+      fontWeight: "800",
+      color: "#FFFFFF",
+      textAlign: "center",
+    },
 
-  dateText: {
-    fontSize: 13,
-    color: "rgba(255,255,255,0.8)",
-  },
+    dateText: {
+      fontSize: 13,
+      color: "rgba(255,255,255,0.8)",
+    },
 
-  headerStats: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-    marginTop: 8,
-  },
+    headerStats: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 12,
+      marginTop: 8,
+    },
 
-  headerStat: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
+    headerStat: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+    },
 
-  headerStatText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#E2E8F0",
-  },
+    headerStatText: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: "#E2E8F0",
+    },
 
-  headerStatDivider: {
-    width: 1,
-    height: 16,
-    backgroundColor: "#475569",
-  },
+    headerStatDivider: {
+      width: 1,
+      height: 16,
+      backgroundColor: "#475569",
+    },
 
-  headerBadges: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 8,
-    marginTop: 12,
-    flexWrap: "wrap",
-  },
+    headerBadges: {
+      flexDirection: "row",
+      justifyContent: "center",
+      gap: 8,
+      marginTop: 12,
+      flexWrap: "wrap",
+    },
 
-  difficultyBadge: {
-    backgroundColor: "#7C3AED",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-  },
+    // Data-category badge colors are intentionally hardcoded
+    difficultyBadge: {
+      backgroundColor: "#7C3AED",
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 999,
+    },
 
-  difficultyBadgeText: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#FFFFFF",
-  },
+    difficultyBadgeText: {
+      fontSize: 11,
+      fontWeight: "600",
+      color: "#FFFFFF",
+    },
 
-  videoBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#0369A1",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-    gap: 4,
-  },
+    videoBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: "#0369A1",
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 999,
+      gap: 4,
+    },
 
-  videoBadgeText: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#FFFFFF",
-  },
+    videoBadgeText: {
+      fontSize: 11,
+      fontWeight: "600",
+      color: "#FFFFFF",
+    },
 
-  gpsBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#0F766E",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-    gap: 4,
-  },
+    gpsBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: "#0F766E",
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 999,
+      gap: 4,
+    },
 
-  gpsBadgeText: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#FFFFFF",
-  },
+    gpsBadgeText: {
+      fontSize: 11,
+      fontWeight: "600",
+      color: "#FFFFFF",
+    },
 
-  sectionCard: {
-    marginHorizontal: 16,
-    marginVertical: 8,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    overflow: "hidden",
-  },
+    sectionCard: {
+      marginHorizontal: 16,
+      marginVertical: 8,
+      backgroundColor: c.surface,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: c.border,
+      overflow: "hidden",
+    },
 
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
-  },
+    sectionHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      borderBottomWidth: 1,
+      borderBottomColor: c.borderFaint,
+    },
 
-  sectionTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
+    sectionTitleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+    },
 
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#0F172A",
-  },
+    sectionTitle: {
+      fontSize: 15,
+      fontWeight: "700",
+      color: c.text,
+    },
 
-  sectionContent: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
+    sectionContent: {
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+    },
 
   predictionText: {
     fontSize: 14,
     lineHeight: 20,
     color: "#1E293B",
   },
-
-  emptyText: {
-    fontSize: 14,
-    color: "#94A3B8",
-    fontStyle: "italic",
-  },
-
-  measurementGroup: {
-    marginBottom: 16,
-  },
-
-  measurementLabel: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
+  predictionAttemptCard: {
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    borderRadius: 12,
+    padding: 10,
     marginBottom: 8,
+    gap: 4,
   },
-
-  measurementName: {
-    fontSize: 13,
+  predictionAttemptTitle: {
+    fontSize: 12,
     fontWeight: "700",
     color: "#0F172A",
-  },
-
-  measurementUnit: {
-    fontSize: 12,
-    color: "#64748B",
-  },
-
-  measurementValue: {
-    marginLeft: 12,
-    marginBottom: 8,
-  },
-
-  prototypeLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#475569",
-    marginBottom: 4,
-  },
-
-  measurementText: {
-    fontSize: 13,
-    color: "#1E293B",
-    backgroundColor: "#F8FAFC",
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-
-  emptyValueText: {
-    fontSize: 13,
-    color: "#CBD5E1",
-  },
-
-  mediaContainer: {
-    marginVertical: 8,
-    borderRadius: 12,
-    overflow: "hidden",
-    backgroundColor: "#F8FAFC",
-  },
-
-  mediaPlaceholder: {
-    fontSize: 13,
-    color: "#0369A1",
-    paddingVertical: 16,
-    paddingHorizontal: 12,
-    textAlign: "center",
-    backgroundColor: "#EFF6FF",
-    borderRadius: 8,
-  },
-
-  videoContainer: {
-    width: "100%",
-    height: 200,
-    backgroundColor: "#000000",
-    borderRadius: 8,
-    overflow: "hidden",
-  },
-
-  videoPreview: {
-    width: "100%",
-    height: "100%",
-  },
-
-  gpsCoordinates: {
-    backgroundColor: "#EFF6FF",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginBottom: 12,
-  },
-
-  gpsLabel: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#0F766E",
     marginBottom: 2,
   },
 
-  gpsValue: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#0F766E",
-    marginBottom: 8,
-  },
+    emptyText: {
+      fontSize: 14,
+      color: c.textMuted,
+      fontStyle: "italic",
+    },
 
-  reflectionText: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#1E293B",
-  },
+    measurementGroup: {
+      marginBottom: 16,
+    },
 
-  summaryGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-  },
+    measurementLabel: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      marginBottom: 8,
+    },
 
-  summaryItem: {
-    flex: 1,
-    minWidth: 140,
-    backgroundColor: "#F8FAFC",
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
+    measurementName: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: c.text,
+    },
 
-  summaryLabel: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#64748B",
-    marginBottom: 6,
-  },
+    measurementUnit: {
+      fontSize: 12,
+      color: c.textSecondary,
+    },
 
-  ratingStars: {
-    flexDirection: "row",
-    gap: 2,
-    marginBottom: 4,
-  },
+    measurementValue: {
+      marginLeft: 12,
+      marginBottom: 8,
+    },
 
-  summaryValue: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#0F172A",
-  },
+    prototypeLabel: {
+      fontSize: 12,
+      fontWeight: "600",
+      color: c.textSecondary,
+      marginBottom: 4,
+    },
 
-  xpValue: {
-    color: "#F59E0B",
-  },
-});
+    measurementText: {
+      fontSize: 13,
+      color: c.text,
+      backgroundColor: c.backgroundSecondary,
+      paddingHorizontal: 10,
+      paddingVertical: 8,
+      borderRadius: 8,
+    },
+
+    emptyValueText: {
+      fontSize: 13,
+      color: c.border,
+    },
+
+    mediaContainer: {
+      marginVertical: 8,
+      borderRadius: 12,
+      overflow: "hidden",
+      backgroundColor: c.backgroundSecondary,
+    },
+
+    mediaPlaceholder: {
+      fontSize: 13,
+      color: "#0369A1",
+      paddingVertical: 16,
+      paddingHorizontal: 12,
+      textAlign: "center",
+      backgroundColor: c.infoLight,
+      borderRadius: 8,
+    },
+
+    videoContainer: {
+      width: "100%",
+      height: 200,
+      backgroundColor: "#000000",
+      borderRadius: 8,
+      overflow: "hidden",
+    },
+
+    videoPreview: {
+      width: "100%",
+      height: "100%",
+    },
+
+    gpsCoordinates: {
+      backgroundColor: c.infoLight,
+      borderRadius: 12,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      marginBottom: 12,
+    },
+
+    gpsLabel: {
+      fontSize: 11,
+      fontWeight: "600",
+      color: c.info,
+      marginBottom: 2,
+    },
+
+    gpsValue: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: c.info,
+      marginBottom: 8,
+    },
+
+    reflectionText: {
+      fontSize: 14,
+      lineHeight: 20,
+      color: c.text,
+    },
+
+    summaryGrid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 12,
+    },
+
+    summaryItem: {
+      flex: 1,
+      minWidth: 140,
+      backgroundColor: c.backgroundSecondary,
+      borderRadius: 12,
+      paddingHorizontal: 12,
+      paddingVertical: 12,
+      alignItems: "center",
+    },
+
+    summaryLabel: {
+      fontSize: 11,
+      fontWeight: "600",
+      color: c.textSecondary,
+      marginBottom: 6,
+    },
+
+    ratingStars: {
+      flexDirection: "row",
+      gap: 2,
+      marginBottom: 4,
+    },
+
+    summaryValue: {
+      fontSize: 16,
+      fontWeight: "700",
+      color: c.text,
+    },
+
+    xpValue: {
+      color: "#F59E0B",
+    },
+  });
+}

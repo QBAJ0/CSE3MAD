@@ -1,6 +1,7 @@
 // app/(tabs)/home.tsx
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
+import { useMemo } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -14,8 +15,8 @@ import { CHALLENGES } from "../../src/data/challenges";
 import { useActivityCompletion } from "../../src/hooks/useActivityCompletion";
 import { useHomeStats } from "../../src/hooks/useHomeStats";
 import { useStreakReminder } from "../../src/hooks/useStreakReminder";
-
-const XP_PER_LEVEL = 500;
+import type { ColorTokens } from "../../src/theme/colors";
+import { useTheme } from "../../src/theme/themeContext";
 
 const AVATAR_COLORS = [
   "#0F766E", "#2563EB", "#FED7AA", "#F97316", "#0F766E", "#2563EB",
@@ -25,17 +26,15 @@ type IoniconName = React.ComponentProps<typeof Ionicons>["name"];
 
 export default function HomeScreen() {
   const { team } = useTeam();
-  const { totalPoints, completedCount, streak, loading: statsLoading } = useHomeStats();
+  const { streak, loading: statsLoading } = useHomeStats();
   const { completedIds, loading: activityLoading } = useActivityCompletion();
-  const { showReminder, streak: reminderStreak } = useStreakReminder();
-  const dataLoading = statsLoading || activityLoading;
+  const { showReminder } = useStreakReminder();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
+  const dataLoading = statsLoading || activityLoading;
   const nextChallenge = CHALLENGES.find((c) => !completedIds.has(c.id));
   const allDone = completedIds.size >= CHALLENGES.length;
-
-  const level = Math.floor(totalPoints / XP_PER_LEVEL) + 1;
-  const xpIntoLevel = totalPoints % XP_PER_LEVEL;
-  const xpPercent = Math.min((xpIntoLevel / XP_PER_LEVEL) * 100, 100);
 
   return (
     <ScrollView
@@ -45,11 +44,6 @@ export default function HomeScreen() {
     >
       {/* ── Header ── */}
       <View style={styles.header}>
-        <View style={styles.levelBadge}>
-          <Ionicons name="star" size={11} color="#FED7AA" />
-          <Text style={styles.levelBadgeText}>Level {level}</Text>
-        </View>
-
         <Text style={styles.greeting}>
           Hey, {team?.teamName ?? "Scientists"}!
         </Text>
@@ -69,75 +63,59 @@ export default function HomeScreen() {
         )}
       </View>
 
-      {/* ── XP progress bar ── */}
-      <View style={styles.xpSection}>
-        <View style={styles.xpLabelRow}>
-          <Text style={styles.xpLabel}>XP Progress</Text>
-          <Text style={styles.xpLabel}>
-            {xpIntoLevel} / {XP_PER_LEVEL} XP
-          </Text>
-        </View>
-        <View style={styles.xpTrack}>
-          <View style={[styles.xpFill, { width: `${xpPercent}%` }]} />
-        </View>
-      </View>
-
       {/* ── Stats row ── */}
       <View style={styles.statsRow}>
         <StatCard
           iconName="checkmark-circle"
-          iconColor="#2563EB"
+          iconColor={colors.info}
           value={`${completedIds.size}/${CHALLENGES.length}`}
           label="Challenges"
-          valueColor="#2563EB"
+          valueColor={colors.info}
           loading={dataLoading}
+          colors={colors}
         />
         <StatCard
-          iconName="flash"
-          iconColor="#F97316"
-          value={String(totalPoints)}
-          label="Total XP"
-          valueColor="#F97316"
+          iconName="flame"
+          iconColor={colors.cta}
+          value={String(streak)}
+          label="Day Streak"
+          valueColor={colors.cta}
           loading={dataLoading}
+          colors={colors}
         />
         <StatCard
           iconName="people"
           iconColor="#FED7AA"
           value={String(team?.members.length ?? 0)}
           label="Members"
-          valueColor="#0F766E"
+          valueColor={colors.primary}
           loading={dataLoading}
+          colors={colors}
         />
       </View>
 
-      {/* ── Streak reminder ── */}
-      {showReminder && (
-        <View style={styles.streakReminderCard}>
+      {/* ── Challenge reminder ── */}
+      {showReminder && nextChallenge && (
+        <View style={styles.challengeReminderCard}>
           <View style={styles.reminderContent}>
             <View style={styles.reminderLeft}>
-              <Ionicons name="alert-circle" size={24} color="#DC2626" />
+              <Ionicons name="alert-circle" size={24} color={colors.cta} />
             </View>
             <View style={styles.reminderMiddle}>
-              <View style={styles.reminderTitleRow}>
-                <Text style={styles.reminderTitle}>Streak at Risk!</Text>
-                <Ionicons name="flame" size={16} color="#FED7AA" />
-              </View>
+              <Text style={styles.challengeReminderTitle}>Challenge Reminder</Text>
               <Text style={styles.reminderText}>
-                Complete a challenge today to keep your {reminderStreak}-day streak alive.
+                Ready for your next challenge: {nextChallenge.title}?
               </Text>
             </View>
           </View>
-          {nextChallenge && (
-            <TouchableOpacity
-              style={styles.reminderButton}
-              onPress={() => router.push(`/challenge/${nextChallenge.id}`)}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="flash" size={14} color="#FFFFFF" />
-              <Text style={styles.reminderButtonText}>Go Now</Text>
-              <Ionicons name="chevron-forward" size={14} color="#FFFFFF" />
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity
+            style={styles.reminderButton}
+            onPress={() => router.push(`/challenge/${nextChallenge.id}`)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.reminderButtonText}>Start Challenge</Text>
+            <Ionicons name="chevron-forward" size={14} color="#FFFFFF" />
+          </TouchableOpacity>
         </View>
       )}
 
@@ -169,7 +147,7 @@ export default function HomeScreen() {
       {/* ── All done celebration ── */}
       {allDone && (
         <View style={styles.allDoneCard}>
-          <Ionicons name="trophy" size={40} color="#F97316" />
+          <Ionicons name="trophy" size={40} color={colors.cta} />
           <Text style={styles.allDoneTitle}>All challenges complete!</Text>
           <Text style={styles.allDoneSub}>
             Your team is unstoppable. Check the leaderboard!
@@ -180,7 +158,7 @@ export default function HomeScreen() {
       {/* ── Your squad ── */}
       <View style={styles.squadCard}>
         <View style={styles.squadTitleRow}>
-          <Ionicons name="people" size={16} color="#0F766E" />
+          <Ionicons name="people" size={16} color={colors.primary} />
           <Text style={styles.squadTitle}>Your Squad</Text>
         </View>
         <View style={styles.memberList}>
@@ -207,31 +185,13 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      {/* ── Quick navigation buttons ── */}
-      <View style={styles.quickRow}>
-        <QuickBtn
-          iconName="flash-outline"
-          label="Challenges"
-          onPress={() => router.navigate("/(tabs)/activity")}
-        />
-        <QuickBtn
-          iconName="trophy-outline"
-          label="Leaderboard"
-          onPress={() => router.navigate("/(tabs)/leaderboard")}
-        />
-        <QuickBtn
-          iconName="person-outline"
-          label="Profile"
-          onPress={() => router.navigate("/(tabs)/profile")}
-        />
-      </View>
-
       <AdMobBanner />
     </ScrollView>
   );
 }
 
-// ── Stat card ───────────────────────────────────────────────────────────────
+// ── Stat card ────────────────────────────────────────────────────────────────
+
 function StatCard({
   iconName,
   iconColor,
@@ -239,6 +199,7 @@ function StatCard({
   label,
   valueColor,
   loading,
+  colors,
 }: {
   iconName: IoniconName;
   iconColor: string;
@@ -246,354 +207,178 @@ function StatCard({
   label: string;
   valueColor: string;
   loading?: boolean;
+  colors: ColorTokens;
 }) {
   return (
-    <View style={statStyles.card}>
+    <View style={[statCardStyle.card, { backgroundColor: colors.surface, borderColor: colors.borderFaint }]}>
       <Ionicons name={iconName} size={22} color={iconColor} />
-      <Text style={[statStyles.value, { color: loading ? "#CBD5E1" : valueColor }]}>
+      <Text style={[statCardStyle.value, { color: loading ? colors.border : valueColor }]}>
         {loading ? "—" : value}
       </Text>
-      <Text style={statStyles.label}>{label}</Text>
+      <Text style={[statCardStyle.label, { color: colors.textMuted }]}>{label}</Text>
     </View>
   );
 }
 
-// ── Quick nav button ─────────────────────────────────────────────────────────
-function QuickBtn({
-  iconName,
-  label,
-  onPress,
-}: {
-  iconName: IoniconName;
-  label: string;
-  onPress: () => void;
-}) {
-  return (
-    <TouchableOpacity style={quickStyles.btn} onPress={onPress} activeOpacity={0.8}>
-      <Ionicons name={iconName} size={24} color="#0F766E" />
-      <Text style={quickStyles.label}>{label}</Text>
-    </TouchableOpacity>
-  );
-}
-
-// --- Styles ---
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: "#FFF7ED",
-  },
-  content: {
-    paddingBottom: 40,
-  },
-
-  header: {
-    backgroundColor: "#0F766E",
-    paddingTop: 58,
-    paddingBottom: 24,
-    paddingHorizontal: 20,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-    marginBottom: 16,
-    gap: 6,
-  },
-  levelBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    alignSelf: "flex-start",
-    backgroundColor: "rgba(255,255,255,0.15)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.3)",
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 999,
-    marginBottom: 8,
-  },
-  levelBadgeText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#FFFFFF",
-  },
-  greeting: {
-    fontSize: 26,
-    fontWeight: "800",
-    color: "#FFFFFF",
-  },
-  subGreeting: {
-    fontSize: 14,
-    color: "rgba(255,255,255,0.8)",
-  },
-  streakRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    marginTop: 8,
-  },
-  streakText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#FED7AA",
-  },
-
-  xpSection: {
-    paddingHorizontal: 16,
-    marginBottom: 4,
-  },
-  xpLabelRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 6,
-  },
-  xpLabel: {
-    fontSize: 12,
-    color: "#64748B",
-    fontWeight: "600",
-  },
-  xpTrack: {
-    height: 10,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 999,
-    overflow: "hidden",
-  },
-  xpFill: {
-    height: "100%",
-    backgroundColor: "#2563EB",
-    borderRadius: 999,
-  },
-
-  statsRow: {
-    flexDirection: "row",
-    gap: 10,
-    paddingHorizontal: 16,
-    marginTop: 12,
-    marginBottom: 16,
-  },
-
-  nextCard: {
-    marginHorizontal: 16,
-    marginBottom: 16,
-    backgroundColor: "#F97316",
-    borderRadius: 20,
-    overflow: "hidden",
-  },
-  nextCardInner: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: 20,
-  },
-  nextCardText: {
-    flex: 1,
-  },
-  nextCardLabel: {
-    fontSize: 10,
-    fontWeight: "800",
-    color: "rgba(255,255,255,0.7)",
-    letterSpacing: 2,
-    marginBottom: 4,
-  },
-  nextCardTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 4,
-  },
-  nextCardTitle: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: "#FFFFFF",
-    flex: 1,
-  },
-  nextCardMeta: {
-    fontSize: 12,
-    color: "rgba(255,255,255,0.75)",
-  },
-  nextArrow: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginLeft: 12,
-  },
-
-  streakReminderCard: {
-    marginHorizontal: 16,
-    marginBottom: 16,
-    backgroundColor: "#FEE2E2",
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: "#FECACA",
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    gap: 12,
-  },
-  reminderContent: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 10,
-  },
-  reminderLeft: {
-    paddingTop: 2,
-  },
-  reminderMiddle: {
-    flex: 1,
-    gap: 2,
-  },
-  reminderTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  reminderTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#DC2626",
-  },
-  reminderText: {
-    fontSize: 12,
-    color: "#991B1B",
-    lineHeight: 18,
-  },
-  reminderButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#DC2626",
-    borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    gap: 4,
-    alignSelf: "flex-start",
-  },
-  reminderButtonText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#FFFFFF",
-  },
-
-  allDoneCard: {
-    marginHorizontal: 16,
-    marginBottom: 16,
-    backgroundColor: "#FFF7ED",
-    borderRadius: 20,
-    padding: 22,
-    alignItems: "center",
-    gap: 8,
-    borderWidth: 2,
-    borderColor: "#0F766E",
-  },
-  allDoneTitle: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: "#0F766E",
-  },
-  allDoneSub: {
-    fontSize: 13,
-    color: "#64748B",
-    textAlign: "center",
-  },
-
-  squadCard: {
-    marginHorizontal: 16,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: "#FFF7ED",
-  },
-  squadTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 16,
-  },
-  squadTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: "#0F766E",
-  },
-  memberList: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 18,
-  },
-  memberItem: {
-    alignItems: "center",
-    minWidth: 56,
-  },
-  memberAvatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 6,
-  },
-  memberInitial: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: "#FFFFFF",
-  },
-  memberName: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#0F766E",
-    maxWidth: 60,
-    textAlign: "center",
-  },
-  memberGrade: {
-    fontSize: 10,
-    color: "#94A3B8",
-    marginTop: 1,
-  },
-
-  quickRow: {
-    flexDirection: "row",
-    gap: 10,
-    paddingHorizontal: 16,
-    marginBottom: 8,
-  },
-});
-
-const statStyles = StyleSheet.create({
+const statCardStyle = StyleSheet.create({
   card: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
     borderRadius: 16,
     padding: 14,
     alignItems: "center",
     gap: 4,
     borderWidth: 1,
-    borderColor: "#FFF7ED",
   },
-  value: {
-    fontSize: 22,
-    fontWeight: "800",
-  },
-  label: {
-    fontSize: 11,
-    color: "#94A3B8",
-    fontWeight: "600",
-  },
+  value: { fontSize: 22, fontWeight: "800" },
+  label: { fontSize: 11, fontWeight: "600" },
 });
 
-const quickStyles = StyleSheet.create({
-  btn: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    paddingVertical: 16,
-    alignItems: "center",
-    gap: 4,
-    borderWidth: 1,
-    borderColor: "#FFF7ED",
-  },
-  label: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#0F766E",
-  },
-});
+// ── Styles ────────────────────────────────────────────────────────────────────
+
+function createStyles(c: ColorTokens) {
+  return StyleSheet.create({
+    screen: { flex: 1, backgroundColor: c.background },
+    content: { paddingBottom: 40 },
+
+    header: {
+      backgroundColor: c.header,
+      paddingTop: 58,
+      paddingBottom: 24,
+      paddingHorizontal: 20,
+      borderBottomLeftRadius: 28,
+      borderBottomRightRadius: 28,
+      marginBottom: 16,
+      gap: 6,
+    },
+    greeting: { fontSize: 26, fontWeight: "800", color: c.headerText },
+    subGreeting: { fontSize: 14, color: "rgba(255,255,255,0.8)" },
+    streakRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 8 },
+    streakText: { fontSize: 14, fontWeight: "700", color: "#FED7AA" },
+
+    statsRow: {
+      flexDirection: "row",
+      gap: 10,
+      paddingHorizontal: 16,
+      marginTop: 12,
+      marginBottom: 16,
+    },
+
+    nextCard: {
+      marginHorizontal: 16,
+      marginBottom: 16,
+      backgroundColor: c.cta,
+      borderRadius: 20,
+      overflow: "hidden",
+    },
+    nextCardInner: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      padding: 20,
+    },
+    nextCardText: { flex: 1 },
+    nextCardLabel: {
+      fontSize: 10,
+      fontWeight: "800",
+      color: "rgba(255,255,255,0.7)",
+      letterSpacing: 2,
+      marginBottom: 4,
+    },
+    nextCardTitleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      marginBottom: 4,
+    },
+    nextCardTitle: { fontSize: 18, fontWeight: "800", color: "#FFFFFF", flex: 1 },
+    nextCardMeta: { fontSize: 12, color: "rgba(255,255,255,0.75)" },
+    nextArrow: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: "rgba(255,255,255,0.2)",
+      alignItems: "center",
+      justifyContent: "center",
+      marginLeft: 12,
+    },
+
+    challengeReminderCard: {
+      marginHorizontal: 16,
+      marginBottom: 16,
+      backgroundColor: c.surface,
+      borderRadius: 16,
+      borderWidth: 1.5,
+      borderColor: c.ctaLight,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      gap: 12,
+    },
+    reminderContent: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
+    reminderLeft: { paddingTop: 2 },
+    reminderMiddle: { flex: 1, gap: 2 },
+    challengeReminderTitle: { fontSize: 14, fontWeight: "700", color: c.cta },
+    reminderText: { fontSize: 12, color: c.textSecondary, lineHeight: 18 },
+    reminderButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: c.cta,
+      borderRadius: 10,
+      paddingVertical: 10,
+      paddingHorizontal: 14,
+      gap: 4,
+      alignSelf: "flex-start",
+    },
+    reminderButtonText: { fontSize: 12, fontWeight: "700", color: "#FFFFFF" },
+
+    allDoneCard: {
+      marginHorizontal: 16,
+      marginBottom: 16,
+      backgroundColor: c.surface,
+      borderRadius: 20,
+      padding: 22,
+      alignItems: "center",
+      gap: 8,
+      borderWidth: 2,
+      borderColor: c.primary,
+    },
+    allDoneTitle: { fontSize: 18, fontWeight: "800", color: c.primary },
+    allDoneSub: { fontSize: 13, color: c.textSecondary, textAlign: "center" },
+
+    squadCard: {
+      marginHorizontal: 16,
+      backgroundColor: c.surface,
+      borderRadius: 20,
+      padding: 20,
+      marginBottom: 14,
+      borderWidth: 1,
+      borderColor: c.borderFaint,
+    },
+    squadTitleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      marginBottom: 16,
+    },
+    squadTitle: { fontSize: 16, fontWeight: "800", color: c.primary },
+    memberList: { flexDirection: "row", flexWrap: "wrap", gap: 18 },
+    memberItem: { alignItems: "center", minWidth: 56 },
+    memberAvatar: {
+      width: 52,
+      height: 52,
+      borderRadius: 26,
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 6,
+    },
+    memberInitial: { fontSize: 22, fontWeight: "800", color: "#FFFFFF" },
+    memberName: {
+      fontSize: 12,
+      fontWeight: "600",
+      color: c.primary,
+      maxWidth: 60,
+      textAlign: "center",
+    },
+    memberGrade: { fontSize: 10, color: c.textMuted, marginTop: 1 },
+  });
+}
