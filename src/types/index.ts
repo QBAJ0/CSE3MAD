@@ -43,6 +43,7 @@ export type Measurement = {
     | "photo"
     | "tracing";
   choices?: string[];
+  allowOther?: boolean;
   placeholder?: string;
   difficulty?: DifficultyMode;
   vibrate?: boolean;
@@ -75,6 +76,7 @@ export type Challenge = {
   instructions: string[];
   features: string[];
   maxPrototypes: number;
+  minPrototypes?: number;
   estimatedMinutes: number;
   difficultyLevels: DifficultyMode[];
   measurements: Measurement[];

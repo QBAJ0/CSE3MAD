@@ -860,7 +860,7 @@ export default function ResultsScreen() {
               numberOfLines={3}
               textAlignVertical="top"
             />
-            {!answerReady && answerLen > 0 ? (
+            {answerReady ? null : answerLen > 0 ? (
               <Text style={styles.observationCount}>
                 {GAMIFICATION.OBSERVATION_MIN_CHARS - answerLen} more characters needed
               </Text>
@@ -1091,12 +1091,12 @@ function createStyles(c: ColorTokens) {
       gap: 4,
     },
     memberRow: {
-      flexDirection: "row" as const,
-      justifyContent: "space-between" as const,
-      alignItems: "center" as const,
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
     },
     memberName: { fontSize: 13, color: c.textSecondary, flex: 1 },
-    memberBpm: { fontSize: 13, fontWeight: "700" as const, color: c.text },
+    memberBpm: { fontSize: 13, fontWeight: "700", color: c.text },
     attemptPrompt: {
       fontSize: 12,
       fontWeight: "700",

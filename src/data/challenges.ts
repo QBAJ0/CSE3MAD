@@ -45,6 +45,13 @@ export const CHALLENGES: Challenge[] = [
         placeholder: "e.g. Plastic, 4 corners",
       },
       {
+        key: "designPrediction",
+        label: "What is your prediction for this design?",
+        recorder: "manualText",
+        placeholder: "e.g. I think this design will fall slowly because the canopy is large",
+        optional: true,
+      },
+      {
         key: "dropHeightMeters",
         label: "Drop height (measure once for all designs)",
         unit: "m",
@@ -134,35 +141,57 @@ export const CHALLENGES: Challenge[] = [
         difficulty: "highSchool",
       },
     ],
-    curriculumLinks: ["ACSSU076 - Forces affect motion"],
+    curriculumLinks: [
+      "ACSSU076 – Forces affect motion",
+      "ACSSU117 – Forces affect motion (High School)",
+      "ACSIS124 – Planning and conducting investigations",
+      "ACSIS126 – Analysing patterns in data",
+      "ACTDEP036 – Generate, test, and improve solutions",
+      "ACMMG108 – Measuring speed",
+      "ACMSP147 – Comparing data and averages",
+    ],
     predictionPrompt: "Which parachute design do you think will fall the slowest? What size and material will work best?",
     extensionTip: "Try cutting a small hole in the centre of your canopy — does it actually fall more steadily? Engineers use this trick on real parachutes!",
+    discussion:
+      "Gravity pulls objects downward, causing them to speed up as they fall. A parachute increases air resistance (also called drag). Drag acts upward, opposing the motion and slowing the fall. A slower fall reduces the force when the toy hits the ground, making the landing safer. Engineers improve parachute designs through repeated testing and redesign.",
     thingsToKnow: [
       {
         heading: "What is drag?",
         color: "#2563EB",
         bullets: [
           "Drag is a force that opposes movement through air.",
-          "A bigger canopy catches more air = more drag = slower fall.",
+          "A bigger canopy catches more air → more drag → slower fall.",
           "Drag force increases with canopy area and air density.",
+          "A slower fall reduces impact force, making landing safer.",
         ],
       },
       {
-        heading: "Materials matter!",
+        heading: "Forces on the toy",
         color: "#2563EB",
         bullets: [
-          "Lighter, larger canopies create more drag.",
-          "Thin plastic is better than paper — it doesn't crumple.",
-          "String length affects stability during descent.",
+          "Weight (downward) = mass × g  (g = 9.8 m/s²)",
+          "Drag force (upward) = air resistance from the parachute",
+          "Net force = Weight − Drag force",
+          "A larger parachute increases drag, reducing net force and acceleration.",
         ],
       },
       {
-        heading: "Newton's laws at work",
+        heading: "Newton's Second Law",
         color: "#F97316",
         bullets: [
+          "Net Force = mass × acceleration  (F = ma)",
           "Gravity pulls your toy downward at 9.8 m/s².",
-          "When drag force equals gravity, the toy reaches terminal velocity.",
-          "The net force = Gravity − Drag.",
+          "When drag equals weight, net force = 0 — the toy reaches terminal velocity.",
+          "Measuring fall time and height lets you calculate the actual acceleration.",
+        ],
+      },
+      {
+        heading: "Student Focus",
+        color: "#0F766E",
+        bullets: [
+          "Primary school: measure drop time and calculate final speed.",
+          "High school: calculate final velocity, acceleration, net force, drag force, and g-force on impact.",
+          "G-force tells you how hard the toy hits the ground — important for safe landing design.",
         ],
       },
     ],
@@ -192,10 +221,26 @@ export const CHALLENGES: Challenge[] = [
       "Map loud and quiet zones",
     ],
     features: ["predictionRequired", "gps", "sensors"],
-    maxPrototypes: 3,
+    maxPrototypes: 8,
+    minPrototypes: 1,
     estimatedMinutes: 15,
     difficultyLevels: ["primary", "highSchool"],
     measurements: [
+      {
+        key: "predictedOutcomeText",
+        label: "What is your prediction for this test?",
+        recorder: "manualText",
+        placeholder: "e.g. I think stomping will be loudest at around 85 dB",
+        optional: true,
+      },
+      {
+        key: "predictedOutcomeValue",
+        label: "Predicted sound level",
+        unit: "dB",
+        recorder: "manualNumber",
+        placeholder: "e.g. 85",
+        optional: true,
+      },
       {
         key: "action",
         label: "Action",
@@ -207,6 +252,7 @@ export const CHALLENGES: Challenge[] = [
           "Walking",
           "Stomping",
         ],
+        allowOther: true,
       },
       {
         key: "soundLevel",
@@ -300,7 +346,8 @@ export const CHALLENGES: Challenge[] = [
       "Repeat with a cardboard instead of a paper vertical.",
     ],
     features: ["predictionRequired", "gps", "multiplePrototypes"],
-    maxPrototypes: 3,
+    maxPrototypes: 6,
+    minPrototypes: 1,
     estimatedMinutes: 15,
     difficultyLevels: ["primary", "highSchool"],
     measurements: [
@@ -309,6 +356,13 @@ export const CHALLENGES: Challenge[] = [
         label: "Fan design",
         recorder: "manualText",
         placeholder: "e.g. Folded fan",
+      },
+      {
+        key: "predictedOutcomeText",
+        label: "What is your prediction for this design?",
+        recorder: "manualText",
+        placeholder: "e.g. The folded fan at 15 cm will bend the paper the most",
+        optional: true,
       },
       {
         key: "material",
@@ -320,6 +374,7 @@ export const CHALLENGES: Challenge[] = [
           "Thin cardboard",
           "Corrugated cardboard",
         ],
+        allowOther: true,
       },
       {
         key: "distance",
@@ -342,9 +397,13 @@ export const CHALLENGES: Challenge[] = [
       },
       { key: "location", label: "GPS Location", recorder: "gps" },
     ],
-    curriculumLinks: ["ACSSU076 - Forces and motion"],
+    curriculumLinks: ["ACSSU076 – Forces and motion"],
     predictionPrompt: "Which fan design and material do you think will create the most air movement? Which distance will have the biggest effect?",
     extensionTip: "Try wetting your fan strip — does moisture change how it bends? What does this tell you about the material properties?",
+    discussion:
+      "Moving air applies force to objects. Paper bends due to its flexibility, and repeated bending can weaken it over time. " +
+      "To estimate the force applied: F ≈ k × θ, where F is force (N), θ is the bend angle in radians, and k is the stiffness coefficient. " +
+      "Students can rank forces by stiffness and bend angle without exact units if needed.",
     thingsToKnow: [
       {
         heading: "Air pressure",
@@ -365,12 +424,26 @@ export const CHALLENGES: Challenge[] = [
         ],
       },
       {
-        heading: "Material properties",
+        heading: "Material stiffness (k values)",
         color: "#2563EB",
         bullets: [
-          "Lighter, thinner materials bend more easily.",
-          "Corrugated cardboard is stiffer due to its structure.",
+          "Lighter, thinner materials bend more easily — lower k value.",
+          "Thin printer paper (0.1 mm): k ≈ 0.05 N/rad — bends very easily.",
+          "Standard card stock (0.25 mm): k ≈ 0.2 N/rad — moderate bend.",
+          "Thin cardboard (0.5 mm): k ≈ 0.5 N/rad — much harder to bend.",
+          "Corrugated cardboard (3 mm): k ≈ 2–3 N/rad — very stiff, almost no bend.",
           "The shape of your fan changes how much airflow it creates.",
+        ],
+      },
+      {
+        heading: "Estimating force (optional)",
+        color: "#F59E0B",
+        bullets: [
+          "Formula: F ≈ k × θ  (force = stiffness × bend angle in radians).",
+          "Convert degrees to radians: θ (rad) = degrees × π ÷ 180.",
+          "Example — thin paper (k = 0.05), bend angle 30°: θ = 0.524 rad → F ≈ 0.026 N.",
+          "Same 30° bend on thin cardboard (k = 0.5): F ≈ 0.26 N — 10× more force needed.",
+          "The key insight: force increases strongly with material stiffness.",
         ],
       },
     ],
@@ -420,6 +493,20 @@ export const CHALLENGES: Challenge[] = [
         placeholder: "e.g. 4 folds + 4 pillars",
       },
       {
+        key: "predictedOutcomeText",
+        label: "Your prediction",
+        recorder: "manualText",
+        placeholder: "e.g. Wider base will shake less",
+        optional: true,
+      },
+      {
+        key: "predictedOutcomeValue",
+        label: "Predicted shake (g)",
+        recorder: "manualNumber",
+        placeholder: "0.12",
+        optional: true,
+      },
+      {
         key: "photoUri",
         label: "Structure Photo",
         recorder: "photo",
@@ -440,9 +527,11 @@ export const CHALLENGES: Challenge[] = [
       },
       { key: "location", label: "GPS Location", recorder: "gps" },
     ],
+    discussion:
+      "Earthquakes cause ground vibrations that can collapse poorly designed structures. Engineers design buildings to absorb and distribute energy safely.",
     curriculumLinks: [
-      "ACSSU096 - Earth processes",
-      "ACTDEP025 - Evaluating design solutions",
+      "ACSSU096 – Earth processes",
+      "ACTDEP036 – Testing and improving designs",
     ],
     predictionPrompt: "Which structure design do you think will withstand the most vibration? What building features help resist earthquakes?",
     extensionTip: "Try adding a 'base isolator' layer of foam or rubber under your structure. How does it change the vibration readings?",
@@ -599,12 +688,35 @@ export const CHALLENGES: Challenge[] = [
     estimatedMinutes: 15,
     difficultyLevels: ["primary", "highSchool"],
     measurements: [
+      {
+        key: "predictedOutcomeText",
+        label: "Who do you think will react fastest?",
+        recorder: "manualText",
+        placeholder: "e.g. Ava will be fastest because she plays sport",
+        optional: true,
+      },
+      {
+        key: "predictedOutcomeValue",
+        label: "Predicted fastest reaction time",
+        unit: "s",
+        recorder: "manualNumber",
+        placeholder: "e.g. 0.25",
+        optional: true,
+      },
       { key: "teamResults", label: "Team Results", recorder: "teamReaction" },
       { key: "location", label: "GPS Location", recorder: "gps" },
     ],
-    curriculumLinks: ["ACSIS130 - Collecting data"],
+    curriculumLinks: [
+      "ACSIS130 – Collecting and analysing data",
+      "ACMSP147 – Averages and variation",
+      "ACPPS057 – Understanding physical performance",
+    ],
     predictionPrompt: "Who do you think has the fastest reaction time in your team? Will the dominant hand always be faster?",
     extensionTip: "Try the test again after 5 minutes of exercise. Does your reaction time change when your heart rate is elevated?",
+    discussion:
+      "Reaction time measures how quickly the brain processes information and sends signals to muscles. " +
+      "Practice can improve speed and coordination. " +
+      "Comparing hands shows how dominance affects performance.",
     thingsToKnow: [
       {
         heading: "How fast is reaction time?",
@@ -675,8 +787,8 @@ export const CHALLENGES: Challenge[] = [
         ],
       },
       {
-        key: "predictedBpm",
-        label: "Predicted Breaths Per Minute",
+        key: "predictedOutcomeValue",
+        label: "Predicted breaths per minute",
         recorder: "manualNumber",
         placeholder: "e.g. 15",
         optional: true,

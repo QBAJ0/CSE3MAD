@@ -348,7 +348,7 @@ export function TracingRecorder({
         </View>
         <Text style={styles.subtitle}>
           {isTracing
-            ? "Trace the moving green dot!"
+            ? "Trace the moving blue dot!"
             : "Tap Start to trace the shape"}
         </Text>
       </View>
@@ -419,7 +419,7 @@ export function TracingRecorder({
       <View style={styles.instructions}>
         <Text style={styles.instructionText}>
           {isTracing
-            ? "Keep your finger on the green dot as it moves!"
+            ? "Keep your finger on the blue dot as it moves!"
             : "Follow the path exactly where the dot goes"}
         </Text>
       </View>
