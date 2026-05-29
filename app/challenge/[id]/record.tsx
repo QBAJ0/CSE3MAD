@@ -130,6 +130,12 @@ const RECORDER_RENDERERS: Partial<Record<
   ),
 };
 
+const BREATHING_CONDITIONS = [
+  "At rest",
+  "After Exercise 1 – Jog (1 min)",
+  "After Exercise 2 – 100 Star Jumps",
+];
+
 // ── Screen ───────────────────────────────────────────────────────────────────
 
 export default function RecordScreen() {
@@ -143,6 +149,30 @@ export default function RecordScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
+  const current = draft.prototypes[draft.currentPrototypeIndex];
+  const isHumanPerformance = challenge?.id === HUMAN_PERFORMANCE_CHALLENGE_ID;
+
+  useEffect(() => {
+    if (!isHumanPerformance || !current) return;
+    const trial = getTrialForPrototype(current.index);
+    if (
+      trial &&
+      String(current.measurements.movementType ?? "") !== trial.movementType
+    ) {
+      updatePrototype(current.index, {
+        measurements: { movementType: trial.movementType },
+      });
+    }
+  }, [isHumanPerformance, current, draft.currentPrototypeIndex, updatePrototype]);
+
+  useEffect(() => {
+    if (challenge?.id !== 7 || !current) return;
+    const expected = BREATHING_CONDITIONS[current.index - 1] ?? "";
+    if (expected && String(current.measurements.condition ?? "") !== expected) {
+      updatePrototype(current.index, { measurements: { condition: expected } });
+    }
+  }, [challenge?.id, current, draft.currentPrototypeIndex, updatePrototype]);
+
   // ── Guards ─────────────────────────────────────────────────────────────────
 
   if (!challenge || !team) {
@@ -152,8 +182,6 @@ export default function RecordScreen() {
       </View>
     );
   }
-
-  const current = draft.prototypes[draft.currentPrototypeIndex];
 
   if (!current) {
     return (
@@ -181,7 +209,6 @@ export default function RecordScreen() {
       (m) => !m.difficulty || m.difficulty === draft.difficulty,
     ),
   );
-  const isHumanPerformance = challenge.id === HUMAN_PERFORMANCE_CHALLENGE_ID;
   const requiredMeasurements = getRequiredMeasurements(measurements);
   const currentComplete = isPrototypeComplete(current, requiredMeasurements, challenge.id);
   const allPrototypesComplete =
@@ -282,33 +309,6 @@ export default function RecordScreen() {
     if (currentNum < max) addPrototype();
     else goToReflect();
   };
-
-  useEffect(() => {
-    if (!isHumanPerformance || !current) return;
-    const trial = getTrialForPrototype(current.index);
-    if (
-      trial &&
-      String(current.measurements.movementType ?? "") !== trial.movementType
-    ) {
-      updatePrototype(current.index, {
-        measurements: { movementType: trial.movementType },
-      });
-    }
-  }, [isHumanPerformance, current.index, draft.currentPrototypeIndex]);
-
-  const BREATHING_CONDITIONS = [
-    "At rest",
-    "After Exercise 1 – Jog (1 min)",
-    "After Exercise 2 – 100 Star Jumps",
-  ];
-
-  useEffect(() => {
-    if (challenge.id !== 7 || !current) return;
-    const expected = BREATHING_CONDITIONS[current.index - 1] ?? "";
-    if (expected && String(current.measurements.condition ?? "") !== expected) {
-      updatePrototype(current.index, { measurements: { condition: expected } });
-    }
-  }, [challenge.id, current.index, draft.currentPrototypeIndex]);
 
   const handleSaveDraft = () => {
     haptic("warning");

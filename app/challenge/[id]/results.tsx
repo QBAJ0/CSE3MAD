@@ -895,7 +895,7 @@ export default function ResultsScreen() {
           <Text style={styles.cardTitle}>Team Comment (optional)</Text>
         </View>
         <Text style={styles.commentHint}>
-          Anything else your team wants to add? Shout-outs, surprises, or what you'd try next time.
+          Anything else your team wants to add? Shout-outs, surprises, or what you would try next time.
         </Text>
         <TextInput
           style={[styles.commentInput, comment.trim() ? styles.commentInputFilled : null]}
