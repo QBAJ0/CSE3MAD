@@ -17,6 +17,7 @@ import { BatteryStatusCard } from "../../src/components/BatteryStatusCard";
 import { useTeam } from "../../src/context/TeamContext";
 import { CHALLENGES, getChallengeById } from "../../src/data/challenges";
 import type { ColorTokens } from "../../src/theme/colors";
+import { getChallengeAccent } from "../../src/utils/challengeAccent";
 import { AppearanceSetting, useTheme } from "../../src/theme/themeContext";
 import { ActivityResult } from "../../src/types";
 import { scheduleStreakReminder, cancelStreakReminder } from "../../src/utils/notifications";
@@ -199,14 +200,15 @@ export default function ProfileScreen() {
         <View style={styles.badgeGrid}>
           {CHALLENGES.map((challenge) => {
             const isDone = recentActivities.some((a) => a.challengeId === challenge.id);
+            const accent = getChallengeAccent(challenge);
             return (
               <View
                 key={challenge.id}
                 style={[
                   styles.badgeTile,
                   {
-                    backgroundColor: isDone ? colors.successLight : colors.backgroundSecondary,
-                    borderColor: isDone ? colors.success : colors.border,
+                    backgroundColor: isDone ? accent.tint : colors.backgroundSecondary,
+                    borderColor: isDone ? accent.border : colors.border,
                     opacity: isDone ? 1 : 0.45,
                   },
                 ]}
@@ -214,16 +216,19 @@ export default function ProfileScreen() {
                 <Ionicons
                   name={challenge.icon as any}
                   size={24}
-                  color={isDone ? colors.primary : colors.textMuted}
+                  color={isDone ? accent.accent : colors.textMuted}
                 />
                 <Text
-                  style={[styles.badgeName, { color: isDone ? colors.primary : colors.textMuted }]}
+                  style={[
+                    styles.badgeName,
+                    { color: isDone ? accent.accent : colors.textMuted },
+                  ]}
                   numberOfLines={2}
                 >
                   {challenge.title}
                 </Text>
                 {isDone && (
-                  <View style={[styles.rarityDot, { backgroundColor: colors.primary }]} />
+                  <View style={[styles.rarityDot, { backgroundColor: accent.accent }]} />
                 )}
               </View>
             );
@@ -280,6 +285,8 @@ export default function ProfileScreen() {
             const challenge = getChallengeById(activity.challengeId);
             if (!challenge) return null;
 
+            const accent = getChallengeAccent(challenge);
+
             const date = new Date(activity.createdAt).toLocaleDateString("en-AU", {
               day: "numeric",
               month: "short",
@@ -292,8 +299,8 @@ export default function ProfileScreen() {
             return (
               <View key={activity.id} style={styles.historyCard}>
                 <View style={styles.historyTopRow}>
-                  <View style={styles.historyIcon}>
-                    <Ionicons name={challenge.icon as any} size={22} color={colors.info} />
+                  <View style={[styles.historyIcon, { backgroundColor: accent.tint }]}>
+                    <Ionicons name={challenge.icon as any} size={22} color={accent.accent} />
                   </View>
                   <View style={styles.historyInfo}>
                     <Text style={styles.historyName}>{challenge.title}</Text>

@@ -326,8 +326,8 @@ export const CHALLENGES: Challenge[] = [
     setupImage: require("../../assets/images/fan-setup.png"),
     title: "Hand Fan Challenge",
     category: "Engineering Challenges",
-    icon: "aperture-outline",
-    color: "#F59E0B",
+    icon: "paper-plane-outline",
+    color: "#EF4444",
     shortDescription: "Test how air movement affects flexible materials.",
     overview:
       "Test how air movement affects materials by building different fan designs.",
@@ -463,7 +463,7 @@ export const CHALLENGES: Challenge[] = [
     title: "Earthquake-Resistant Structure",
     category: "Engineering Challenges",
     icon: "construct-outline",
-    color: "#0F766E",
+    color: "#22C55E",
     shortDescription: "Build a structure that resists vibration.",
     overview:
       "Design structures that withstand vibration, simulating earthquakes.",
@@ -671,7 +671,7 @@ export const CHALLENGES: Challenge[] = [
     title: "Reaction Board",
     category: "Health and Medical Sciences",
     icon: "pulse-outline",
-    color: "#A855F7",
+    color: "#EC4899",
     shortDescription: "Test reaction time and coordination.",
     overview:
       "Measure reaction time and coordination through digital challenges.",
@@ -759,7 +759,7 @@ export const CHALLENGES: Challenge[] = [
     title: "Breathing Pace Trainer",
     category: "Medical Science / Health Science",
     icon: "heart-outline",
-    color: "#0F766E",
+    color: "#06B6D4",
     shortDescription: "Analyse breathing patterns before and after exercise.",
     overview:
       "Students analyse breathing patterns at rest and after exercise using the phone's motion sensors.",
