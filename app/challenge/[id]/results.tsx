@@ -508,16 +508,14 @@ export default function ResultsScreen() {
               <Text style={styles.attemptPrompt}>Were you right?</Text>
               <View style={styles.rightRow}>
                 {([
-                  { id: "yes",    label: "Yes" },
-                  { id: "partly", label: "Partly" },
-                  { id: "no",     label: "No" },
+                  { id: "yes", label: "Yes" },
+                  { id: "no", label: "No" },
                 ] as const).map((option) => (
                   <TouchableOpacity
                     key={option.id}
                     style={[
                       styles.rightChoice,
                       selected === option.id && styles.rightChoiceActive,
-                      selected === option.id && option.id === "partly" && styles.rightChoicePartly,
                       selected === option.id && option.id === "no" && styles.rightChoiceNo,
                     ]}
                     onPress={() => setWereYouRight(prototype.index, option.id)}
@@ -1080,10 +1078,6 @@ function createStyles(c: ColorTokens) {
     rightChoiceActive: {
       backgroundColor: c.success,
       borderColor: c.success,
-    },
-    rightChoicePartly: {
-      backgroundColor: c.warning,
-      borderColor: c.warning,
     },
     rightChoiceNo: {
       backgroundColor: c.danger,
