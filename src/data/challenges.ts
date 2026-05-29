@@ -346,7 +346,8 @@ export const CHALLENGES: Challenge[] = [
       "Repeat with a cardboard instead of a paper vertical.",
     ],
     features: ["predictionRequired", "gps", "multiplePrototypes"],
-    maxPrototypes: 3,
+    maxPrototypes: 6,
+    minPrototypes: 1,
     estimatedMinutes: 15,
     difficultyLevels: ["primary", "highSchool"],
     measurements: [
@@ -355,6 +356,13 @@ export const CHALLENGES: Challenge[] = [
         label: "Fan design",
         recorder: "manualText",
         placeholder: "e.g. Folded fan",
+      },
+      {
+        key: "predictedOutcomeText",
+        label: "What is your prediction for this design?",
+        recorder: "manualText",
+        placeholder: "e.g. The folded fan at 15 cm will bend the paper the most",
+        optional: true,
       },
       {
         key: "material",
@@ -366,6 +374,7 @@ export const CHALLENGES: Challenge[] = [
           "Thin cardboard",
           "Corrugated cardboard",
         ],
+        allowOther: true,
       },
       {
         key: "distance",
@@ -388,9 +397,13 @@ export const CHALLENGES: Challenge[] = [
       },
       { key: "location", label: "GPS Location", recorder: "gps" },
     ],
-    curriculumLinks: ["ACSSU076 - Forces and motion"],
+    curriculumLinks: ["ACSSU076 – Forces and motion"],
     predictionPrompt: "Which fan design and material do you think will create the most air movement? Which distance will have the biggest effect?",
     extensionTip: "Try wetting your fan strip — does moisture change how it bends? What does this tell you about the material properties?",
+    discussion:
+      "Moving air applies force to objects. Paper bends due to its flexibility, and repeated bending can weaken it over time. " +
+      "To estimate the force applied: F ≈ k × θ, where F is force (N), θ is the bend angle in radians, and k is the stiffness coefficient. " +
+      "Students can rank forces by stiffness and bend angle without exact units if needed.",
     thingsToKnow: [
       {
         heading: "Air pressure",
@@ -411,12 +424,26 @@ export const CHALLENGES: Challenge[] = [
         ],
       },
       {
-        heading: "Material properties",
+        heading: "Material stiffness (k values)",
         color: "#2563EB",
         bullets: [
-          "Lighter, thinner materials bend more easily.",
-          "Corrugated cardboard is stiffer due to its structure.",
+          "Lighter, thinner materials bend more easily — lower k value.",
+          "Thin printer paper (0.1 mm): k ≈ 0.05 N/rad — bends very easily.",
+          "Standard card stock (0.25 mm): k ≈ 0.2 N/rad — moderate bend.",
+          "Thin cardboard (0.5 mm): k ≈ 0.5 N/rad — much harder to bend.",
+          "Corrugated cardboard (3 mm): k ≈ 2–3 N/rad — very stiff, almost no bend.",
           "The shape of your fan changes how much airflow it creates.",
+        ],
+      },
+      {
+        heading: "Estimating force (optional)",
+        color: "#F59E0B",
+        bullets: [
+          "Formula: F ≈ k × θ  (force = stiffness × bend angle in radians).",
+          "Convert degrees to radians: θ (rad) = degrees × π ÷ 180.",
+          "Example — thin paper (k = 0.05), bend angle 30°: θ = 0.524 rad → F ≈ 0.026 N.",
+          "Same 30° bend on thin cardboard (k = 0.5): F ≈ 0.26 N — 10× more force needed.",
+          "The key insight: force increases strongly with material stiffness.",
         ],
       },
     ],
