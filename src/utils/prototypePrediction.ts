@@ -75,6 +75,7 @@ export function getPredictionUiConfig(challengeId: number): PredictionUiConfig {
         predictionValueLabel: "Predict BPM",
         predictionValuePlaceholder: "28",
         predictionValueUnit: "bpm",
+        valueOnly: true,
       };
     default:
       return {
@@ -136,8 +137,18 @@ export function buildOutcomeTextForChallenge(
       return reaction != null ? `${reaction.toFixed(3)} s reaction time` : "";
     }
     case 7: {
-      const bpm = num(measurements.breathingData);
-      return bpm != null ? `${Math.round(bpm)} breaths/min measured` : "";
+      const raw = measurements.breathingData;
+      if (typeof raw === "string" && raw.trim()) {
+        try {
+          const results = JSON.parse(raw) as Array<{ name: string; bpm: number }>;
+          if (Array.isArray(results) && results.length > 0) {
+            const avg = results.reduce((sum, r) => sum + (r.bpm ?? 0), 0) / results.length;
+            return `${Math.round(avg)} breaths/min (team avg)`;
+          }
+        } catch {}
+      }
+      const bpm = num(raw);
+      return bpm != null ? `${Math.round(bpm)} breaths/min` : "";
     }
     default:
       return String(measurements.outcomeText ?? "").trim();
