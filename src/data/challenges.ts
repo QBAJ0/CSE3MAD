@@ -493,6 +493,20 @@ export const CHALLENGES: Challenge[] = [
         placeholder: "e.g. 4 folds + 4 pillars",
       },
       {
+        key: "predictedOutcomeText",
+        label: "Your prediction",
+        recorder: "manualText",
+        placeholder: "e.g. Wider base will shake less",
+        optional: true,
+      },
+      {
+        key: "predictedOutcomeValue",
+        label: "Predicted shake (g)",
+        recorder: "manualNumber",
+        placeholder: "0.12",
+        optional: true,
+      },
+      {
         key: "photoUri",
         label: "Structure Photo",
         recorder: "photo",
@@ -513,9 +527,11 @@ export const CHALLENGES: Challenge[] = [
       },
       { key: "location", label: "GPS Location", recorder: "gps" },
     ],
+    discussion:
+      "Earthquakes cause ground vibrations that can collapse poorly designed structures. Engineers design buildings to absorb and distribute energy safely.",
     curriculumLinks: [
-      "ACSSU096 - Earth processes",
-      "ACTDEP025 - Evaluating design solutions",
+      "ACSSU096 – Earth processes",
+      "ACTDEP036 – Testing and improving designs",
     ],
     predictionPrompt: "Which structure design do you think will withstand the most vibration? What building features help resist earthquakes?",
     extensionTip: "Try adding a 'base isolator' layer of foam or rubber under your structure. How does it change the vibration readings?",
@@ -771,8 +787,8 @@ export const CHALLENGES: Challenge[] = [
         ],
       },
       {
-        key: "predictedBpm",
-        label: "Predicted Breaths Per Minute",
+        key: "predictedOutcomeValue",
+        label: "Predicted breaths per minute",
         recorder: "manualNumber",
         placeholder: "e.g. 15",
         optional: true,

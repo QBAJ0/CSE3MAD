@@ -497,10 +497,34 @@ export default function ResultsScreen() {
 
           return (
             <View key={prototype.index} style={styles.attemptCard}>
-              <Text style={styles.attemptTitle}>#{idx + 1}</Text>
+              <Text style={styles.attemptTitle}>
+                {challenge.id === 7 && prototype.measurements.condition
+                  ? String(prototype.measurements.condition)
+                  : `#${idx + 1}`}
+              </Text>
               <Text style={styles.attemptLine}>
                 Outcome: {outcomeText || "Not recorded"}
               </Text>
+              {challenge.id === 7 && (() => {
+                const raw = prototype.measurements.breathingData;
+                if (typeof raw !== "string" || !raw.trim()) return null;
+                try {
+                  const members = JSON.parse(raw) as Array<{ name: string; bpm: number }>;
+                  if (!Array.isArray(members) || members.length === 0) return null;
+                  return (
+                    <View style={styles.memberBreakdown}>
+                      {members.map((m, i) => (
+                        <View key={i} style={styles.memberRow}>
+                          <Text style={styles.memberName}>{m.name}</Text>
+                          <Text style={styles.memberBpm}>{Math.round(m.bpm)} bpm</Text>
+                        </View>
+                      ))}
+                    </View>
+                  );
+                } catch {
+                  return null;
+                }
+              })()}
               <Text style={styles.attemptLine}>
                 Prediction: {predictionDisplay || "Not recorded"}
               </Text>
@@ -1058,6 +1082,21 @@ function createStyles(c: ColorTokens) {
       marginBottom: 6,
     },
     attemptLine: { fontSize: 13, color: c.textSecondary, marginBottom: 4 },
+    memberBreakdown: {
+      backgroundColor: c.backgroundSecondary,
+      borderRadius: 10,
+      paddingVertical: 6,
+      paddingHorizontal: 10,
+      marginBottom: 6,
+      gap: 4,
+    },
+    memberRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
+    memberName: { fontSize: 13, color: c.textSecondary, flex: 1 },
+    memberBpm: { fontSize: 13, fontWeight: "700", color: c.text },
     attemptPrompt: {
       fontSize: 12,
       fontWeight: "700",
