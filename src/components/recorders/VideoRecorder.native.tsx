@@ -1,3 +1,4 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { ResizeMode, Video } from "expo-av";
 import { CameraType, CameraView, useCameraPermissions, useMicrophonePermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
@@ -27,10 +28,13 @@ export function VideoRecorder({
   const [micPermission, requestMicPermission] = useMicrophonePermissions();
   const [cameraOpen, setCameraOpen] = useState(false);
   const [recording, setRecording] = useState(false);
+  const [isCameraReady, setIsCameraReady] = useState(false);
   const [videoUri, setVideoUri] = useState<string | null>(existingUri || null);
   const [facing, setFacing] = useState<CameraType>("back");
   const [torchOn, setTorchOn] = useState(false);
   const cameraRef = useRef<CameraView>(null);
+  // Ref mirrors `recording` state so stopRecording never closes over a stale value
+  const recordingRef = useRef(false);
   const { haptic } = useHaptic();
 
   // Request both camera and microphone permissions on mount.
@@ -75,17 +79,24 @@ export function VideoRecorder({
   const handleOpenCamera = () => {
     haptic("medium");
     setTorchOn(false);
+    setIsCameraReady(false);
     setCameraOpen(true);
   };
 
   const handleCloseCamera = () => {
+    if (recordingRef.current && cameraRef.current) {
+      cameraRef.current.stopRecording();
+    }
+    recordingRef.current = false;
     setCameraOpen(false);
     setRecording(false);
     setTorchOn(false);
+    setIsCameraReady(false);
   };
 
   const toggleCameraFacing = () => {
     haptic("light");
+    setIsCameraReady(false);
     setFacing((current) => {
       const next = current === "back" ? "front" : "back";
       if (next === "front") setTorchOn(false);
@@ -100,9 +111,10 @@ export function VideoRecorder({
   };
 
   const startRecording = async () => {
-    if (!cameraRef.current) return;
+    if (!cameraRef.current || recordingRef.current || !isCameraReady) return;
 
     haptic("medium");
+    recordingRef.current = true;
     setRecording(true);
 
     try {
@@ -115,18 +127,20 @@ export function VideoRecorder({
         setCameraOpen(false);
       }
     } catch {
-      Alert.alert("Error", "Failed to record video. Please try again.");
-      haptic("error");
+      if (recordingRef.current) {
+        Alert.alert("Error", "Failed to record video. Please try again.");
+        haptic("error");
+      }
     } finally {
+      recordingRef.current = false;
       setRecording(false);
     }
   };
 
-  const stopRecording = async () => {
-    if (cameraRef.current && recording) {
+  const stopRecording = () => {
+    if (cameraRef.current && recordingRef.current) {
       haptic("light");
-      await cameraRef.current.stopRecording();
-      setRecording(false);
+      cameraRef.current.stopRecording();
     }
   };
 
@@ -150,6 +164,7 @@ export function VideoRecorder({
   const retakeVideo = () => {
     setVideoUri(null);
     setTorchOn(false);
+    setIsCameraReady(false);
     setCameraOpen(true);
     haptic("light");
   };
@@ -260,6 +275,7 @@ export function VideoRecorder({
             mode="video"
             autofocus="on"
             enableTorch={torchOn && facing === "back"}
+            onCameraReady={() => setIsCameraReady(true)}
           />
 
           <View style={styles.cameraOverlay}>
@@ -278,20 +294,22 @@ export function VideoRecorder({
                   <TouchableOpacity
                     onPress={toggleTorch}
                     style={[
-                      styles.torchButton,
+                      styles.iconButton,
                       torchOn && styles.torchButtonActive,
                     ]}
                   >
-                    <Text style={styles.torchButtonText}>
-                      {torchOn ? "Off" : "Light"}
-                    </Text>
+                    <Ionicons
+                      name={torchOn ? "flash" : "flash-outline"}
+                      size={22}
+                      color="#FFF"
+                    />
                   </TouchableOpacity>
                 )}
                 <TouchableOpacity
                   onPress={toggleCameraFacing}
-                  style={styles.flipButton}
+                  style={styles.iconButton}
                 >
-                  <Text style={styles.flipButtonText}>Flip</Text>
+                  <Ionicons name="camera-reverse-outline" size={24} color="#FFF" />
                 </TouchableOpacity>
               </View>
             </View>
@@ -299,8 +317,12 @@ export function VideoRecorder({
             <View style={styles.cameraFooter}>
               {!recording ? (
                 <TouchableOpacity
-                  style={styles.recordButton}
+                  style={[
+                    styles.recordButton,
+                    !isCameraReady && styles.recordButtonDisabled,
+                  ]}
                   onPress={startRecording}
+                  disabled={!isCameraReady}
                 >
                   <View style={styles.recordButtonInner} />
                 </TouchableOpacity>
@@ -314,7 +336,11 @@ export function VideoRecorder({
               )}
 
               <Text style={styles.recordHint}>
-                {recording ? "Tap to stop recording" : "Tap to start recording"}
+                {!isCameraReady
+                  ? "Camera starting…"
+                  : recording
+                    ? "Tap to stop recording"
+                    : "Tap to start recording"}
               </Text>
             </View>
           </View>
@@ -475,7 +501,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 10,
   },
-  torchButton: {
+  iconButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
@@ -485,24 +511,6 @@ const styles = StyleSheet.create({
   },
   torchButtonActive: {
     backgroundColor: "rgba(250,204,21,0.85)",
-  },
-  torchButtonText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#FFF",
-  },
-  flipButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  flipButtonText: {
-    color: "#FFF",
-    fontSize: 13,
-    fontWeight: "700",
   },
   cameraFooter: {
     position: "absolute",
@@ -521,6 +529,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderWidth: 3,
     borderColor: "#EF4444",
+  },
+  recordButtonDisabled: {
+    opacity: 0.35,
   },
   recordButtonInner: {
     width: 60,

@@ -836,9 +836,7 @@ export default function ResultsScreen() {
               numberOfLines={3}
               textAlignVertical="top"
             />
-            {answerReady ? (
-              <Text style={styles.observationCountReady}>✓ Good answer</Text>
-            ) : answerLen > 0 ? (
+            {answerReady ? null : answerLen > 0 ? (
               <Text style={styles.observationCount}>
                 {GAMIFICATION.OBSERVATION_MIN_CHARS - answerLen} more characters needed
               </Text>

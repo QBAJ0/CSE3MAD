@@ -20,11 +20,6 @@ const SUBJECT_TILES = [
   { icon: "heart-outline" as const, label: "Health", color: "#FED7AA" },
 ];
 
-const FEATURE_TAGS = [
-  { icon: "flask-outline" as const, label: "STEMM" },
-  { icon: "game-controller-outline" as const, label: "Gamified" },
-  { icon: "trophy-outline" as const, label: "Compete" },
-];
 
 export default function WelcomeScreen() {
   const { colors } = useTheme();
@@ -63,16 +58,6 @@ export default function WelcomeScreen() {
 
       {/* ── Bottom card ── */}
       <View style={styles.card}>
-        {/* Feature tags */}
-        <View style={styles.tagsRow}>
-          {FEATURE_TAGS.map(({ icon, label }) => (
-            <View key={label} style={styles.tag}>
-              <Ionicons name={icon} size={12} color={colors.primary} />
-              <Text style={styles.tagText}>{label}</Text>
-            </View>
-          ))}
-        </View>
-
         <Text style={styles.heading}>Team up. Experiment. Win.</Text>
         <Text style={styles.body}>
           Take on hands-on science challenges, earn badges, and
@@ -207,29 +192,6 @@ function createStyles(c: ColorTokens) {
       borderTopRightRadius: 32,
       padding: 28,
       paddingBottom: 52,
-    },
-
-    tagsRow: {
-      flexDirection: "row",
-      gap: 8,
-      marginBottom: 20,
-      flexWrap: "wrap",
-    },
-    tag: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 5,
-      backgroundColor: c.ctaLight,
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: c.cta,
-    },
-    tagText: {
-      fontSize: 12,
-      fontWeight: "700",
-      color: c.primary,
     },
 
     heading: {
