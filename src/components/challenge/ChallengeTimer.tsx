@@ -6,7 +6,6 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  Vibration,
   View,
 } from "react-native";
 import { useHaptic } from "../../hooks/useHaptic";
@@ -39,7 +38,7 @@ export function ChallengeTimer({
 
   const handleTimeout = useCallback(() => {
     setIsActive(false);
-    Vibration.vibrate([1000, 500, 1000, 500, 1000]);
+    haptic("error");
     Alert.alert(
       "Time's Up!",
       `Your ${minutes}-minute challenge time has ended.`,
@@ -55,7 +54,7 @@ export function ChallengeTimer({
         },
       ],
     );
-  }, [minutes, onTimeout]);
+  }, [minutes, onTimeout, haptic]);
 
   useEffect(() => {
     if (!isActive) {
@@ -75,14 +74,11 @@ export function ChallengeTimer({
           warned60Ref.current = true;
           setIsWarning(true);
           haptic("warning");
-          Vibration.vibrate(500);
         }
         if (newTime === 30) {
           haptic("heavy");
-          Vibration.vibrate([500, 200, 500]);
         }
         if (newTime === 0) {
-          haptic("error");
           handleTimeout();
         }
         return newTime;

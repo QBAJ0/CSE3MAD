@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useHaptic } from "../../hooks/useHaptic";
 import type { ColorTokens } from "../../theme/colors";
 import { useTheme } from "../../theme/themeContext";
 import { Measurement } from "../../types";
@@ -18,7 +17,6 @@ interface Props {
 }
 
 export function ChoiceRecorder({ measurement, value, onChange }: Props) {
-  const { haptic } = useHaptic();
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const choices = measurement.choices || [];
@@ -28,13 +26,11 @@ export function ChoiceRecorder({ measurement, value, onChange }: Props) {
   const [otherText, setOtherText] = useState(isCustom ? value : "");
 
   const selectChoice = (choice: string) => {
-    haptic("light");
     setShowOtherInput(false);
     onChange(choice);
   };
 
   const selectOther = () => {
-    haptic("light");
     setShowOtherInput(true);
     onChange(otherText);
   };
