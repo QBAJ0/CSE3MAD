@@ -221,10 +221,26 @@ export const CHALLENGES: Challenge[] = [
       "Map loud and quiet zones",
     ],
     features: ["predictionRequired", "gps", "sensors"],
-    maxPrototypes: 3,
+    maxPrototypes: 8,
+    minPrototypes: 1,
     estimatedMinutes: 15,
     difficultyLevels: ["primary", "highSchool"],
     measurements: [
+      {
+        key: "predictedOutcomeText",
+        label: "What is your prediction for this test?",
+        recorder: "manualText",
+        placeholder: "e.g. I think stomping will be loudest at around 85 dB",
+        optional: true,
+      },
+      {
+        key: "predictedOutcomeValue",
+        label: "Predicted sound level",
+        unit: "dB",
+        recorder: "manualNumber",
+        placeholder: "e.g. 85",
+        optional: true,
+      },
       {
         key: "action",
         label: "Action",
@@ -236,6 +252,7 @@ export const CHALLENGES: Challenge[] = [
           "Walking",
           "Stomping",
         ],
+        allowOther: true,
       },
       {
         key: "soundLevel",

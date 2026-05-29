@@ -56,6 +56,8 @@ type ShellProps = {
   onNext: () => void;
   nextLabel: string;
   onSaveAndExit: () => void;
+  onAddMore?: () => void;
+  minDesigns?: number;
 };
 
 // ── Shell ────────────────────────────────────────────────────────────────────
@@ -85,6 +87,8 @@ export default function ChallengeScreenShell({
   onNext,
   nextLabel,
   onSaveAndExit,
+  onAddMore,
+  minDesigns,
 }: ShellProps) {
   const { colors } = useTheme();
   const shell = useMemo(() => createStyles(colors), [colors]);
@@ -123,7 +127,9 @@ export default function ChallengeScreenShell({
           ]}
         >
           <Text style={[shell.designBadgeText, { color: challengeColor }]}>
-            Design {currentDesignNum} of {maxDesigns}
+            {minDesigns != null && minDesigns < maxDesigns
+              ? `Test ${currentDesignNum}`
+              : `Design ${currentDesignNum} of ${maxDesigns}`}
           </Text>
         </View>
         <Text style={shell.title}>Record results</Text>
@@ -136,9 +142,13 @@ export default function ChallengeScreenShell({
       {maxDesigns > 1 && (
         <View style={shell.progressHint}>
           <Text style={shell.progressHintText}>
-            {allPrototypesComplete
-              ? `All ${maxDesigns} designs complete — tap Reflect to continue.`
-              : `Complete measurements for each design (${prototypeDots.length} of ${maxDesigns} started).`}
+            {minDesigns != null && minDesigns < maxDesigns
+              ? allPrototypesComplete
+                ? `Minimum reached — tap Reflect or add more tests.`
+                : `Complete at least ${minDesigns} test${minDesigns > 1 ? "s" : ""} to unlock Reflect (${prototypeDots.length} started).`
+              : allPrototypesComplete
+                ? `All ${maxDesigns} designs complete — tap Reflect to continue.`
+                : `Complete measurements for each design (${prototypeDots.length} of ${maxDesigns} started).`}
           </Text>
         </View>
       )}
@@ -183,6 +193,17 @@ export default function ChallengeScreenShell({
       {/* ── Activity-specific content slot ── */}
       {children}
 
+      {/* ── Add another test button (open-ended activities) ── */}
+      {onAddMore && (
+        <TouchableOpacity
+          style={shell.addMoreBtn}
+          onPress={onAddMore}
+          activeOpacity={0.75}
+        >
+          <Text style={shell.addMoreText}>+ Add another test</Text>
+        </TouchableOpacity>
+      )}
+
       {/* ── Primary CTA ── */}
       <Pressable
         style={({ pressed }) => [
@@ -195,11 +216,13 @@ export default function ChallengeScreenShell({
         <Text style={shell.ctaText}>{nextLabel}</Text>
         {!canProceed && (
           <Text style={shell.ctaHint}>
-            {maxDesigns > 1 &&
-            prototypeDots.length === maxDesigns &&
-            !allPrototypesComplete
-              ? "Finish every design before Reflect"
-              : "Complete required fields above"}
+            {minDesigns != null && minDesigns < maxDesigns
+              ? `Complete ${minDesigns} test${minDesigns > 1 ? "s" : ""} to unlock Reflect`
+              : maxDesigns > 1 &&
+                prototypeDots.length === maxDesigns &&
+                !allPrototypesComplete
+                ? "Finish every design before Reflect"
+                : "Complete required fields above"}
           </Text>
         )}
       </Pressable>
@@ -334,6 +357,19 @@ function createStyles(c: ColorTokens) {
     field: { gap: 8, marginBottom: 20 },
     fieldLabel: { fontSize: 14, fontWeight: "800", color: c.text },
 
+    addMoreBtn: {
+      borderWidth: 2,
+      borderColor: c.primary,
+      paddingVertical: 14,
+      borderRadius: 16,
+      alignItems: "center",
+      backgroundColor: c.background,
+    },
+    addMoreText: {
+      color: c.primary,
+      fontSize: 15,
+      fontWeight: "700",
+    },
     cta: {
       backgroundColor: c.cta,
       paddingVertical: 18,

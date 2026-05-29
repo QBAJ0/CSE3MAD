@@ -175,6 +175,7 @@ export default function RecordScreen() {
 
   const currentNum = draft.currentPrototypeIndex + 1;
   const max = challenge.maxPrototypes;
+  const minProtos = challenge.minPrototypes ?? max;
   const measurements = getRecordMeasurements(
     challenge.id,
     challenge.measurements.filter(
@@ -184,11 +185,17 @@ export default function RecordScreen() {
   const isHumanPerformance = challenge.id === HUMAN_PERFORMANCE_CHALLENGE_ID;
   const requiredMeasurements = getRequiredMeasurements(measurements);
   const currentComplete = isPrototypeComplete(current, requiredMeasurements, challenge.id);
-  const allPrototypesComplete =
-    draft.prototypes.length >= max &&
-    draft.prototypes.every((p) => isPrototypeComplete(p, requiredMeasurements, challenge.id));
+  const completedPrototypesCount = draft.prototypes.filter((p) =>
+    isPrototypeComplete(p, requiredMeasurements, challenge.id),
+  ).length;
+  const allPrototypesComplete = completedPrototypesCount >= minProtos;
   const onLastPrototype = currentNum >= max;
-  const canProceed = onLastPrototype ? allPrototypesComplete : currentComplete;
+  const useAddMore = challenge.minPrototypes != null && currentNum < max;
+  const canProceed = useAddMore
+    ? allPrototypesComplete
+    : onLastPrototype
+      ? allPrototypesComplete
+      : currentComplete;
   const missingOnCurrent = getMissingMeasurementLabels(current, requiredMeasurements, challenge.id);
   const incompleteSummary = buildIncompleteSummary(draft.prototypes, requiredMeasurements, challenge.id);
   const prototypeDots: PrototypeDot[] = draft.prototypes.map((p) => ({
@@ -266,7 +273,22 @@ export default function RecordScreen() {
     );
   };
 
+  const handleAddMore = () => {
+    if (!currentComplete) {
+      haptic("warning");
+      Alert.alert("Complete this test first", incompleteSummary);
+      return;
+    }
+    haptic("success");
+    addPrototype();
+  };
+
   const handleNext = () => {
+    if (useAddMore) {
+      haptic("success");
+      goToReflect();
+      return;
+    }
     if (!canProceed) {
       const title = onLastPrototype
         ? isHumanPerformance
@@ -519,13 +541,15 @@ export default function RecordScreen() {
       onReflectDisabledPress={() => {
         haptic("warning");
         Alert.alert(
-          max > 1
-            ? isHumanPerformance
-              ? "Reflect unlocks when every movement is complete"
-              : "Reflect unlocks when every design is complete"
-            : isHumanPerformance
-              ? "Complete this movement first"
-              : "Complete required measurements first",
+          useAddMore
+            ? `Complete at least ${minProtos} test${minProtos > 1 ? "s" : ""} to unlock Reflect`
+            : max > 1
+              ? isHumanPerformance
+                ? "Reflect unlocks when every movement is complete"
+                : "Reflect unlocks when every design is complete"
+              : isHumanPerformance
+                ? "Complete this movement first"
+                : "Complete required measurements first",
           incompleteSummary,
         );
       }}
@@ -544,13 +568,17 @@ export default function RecordScreen() {
       canProceed={canProceed}
       onNext={handleNext}
       nextLabel={
-        currentNum < max
-          ? isHumanPerformance
-            ? `Next Movement (${currentNum} / ${max})`
-            : `Next Design (${currentNum} / ${max})`
-          : "Go to Reflect"
+        useAddMore
+          ? "Go to Reflect"
+          : currentNum < max
+            ? isHumanPerformance
+              ? `Next Movement (${currentNum} / ${max})`
+              : `Next Design (${currentNum} / ${max})`
+            : "Go to Reflect"
       }
       onSaveAndExit={handleSaveDraft}
+      onAddMore={useAddMore ? handleAddMore : undefined}
+      minDesigns={challenge.minPrototypes}
     >
       {measurementContent}
     </ChallengeScreenShell>

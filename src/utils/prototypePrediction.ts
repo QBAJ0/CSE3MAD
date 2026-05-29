@@ -29,12 +29,11 @@ export function getPredictionUiConfig(challengeId: number): PredictionUiConfig {
       };
     case 2:
       return {
-        predictionLabel: "Predict sound level",
-        predictionPlaceholder: "",
-        predictionValueLabel: "Predict sound level",
+        predictionLabel: "Predict this test",
+        predictionPlaceholder: "e.g. Stomping will be loudest at around 85 dB",
+        predictionValueLabel: "Predicted sound level",
         predictionValuePlaceholder: "72",
         predictionValueUnit: "dB",
-        valueOnly: true,
       };
     case 3:
       return {
