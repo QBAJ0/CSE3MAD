@@ -317,8 +317,6 @@ export default function ResultsScreen() {
     }
   };
 
-  const fanPhysics = null as Array<{ designName: string; material: string; bendAngle: number; force: number | null }> | null;
-
   const parachutePhysics: ParachuteDerived[] | null =
     challenge.id === 1 && draft.difficulty === "highSchool"
       ? draft.prototypes.map((p) =>
@@ -649,53 +647,6 @@ export default function ResultsScreen() {
               </View>
             );
           })}
-        </View>
-      )}
-
-      {fanPhysics && fanPhysics.some((f) => f.force != null) && (
-        <View style={styles.card}>
-          <View style={styles.cardTitleRow}>
-            <Ionicons name="flask-outline" size={16} color={colors.text} />
-            <Text style={styles.cardTitle}>Air Force Calculations</Text>
-          </View>
-          <Text style={styles.physicsRow}>
-            Formula: F ≈ k · θ  (stiffness × bend angle in radians)
-          </Text>
-
-          {fanPhysics.map((f, i) => (
-            <View key={i} style={styles.physicsBlock}>
-              <Text style={styles.physicsBlockLabel}>{f.designName}</Text>
-              {f.material !== "" && (
-                <Text style={styles.physicsRow}>Material: {f.material}</Text>
-              )}
-              {!isNaN(f.bendAngle) && f.bendAngle > 0 && (
-                <Text style={styles.physicsRow}>
-                  Bend angle: {f.bendAngle}° = {((f.bendAngle * Math.PI) / 180).toFixed(3)} rad
-                </Text>
-              )}
-              {f.force != null && (
-                <Text style={styles.physicsRow}>
-                  Estimated air force: {f.force.toFixed(4)} N
-                </Text>
-              )}
-            </View>
-          ))}
-
-          {fanPhysics.filter((f) => f.force != null).length > 1 && (() => {
-            const sorted = [...fanPhysics]
-              .filter((f) => f.force != null)
-              .sort((a, b) => (b.force ?? 0) - (a.force ?? 0));
-            return (
-              <View style={[styles.physicsBlock, { marginTop: 8 }]}>
-                <Text style={styles.physicsBlockLabel}>Ranking (most air force first)</Text>
-                {sorted.map((f, i) => (
-                  <Text key={i} style={styles.physicsRow}>
-                    {i + 1}. {f.designName} — {f.force!.toFixed(4)} N
-                  </Text>
-                ))}
-              </View>
-            );
-          })()}
         </View>
       )}
 

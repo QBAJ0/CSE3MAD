@@ -114,9 +114,6 @@ export default function TabsLayout() {
           ),
         }}
       />
-      <Tabs.Screen name="activities" options={{ href: null }} />
-      <Tabs.Screen name="results" options={{ href: null }} />
-      <Tabs.Screen name="sqlite-test" options={{ href: null }} />
     </Tabs>
   );
 }

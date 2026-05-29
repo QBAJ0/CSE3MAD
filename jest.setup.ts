@@ -156,19 +156,6 @@ jest.mock("expo-sensors", () => ({
   },
 }));
 
-jest.mock("rive-react-native", () => ({
-  Rive: () => null,
-}));
-
-jest.mock("react-native-vision-camera", () => ({
-  Camera: () => null,
-  useCameraDevice: () => null,
-  useCameraPermission: () => ({
-    hasPermission: true,
-    requestPermission: jest.fn(),
-  }),
-}));
-
 jest.mock("@/src/firebase", () => ({
   app: null,
   auth: { currentUser: { uid: "test-anon-uid" } },
