@@ -141,7 +141,7 @@ export default function ProfileScreen() {
             <Text style={styles.statValue}>
               {new Set(recentActivities.map((a) => a.challengeId)).size}
             </Text>
-            <Text style={styles.statLabel}>Challenges</Text>
+            <Text style={styles.statLabel}>Done</Text>
           </View>
         </View>
       </View>
@@ -190,7 +190,7 @@ export default function ProfileScreen() {
         <View style={styles.cardHeader}>
           <View style={styles.cardTitleRow}>
             <Ionicons name="checkmark-circle-outline" size={16} color={colors.primary} />
-            <Text style={styles.cardTitle}>Completed Challenges</Text>
+            <Text style={styles.cardTitle}>Your Badges</Text>
           </View>
           <Text style={styles.cardSubtitle}>
             {new Set(recentActivities.map((a) => a.challengeId)).size}/{CHALLENGES.length} done
@@ -269,15 +269,15 @@ export default function ProfileScreen() {
       <View style={styles.card}>
         <View style={styles.cardTitleRow}>
           <Ionicons name="time-outline" size={16} color={colors.primary} />
-          <Text style={styles.cardTitle}>Results History</Text>
+          <Text style={styles.cardTitle}>Past Experiments</Text>
         </View>
 
         {recentActivities.length === 0 ? (
           <View style={styles.emptyActivity}>
             <Ionicons name="flask-outline" size={32} color={colors.border} />
-            <Text style={styles.emptyActivityText}>No experiments yet</Text>
+            <Text style={styles.emptyActivityText}>No experiments yet!</Text>
             <Text style={styles.emptyActivitySub}>
-              Complete a challenge to see saved results here.
+              Finish a challenge and your results will show up here.
             </Text>
           </View>
         ) : (
@@ -424,7 +424,7 @@ function NotificationTimeCard({
     <View style={styles.card}>
       <View style={styles.cardTitleRow}>
         <Ionicons name="notifications-outline" size={16} color={colors.primary} />
-        <Text style={styles.cardTitle}>Challenge Reminder</Text>
+        <Text style={styles.cardTitle}>Daily Reminder</Text>
       </View>
 
       <View style={styles.modeToggle}>
@@ -618,12 +618,12 @@ function createStyles(c: ColorTokens) {
     badgeGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
     badgeTile: {
       width: "22%",
-      borderRadius: 12,
+      borderRadius: 16,
       padding: 10,
       alignItems: "center",
       borderWidth: 1.5,
       gap: 4,
-      minHeight: 80,
+      minHeight: 86,
       justifyContent: "center",
     },
     badgeName: { fontSize: 9, fontWeight: "700", textAlign: "center", lineHeight: 12 },
@@ -703,7 +703,7 @@ function createStyles(c: ColorTokens) {
       marginTop: 6,
       padding: 16,
       backgroundColor: c.dangerLight,
-      borderRadius: 12,
+      borderRadius: 999,
       alignItems: "center",
       borderWidth: 1,
       borderColor: c.danger,

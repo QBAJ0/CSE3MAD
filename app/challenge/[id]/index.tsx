@@ -162,15 +162,15 @@ export default function ChallengeBriefScreen() {
             <View style={styles.heroBadge}>
               <Ionicons name="time-outline" size={13} color={colors.textMuted} />
               <Text style={styles.heroBadgeText}>
-                {challenge.estimatedMinutes} min
+                ~{challenge.estimatedMinutes} min
               </Text>
             </View>
             <View style={styles.heroBadge}>
-              <Ionicons name="refresh-outline" size={13} color={colors.textMuted} />
+              <Ionicons name="flask-outline" size={13} color={colors.textMuted} />
               <Text style={styles.heroBadgeText}>
                 {challenge.maxPrototypes === 1
                   ? "1 design"
-                  : `Up to ${challenge.maxPrototypes} designs`}
+                  : `Up to ${challenge.maxPrototypes} tests`}
               </Text>
             </View>
           </View>
@@ -270,7 +270,7 @@ export default function ChallengeBriefScreen() {
           activeOpacity={0.75}
         >
           <Text style={styles.detailsToggleText}>
-            {showDetails ? "Hide learn more" : "Learn more"}
+            {showDetails ? "Hide the science stuff" : "Show the science stuff"}
           </Text>
         </TouchableOpacity>
 
@@ -374,7 +374,7 @@ export default function ChallengeBriefScreen() {
             onPress={handleStart}
           >
             <View style={styles.startBtnRow}>
-              <Text style={styles.startBtnText}>Start testing</Text>
+              <Text style={styles.startBtnText}>Start Challenge</Text>
             </View>
           </Pressable>
 
@@ -387,7 +387,7 @@ export default function ChallengeBriefScreen() {
               activeOpacity={0.8}
             >
               <Text style={styles.resumeBtnText}>
-                Resume previous attempt
+                Continue where you left off
               </Text>
             </TouchableOpacity>
           )}

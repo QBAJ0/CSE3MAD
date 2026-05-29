@@ -49,15 +49,13 @@ export default function HomeScreen() {
         </Text>
         <Text style={styles.subGreeting}>
           {allDone
-            ? "You've conquered all 7 challenges!"
-            : `${CHALLENGES.length - completedIds.size} challenge${
-                CHALLENGES.length - completedIds.size !== 1 ? "s" : ""
-              } left to conquer`}
+            ? "All 7 done — check the leaderboard!"
+            : `${CHALLENGES.length - completedIds.size} to go — keep exploring!`}
         </Text>
 
         {streak > 0 && (
-          <View style={styles.streakRow}>
-            <Ionicons name="flame" size={14} color="#FED7AA" />
+          <View style={styles.streakBadge}>
+            <Ionicons name="flame" size={13} color="#F97316" />
             <Text style={styles.streakText}>{streak}-day streak</Text>
           </View>
         )}
@@ -69,7 +67,7 @@ export default function HomeScreen() {
           iconName="checkmark-circle"
           iconColor={colors.info}
           value={`${completedIds.size}/${CHALLENGES.length}`}
-          label="Challenges"
+          label="Done"
           valueColor={colors.info}
           loading={dataLoading}
           colors={colors}
@@ -78,16 +76,16 @@ export default function HomeScreen() {
           iconName="flame"
           iconColor={colors.cta}
           value={String(streak)}
-          label="Day Streak"
+          label="Streak"
           valueColor={colors.cta}
           loading={dataLoading}
           colors={colors}
         />
         <StatCard
           iconName="people"
-          iconColor="#FED7AA"
+          iconColor={colors.primary}
           value={String(team?.members.length ?? 0)}
-          label="Members"
+          label="Squad"
           valueColor={colors.primary}
           loading={dataLoading}
           colors={colors}
@@ -148,9 +146,9 @@ export default function HomeScreen() {
       {allDone && (
         <View style={styles.allDoneCard}>
           <Ionicons name="trophy" size={40} color={colors.cta} />
-          <Text style={styles.allDoneTitle}>All challenges complete!</Text>
+          <Text style={styles.allDoneTitle}>All done — you crushed it!</Text>
           <Text style={styles.allDoneSub}>
-            Your team is unstoppable. Check the leaderboard!
+            Check the leaderboard to see where your team lands.
           </Text>
         </View>
       )}
@@ -159,7 +157,7 @@ export default function HomeScreen() {
       <View style={styles.squadCard}>
         <View style={styles.squadTitleRow}>
           <Ionicons name="people" size={16} color={colors.primary} />
-          <Text style={styles.squadTitle}>Your Squad</Text>
+          <Text style={styles.squadTitle}>The Squad</Text>
         </View>
         <View style={styles.memberList}>
           {team?.members.map((member, index) => (
@@ -223,7 +221,7 @@ function StatCard({
 const statCardStyle = StyleSheet.create({
   card: {
     flex: 1,
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 14,
     alignItems: "center",
     gap: 4,
@@ -252,8 +250,20 @@ function createStyles(c: ColorTokens) {
     },
     greeting: { fontSize: 26, fontWeight: "800", color: c.headerText },
     subGreeting: { fontSize: 14, color: "rgba(255,255,255,0.8)" },
-    streakRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 8 },
-    streakText: { fontSize: 14, fontWeight: "700", color: "#FED7AA" },
+    streakBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 5,
+      marginTop: 8,
+      alignSelf: "flex-start",
+      backgroundColor: "rgba(255,255,255,0.18)",
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: "rgba(255,255,255,0.3)",
+    },
+    streakText: { fontSize: 13, fontWeight: "700", color: "#FFF7ED" },
 
     statsRow: {
       flexDirection: "row",
@@ -296,7 +306,9 @@ function createStyles(c: ColorTokens) {
       width: 44,
       height: 44,
       borderRadius: 22,
-      backgroundColor: "rgba(255,255,255,0.2)",
+      backgroundColor: "rgba(255,255,255,0.28)",
+      borderWidth: 1.5,
+      borderColor: "rgba(255,255,255,0.4)",
       alignItems: "center",
       justifyContent: "center",
       marginLeft: 12,

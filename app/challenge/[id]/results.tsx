@@ -783,9 +783,7 @@ export default function ResultsScreen() {
         </View>
 
         <Text style={styles.observationsSubtitle}>
-          Answer each question as a team (at least{" "}
-          {GAMIFICATION.OBSERVATION_MIN_CHARS} characters each). Short answers
-          are fine to start.
+          Answer as a team — even a short sentence counts!
         </Text>
 
         {visibleObservationQuestions.map((question, i) => {
@@ -827,7 +825,7 @@ export default function ResultsScreen() {
             activeOpacity={0.75}
           >
             <Text style={styles.moreQuestionsText}>
-              {showAllQuestions ? "Show fewer questions" : "Add more reflection"}
+              {showAllQuestions ? "Show fewer questions" : "Add more questions"}
             </Text>
           </TouchableOpacity>
         )}
@@ -836,7 +834,7 @@ export default function ResultsScreen() {
       <View style={styles.card}>
         <View style={styles.cardTitleRow}>
           <Ionicons name="star-outline" size={16} color={colors.text} />
-          <Text style={styles.cardTitle}>Rate this activity (required)</Text>
+          <Text style={styles.cardTitle}>Rate It</Text>
         </View>
 
         <View style={styles.starsRow}>
@@ -848,7 +846,7 @@ export default function ResultsScreen() {
             >
               <Ionicons
                 name={rating >= s ? "star" : "star-outline"}
-                size={40}
+                size={46}
                 color={rating >= s ? colors.warning : colors.border}
               />
             </TouchableOpacity>
@@ -857,7 +855,7 @@ export default function ResultsScreen() {
 
         <View style={styles.ratingNote}>
           <Text style={styles.ratingNoteText}>
-            Your rating helps improve the activity.
+            How fun was it? Your rating helps the team.
           </Text>
         </View>
       </View>
@@ -865,10 +863,10 @@ export default function ResultsScreen() {
       <View style={styles.card}>
         <View style={styles.cardTitleRow}>
           <Ionicons name="chatbubble-outline" size={16} color={colors.text} />
-          <Text style={styles.cardTitle}>Team Comment (optional)</Text>
+          <Text style={styles.cardTitle}>Team Notes</Text>
         </View>
         <Text style={styles.commentHint}>
-          Anything else your team wants to add? Shout-outs, surprises, or what you would try next time.
+          Shout-outs, surprises, what went wrong — anything goes!
         </Text>
         <TextInput
           style={[styles.commentInput, comment.trim() ? styles.commentInputFilled : null]}
@@ -891,7 +889,7 @@ export default function ResultsScreen() {
         disabled={isSubmitting}
       >
         <Text style={styles.claimBtnText}>
-          {isSubmitting ? "Submitting..." : "Claim Experiment"}
+          {isSubmitting ? "Saving..." : "Claim Reward"}
         </Text>
       </Pressable>
 
@@ -944,7 +942,7 @@ export default function ResultsScreen() {
           );
         }}
       >
-        <Text style={styles.redoLinkText}>↺ Redo the experiment</Text>
+        <Text style={styles.redoLinkText}>↺ Try Again</Text>
       </TouchableOpacity>
 
       <View style={{ height: 30 }} />

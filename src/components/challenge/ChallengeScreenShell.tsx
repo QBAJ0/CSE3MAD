@@ -134,7 +134,7 @@ export default function ChallengeScreenShell({
         </View>
         <Text style={shell.title}>Record results</Text>
         <Text style={shell.subtitle}>
-          Fill the required fields. Photos, videos, and GPS add evidence.
+          Complete the fields. Photos, GPS, and video boost your score.
         </Text>
       </View>
 
@@ -200,7 +200,7 @@ export default function ChallengeScreenShell({
           onPress={onAddMore}
           activeOpacity={0.75}
         >
-          <Text style={shell.addMoreText}>+ Add another test</Text>
+          <Text style={shell.addMoreText}>+ Add Another Test</Text>
         </TouchableOpacity>
       )}
 

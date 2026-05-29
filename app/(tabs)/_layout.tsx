@@ -72,7 +72,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="activity"
         options={{
-          title: 'Challenges',
+          title: 'Missions',
           tabBarIcon: ({ focused, color }) => (
             <TabIcon
               name="flash-outline"

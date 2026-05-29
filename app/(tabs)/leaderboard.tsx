@@ -65,9 +65,9 @@ export default function LeaderboardScreen() {
             <Text style={styles.heroStatText}>{leaderboard.length} teams</Text>
           </View>
         </View>
-        <Text style={styles.title}>Team Rankings</Text>
+        <Text style={styles.title}>Top Scientists</Text>
         <Text style={styles.subtitle}>
-          Who is leading the lab? Complete challenges to climb the board.
+          Who's winning the lab? Finish challenges to move up!
         </Text>
       </View>
 
@@ -95,7 +95,7 @@ export default function LeaderboardScreen() {
       {/* ── Your rank spotlight ── */}
       {yourEntry && yourEntry.rank > 3 && (
         <View style={styles.yourSpotlight}>
-          <Text style={styles.yourSpotlightLabel}>YOUR RANK</Text>
+          <Text style={styles.yourSpotlightLabel}>YOUR SPOT</Text>
           <Text style={styles.yourSpotlightRank}>#{yourEntry.rank}</Text>
           <Text style={styles.yourSpotlightPoints}>{yourEntry.challengesCompleted} done</Text>
         </View>
@@ -106,7 +106,7 @@ export default function LeaderboardScreen() {
         <View style={styles.podiumWrapper}>
           <View style={styles.sectionHeaderRow}>
             <Ionicons name="sparkles-outline" size={16} color={colors.cta} />
-            <Text style={styles.podiumLabel}>Top Performers</Text>
+            <Text style={styles.podiumLabel}>Top Teams</Text>
           </View>
 
           <View style={styles.podiumRow}>
@@ -146,7 +146,7 @@ export default function LeaderboardScreen() {
                       <Text style={styles.podiumRankText}>{RANK_LABEL[rank]}</Text>
                       <Text style={styles.podiumName} numberOfLines={2}>{entry.teamName}</Text>
                       <Text style={styles.podiumXP}>{entry.challengesCompleted}</Text>
-                      <Text style={styles.podiumXPLabel}>done</Text>
+                      <Text style={styles.podiumXPLabel}>finished</Text>
                     </View>
                   </View>
                 );
@@ -160,9 +160,9 @@ export default function LeaderboardScreen() {
       {leaderboard.length === 0 && (
         <View style={styles.emptyState}>
           <Ionicons name="trophy-outline" size={48} color={colors.textMuted} />
-          <Text style={styles.emptyTitle}>Launch your team</Text>
+          <Text style={styles.emptyTitle}>No teams yet!</Text>
           <Text style={styles.emptySubtitle}>
-            Complete your first challenge to land on the leaderboard.
+            Finish your first challenge to get on the board.
           </Text>
         </View>
       )}

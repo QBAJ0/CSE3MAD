@@ -50,7 +50,7 @@ export default function ActivityScreen() {
       {/* ── Header ── */}
       <View style={styles.header}>
         <View style={styles.titleRow}>
-          <Text style={styles.title}>Challenges</Text>
+          <Text style={styles.title}>Lab Missions</Text>
         </View>
         <View style={styles.progressPill}>
           <Text style={styles.progressPillText}>
@@ -67,7 +67,9 @@ export default function ActivityScreen() {
           <View style={styles.progressTrack}>
             <View style={[styles.progressFill, { width: `${completionPercent}%` }]} />
           </View>
-          <Text style={styles.progressLabel}>{completionPercent}% complete</Text>
+          <Text style={styles.progressLabel}>
+            {completionPercent === 100 ? "All done — legend!" : `${completionPercent}% done`}
+          </Text>
         </>
       )}
 
@@ -109,6 +111,7 @@ export default function ActivityScreen() {
               styles.card,
               isDone && styles.cardDone,
               isNext && styles.cardNext,
+              { borderLeftColor: challenge.color, borderLeftWidth: 4 },
             ]}
             onPress={() => router.push(`/challenge/${challenge.id}`)}
             activeOpacity={0.85}
@@ -225,7 +228,7 @@ function createStyles(c: ColorTokens) {
       overflow: "hidden",
       marginBottom: 4,
     },
-    progressFill: { height: "100%", backgroundColor: c.info, borderRadius: 4 },
+    progressFill: { height: "100%", backgroundColor: c.cta, borderRadius: 4 },
     progressLabel: {
       fontSize: 11,
       color: c.textMuted,
@@ -237,9 +240,9 @@ function createStyles(c: ColorTokens) {
     filterScroll: { marginHorizontal: -20, marginBottom: 20 },
     filterRow: { paddingHorizontal: 20, gap: 8 },
     chip: {
-      paddingHorizontal: 16,
+      paddingHorizontal: 18,
       paddingVertical: 9,
-      borderRadius: 12,
+      borderRadius: 999,
       backgroundColor: c.surface,
       borderWidth: 1.5,
       borderColor: c.border,
