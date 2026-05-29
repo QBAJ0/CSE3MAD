@@ -485,6 +485,7 @@ export default function ResultsScreen() {
         </View>
       )}
 
+      {!isHumanPerformance && (
       <View style={styles.card}>
         <View style={styles.cardTitleRow}>
           <Ionicons name="help-circle-outline" size={16} color={colors.text} />
@@ -497,10 +498,34 @@ export default function ResultsScreen() {
 
           return (
             <View key={prototype.index} style={styles.attemptCard}>
-              <Text style={styles.attemptTitle}>#{idx + 1}</Text>
+              <Text style={styles.attemptTitle}>
+                {challenge.id === 7 && prototype.measurements.condition
+                  ? String(prototype.measurements.condition)
+                  : `#${idx + 1}`}
+              </Text>
               <Text style={styles.attemptLine}>
                 Outcome: {outcomeText || "Not recorded"}
               </Text>
+              {challenge.id === 7 && (() => {
+                const raw = prototype.measurements.breathingData;
+                if (typeof raw !== "string" || !raw.trim()) return null;
+                try {
+                  const members = JSON.parse(raw) as Array<{ name: string; bpm: number }>;
+                  if (!Array.isArray(members) || members.length === 0) return null;
+                  return (
+                    <View style={styles.memberBreakdown}>
+                      {members.map((m, i) => (
+                        <View key={i} style={styles.memberRow}>
+                          <Text style={styles.memberName}>{m.name}</Text>
+                          <Text style={styles.memberBpm}>{Math.round(m.bpm)} bpm</Text>
+                        </View>
+                      ))}
+                    </View>
+                  );
+                } catch {
+                  return null;
+                }
+              })()}
               <Text style={styles.attemptLine}>
                 Prediction: {predictionDisplay || "Not recorded"}
               </Text>
@@ -537,6 +562,7 @@ export default function ResultsScreen() {
           );
         })}
       </View>
+      )}
 
       {soundMapPoints.length > 0 && (
         <View style={styles.mapCard}>
@@ -836,9 +862,7 @@ export default function ResultsScreen() {
               numberOfLines={3}
               textAlignVertical="top"
             />
-            {answerReady ? (
-              <Text style={styles.observationCountReady}>✓ Good answer</Text>
-            ) : answerLen > 0 ? (
+            {!answerReady && answerLen > 0 ? (
               <Text style={styles.observationCount}>
                 {GAMIFICATION.OBSERVATION_MIN_CHARS - answerLen} more characters needed
               </Text>
@@ -1060,6 +1084,21 @@ function createStyles(c: ColorTokens) {
       marginBottom: 6,
     },
     attemptLine: { fontSize: 13, color: c.textSecondary, marginBottom: 4 },
+    memberBreakdown: {
+      backgroundColor: c.backgroundSecondary,
+      borderRadius: 10,
+      paddingVertical: 6,
+      paddingHorizontal: 10,
+      marginBottom: 6,
+      gap: 4,
+    },
+    memberRow: {
+      flexDirection: "row" as const,
+      justifyContent: "space-between" as const,
+      alignItems: "center" as const,
+    },
+    memberName: { fontSize: 13, color: c.textSecondary, flex: 1 },
+    memberBpm: { fontSize: 13, fontWeight: "700" as const, color: c.text },
     attemptPrompt: {
       fontSize: 12,
       fontWeight: "700",
