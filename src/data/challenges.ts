@@ -672,12 +672,35 @@ export const CHALLENGES: Challenge[] = [
     estimatedMinutes: 15,
     difficultyLevels: ["primary", "highSchool"],
     measurements: [
+      {
+        key: "predictedOutcomeText",
+        label: "Who do you think will react fastest?",
+        recorder: "manualText",
+        placeholder: "e.g. Ava will be fastest because she plays sport",
+        optional: true,
+      },
+      {
+        key: "predictedOutcomeValue",
+        label: "Predicted fastest reaction time",
+        unit: "s",
+        recorder: "manualNumber",
+        placeholder: "e.g. 0.25",
+        optional: true,
+      },
       { key: "teamResults", label: "Team Results", recorder: "teamReaction" },
       { key: "location", label: "GPS Location", recorder: "gps" },
     ],
-    curriculumLinks: ["ACSIS130 - Collecting data"],
+    curriculumLinks: [
+      "ACSIS130 – Collecting and analysing data",
+      "ACMSP147 – Averages and variation",
+      "ACPPS057 – Understanding physical performance",
+    ],
     predictionPrompt: "Who do you think has the fastest reaction time in your team? Will the dominant hand always be faster?",
     extensionTip: "Try the test again after 5 minutes of exercise. Does your reaction time change when your heart rate is elevated?",
+    discussion:
+      "Reaction time measures how quickly the brain processes information and sends signals to muscles. " +
+      "Practice can improve speed and coordination. " +
+      "Comparing hands shows how dominance affects performance.",
     thingsToKnow: [
       {
         heading: "How fast is reaction time?",
