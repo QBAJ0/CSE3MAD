@@ -1,5 +1,4 @@
 import {
-  addDoc,
   collection,
   doc,
   getDoc,
@@ -7,20 +6,11 @@ import {
   orderBy,
   query,
   setDoc,
-  where,
 } from "firebase/firestore";
 import { auth, db } from "@/src/firebase";
-import { ActivityResult, Comment, LeaderboardEntry } from "../types";
+import { ActivityResult, LeaderboardEntry } from "../types";
 
-export type SyncFailReason = "offline" | "permission" | "unknown";
-
-export class CloudSyncError extends Error {
-  constructor(public readonly reason: SyncFailReason, cause?: unknown) {
-    super(`Cloud sync failed: ${reason}`);
-    this.name = "CloudSyncError";
-    if (cause instanceof Error) this.stack = cause.stack;
-  }
-}
+type SyncFailReason = "offline" | "permission" | "unknown";
 
 function classifyError(e: unknown): SyncFailReason {
   if (e && typeof e === "object" && "code" in e) {
@@ -382,64 +372,6 @@ export async function pushActivityToCloud(result: ActivityResult): Promise<boole
     });
     console.warn(`[leaderboard] pushActivityToCloud (${classifyError(e)}):`, e);
     return false;
-  }
-}
-
-export async function postComment(
-  comment: Omit<Comment, "id">,
-): Promise<boolean> {
-  const ownerUid = currentOwnerUid();
-  const path = "comments/<auto-id>";
-  logWriteStart({
-    op: "postComment",
-    path,
-    ownerUid,
-    teamId: comment.discriminator,
-  });
-  if (!db || !ownerUid) {
-    logWriteEnd({
-      op: "postComment",
-      path,
-      ok: false,
-      ownerUid,
-      error: "missing db or auth.currentUser",
-    });
-    return false;
-  }
-  try {
-    await addDoc(collection(db, "comments"), { ...comment, ownerUid });
-    logWriteEnd({
-      op: "postComment",
-      path,
-      ok: true,
-      ownerUid,
-    });
-    return true;
-  } catch (e) {
-    logWriteEnd({
-      op: "postComment",
-      path,
-      ok: false,
-      ownerUid,
-      error: e,
-    });
-    console.warn(`[leaderboard] postComment (${classifyError(e)}):`, e);
-    return false;
-  }
-}
-
-export async function fetchComments(challengeId: number): Promise<Comment[]> {
-  if (!db) return [];
-  try {
-    const q = query(
-      collection(db, "comments"),
-      where("challengeId", "==", challengeId),
-      orderBy("createdAt", "desc"),
-    );
-    const snap = await getDocs(q);
-    return snap.docs.map((d) => ({ id: d.id, ...d.data() } as Comment));
-  } catch (e) {
-    throw new CloudSyncError(classifyError(e), e);
   }
 }
 

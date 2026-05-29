@@ -30,7 +30,6 @@ describe("navigation route smoke", () => {
     expect(require("../app/challenge/[id]/index").default).toBeDefined();
     expect(require("../app/challenge/[id]/record").default).toBeDefined();
     expect(require("../app/challenge/[id]/results").default).toBeDefined();
-    expect(require("../app/challenge/[id]/details").default).toBeDefined();
   });
 
   it("imports root layout", () => {

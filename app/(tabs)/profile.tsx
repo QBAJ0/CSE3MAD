@@ -290,16 +290,7 @@ export default function ProfileScreen() {
             const gpsAttached = Boolean(activity.location);
 
             return (
-              <TouchableOpacity
-                key={activity.id}
-                style={styles.historyCard}
-                onPress={() =>
-                  router.push(
-                    `/challenge/${activity.challengeId}/details?resultId=${activity.id}`,
-                  )
-                }
-                activeOpacity={0.85}
-              >
+              <View key={activity.id} style={styles.historyCard}>
                 <View style={styles.historyTopRow}>
                   <View style={styles.historyIcon}>
                     <Ionicons name={challenge.icon as any} size={22} color={colors.info} />
@@ -341,7 +332,7 @@ export default function ProfileScreen() {
                     {activity.reflection}
                   </Text>
                 ) : null}
-              </TouchableOpacity>
+              </View>
             );
           })
         )}

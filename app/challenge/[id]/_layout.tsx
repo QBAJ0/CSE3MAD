@@ -18,7 +18,6 @@ export default function ChallengeIdLayout() {
       />
       <Stack.Screen name="record" options={{ title: "Record Data" }} />
       <Stack.Screen name="results" options={{ title: "Review & Submit" }} />
-      <Stack.Screen name="details" options={{ title: "Details" }} />
     </Stack>
   );
 }

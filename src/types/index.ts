@@ -107,16 +107,6 @@ export type ActivityResult = {
 
 export type CompletedActivity = ActivityResult;
 
-export type Comment = {
-  id: string;
-  activityId: string;
-  challengeId: number;
-  teamName: string;
-  discriminator: string;
-  text: string;
-  createdAt: string;
-};
-
 export type LeaderboardEntry = {
   teamName: string;
   discriminator: string;
