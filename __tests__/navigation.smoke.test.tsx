@@ -2,12 +2,15 @@ import React from "react";
 import { render } from "@testing-library/react-native";
 import { ActivityProvider } from "@/src/context/ActivityContext";
 import { TeamProvider } from "@/src/context/TeamContext";
+import { ThemeProvider } from "@/src/theme/themeContext";
 
 function AppProviders({ children }: { children: React.ReactNode }) {
   return (
-    <TeamProvider>
-      <ActivityProvider>{children}</ActivityProvider>
-    </TeamProvider>
+    <ThemeProvider>
+      <TeamProvider>
+        <ActivityProvider>{children}</ActivityProvider>
+      </TeamProvider>
+    </ThemeProvider>
   );
 }
 
@@ -34,11 +37,15 @@ describe("navigation route smoke", () => {
     expect(require("../app/_layout").default).toBeDefined();
   });
 
-  it("renders welcome onboarding screen", () => {
+  it("renders welcome onboarding screen", async () => {
     const WelcomeScreen = require("../app/(onboarding)/welcome").default;
-    const { getAllByText, getByText } = render(<WelcomeScreen />);
-    expect(getAllByText("STEMM").length).toBeGreaterThan(0);
-    expect(getByText("LAB")).toBeTruthy();
+    const { findAllByText, findByText } = render(
+      <AppProviders>
+        <WelcomeScreen />
+      </AppProviders>,
+    );
+    expect((await findAllByText("STEMM")).length).toBeGreaterThan(0);
+    expect(await findByText("LAB")).toBeTruthy();
   });
 
   it("renders challenge brief for id 1", async () => {
