@@ -2,7 +2,7 @@ import { getDifficultyFromYearLevels } from "@/src/utils/difficulty";
 import { TeamMember } from "@/src/types";
 
 function member(grade: string): TeamMember {
-  return { name: "Test", year: grade, grade };
+  return { name: "Test", grade };
 }
 
 describe("getDifficultyFromYearLevels", () => {

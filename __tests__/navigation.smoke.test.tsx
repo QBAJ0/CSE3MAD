@@ -1,8 +1,8 @@
-import React from "react";
-import { render } from "@testing-library/react-native";
 import { ActivityProvider } from "@/src/context/ActivityContext";
 import { TeamProvider } from "@/src/context/TeamContext";
 import { ThemeProvider } from "@/src/theme/themeContext";
+import { render } from "@testing-library/react-native";
+import React from "react";
 
 function AppProviders({ children }: { children: React.ReactNode }) {
   return (
@@ -48,13 +48,12 @@ describe("navigation route smoke", () => {
   });
 
   it("renders challenge brief for id 1", async () => {
-    const ChallengeBriefScreen =
-      require("../app/challenge/[id]/index").default;
+    const ChallengeBriefScreen = require("../app/challenge/[id]/index").default;
     const { findByText } = render(
       <AppProviders>
         <ChallengeBriefScreen />
       </AppProviders>,
     );
-    expect(await findByText(/Start testing/i)).toBeTruthy();
+    expect(await findByText(/Start Challenge/i)).toBeTruthy();
   });
 });
