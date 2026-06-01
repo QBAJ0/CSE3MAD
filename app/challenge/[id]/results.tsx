@@ -27,7 +27,9 @@ import { getChallengeById } from "../../../src/data/challenges";
 import type { ColorTokens } from "../../../src/theme/colors";
 import { useTheme } from "../../../src/theme/themeContext";
 import {
+  HandFanDerived,
   ParachuteDerived,
+  deriveHandFan,
   deriveParachute,
   gForceRiskCategory,
 } from "../../../src/services/physics";
@@ -351,6 +353,16 @@ export default function ResultsScreen() {
         )
       : null;
 
+  const handFanPhysics: (HandFanDerived | null)[] | null =
+    challenge.id === 3 && draft.difficulty === "highSchool"
+      ? draft.prototypes.map((p) =>
+          deriveHandFan({
+            bendAngleDegrees: parseFloat(String(p.measurements.bendAngle ?? "")),
+            material: String(p.measurements.material ?? ""),
+          }),
+        )
+      : null;
+
   const tableKeys = challenge.measurements
     .filter(
       (m) =>
@@ -496,6 +508,64 @@ export default function ResultsScreen() {
         </View>
       )}
 
+      {challenge.id === 6 && (() => {
+        type ReactionEntry = { name: string; dominantTime?: number; nonDominantTime?: number; tracingScore?: number };
+        const allEntries: ReactionEntry[] = [];
+        draft.prototypes.forEach((p) => {
+          const raw = p.measurements.teamResults;
+          if (typeof raw !== "string" || !raw.trim()) return;
+          try {
+            const parsed = JSON.parse(raw) as ReactionEntry[];
+            if (Array.isArray(parsed)) allEntries.push(...parsed);
+          } catch {}
+        });
+        if (allEntries.length === 0) return null;
+
+        const domTimes = allEntries.map((e) => e.dominantTime).filter((v): v is number => v != null);
+        const nonTimes = allEntries.map((e) => e.nonDominantTime).filter((v): v is number => v != null);
+        const avg = (arr: number[]) => arr.reduce((s, v) => s + v, 0) / arr.length;
+
+        return (
+          <View style={styles.card}>
+            <View style={styles.cardTitleRow}>
+              <Ionicons name="pulse-outline" size={16} color={colors.text} />
+              <Text style={styles.cardTitle}>Reaction Board Results</Text>
+            </View>
+
+            <View style={[styles.tableRow, styles.tableHeaderRow]}>
+              <Text style={[styles.tableCell, styles.tableHeaderCell, styles.designCell]}>Member</Text>
+              <Text style={[styles.tableCell, styles.tableHeaderCell]}>Dom (s)</Text>
+              <Text style={[styles.tableCell, styles.tableHeaderCell]}>Non-dom (s)</Text>
+              <Text style={[styles.tableCell, styles.tableHeaderCell]}>Tracing</Text>
+            </View>
+            {allEntries.map((e, i) => (
+              <View key={i} style={[styles.tableRow, i % 2 === 0 && styles.tableRowAlt]}>
+                <Text style={[styles.tableCell, styles.designCell, styles.tableCellBold]}>{e.name ?? `Member ${i + 1}`}</Text>
+                <Text style={styles.tableCell}>{e.dominantTime != null ? e.dominantTime.toFixed(3) : "—"}</Text>
+                <Text style={styles.tableCell}>{e.nonDominantTime != null ? e.nonDominantTime.toFixed(3) : "—"}</Text>
+                <Text style={styles.tableCell}>{e.tracingScore != null ? `${Math.round(e.tracingScore)}%` : "—"}</Text>
+              </View>
+            ))}
+            {domTimes.length > 0 && (
+              <View style={styles.reactionSummaryRow}>
+                <Text style={styles.reactionSummaryLabel}>Best dominant:</Text>
+                <Text style={styles.reactionSummaryValue}>{Math.min(...domTimes).toFixed(3)} s</Text>
+                <Text style={styles.reactionSummaryLabel}>Team avg:</Text>
+                <Text style={styles.reactionSummaryValue}>{avg(domTimes).toFixed(3)} s</Text>
+              </View>
+            )}
+            {nonTimes.length > 0 && (
+              <View style={styles.reactionSummaryRow}>
+                <Text style={styles.reactionSummaryLabel}>Best non-dom:</Text>
+                <Text style={styles.reactionSummaryValue}>{Math.min(...nonTimes).toFixed(3)} s</Text>
+                <Text style={styles.reactionSummaryLabel}>Team avg:</Text>
+                <Text style={styles.reactionSummaryValue}>{avg(nonTimes).toFixed(3)} s</Text>
+              </View>
+            )}
+          </View>
+        );
+      })()}
+
       {!isHumanPerformance && (
       <View style={styles.card}>
         <View style={styles.cardTitleRow}>
@@ -630,6 +700,77 @@ export default function ResultsScreen() {
         </View>
       )}
 
+      {challenge.id === 7 && (() => {
+        type BpmEntry = { name: string; bpm: number };
+        type ConditionData = { condition: string; members: BpmEntry[]; avg: number };
+        const conditions: ConditionData[] = draft.prototypes
+          .map((p) => {
+            const condition = String(p.measurements.condition ?? `Condition ${p.index}`);
+            const raw = p.measurements.breathingData;
+            if (typeof raw !== "string" || !raw.trim()) return null;
+            try {
+              const members = JSON.parse(raw) as BpmEntry[];
+              if (!Array.isArray(members) || members.length === 0) return null;
+              const avg = members.reduce((s, m) => s + (m.bpm ?? 0), 0) / members.length;
+              return { condition, members, avg };
+            } catch { return null; }
+          })
+          .filter((c): c is ConditionData => c != null);
+
+        if (conditions.length < 2) return null;
+
+        const baseline = conditions.find((c) => c.condition.toLowerCase().includes("rest"));
+        const exercises = conditions.filter((c) => !c.condition.toLowerCase().includes("rest"));
+
+        return (
+          <View style={styles.card}>
+            <View style={styles.cardTitleRow}>
+              <Ionicons name="fitness-outline" size={16} color={colors.text} />
+              <Text style={styles.cardTitle}>Before vs After Comparison</Text>
+            </View>
+
+            {baseline && (
+              <View style={styles.breathingBaselineRow}>
+                <Text style={styles.breathingBaselineLabel}>
+                  Resting avg: {Math.round(baseline.avg)} bpm
+                </Text>
+              </View>
+            )}
+
+            {exercises.map((ex, i) => {
+              const increase = baseline ? ex.avg - baseline.avg : null;
+              return (
+                <View key={i} style={styles.breathingConditionBlock}>
+                  <Text style={styles.breathingConditionTitle}>{ex.condition}</Text>
+                  <View style={styles.memberBreakdown}>
+                    {ex.members.map((m, j) => {
+                      const baselineMember = baseline?.members.find((b) => b.name === m.name);
+                      const diff = baselineMember != null ? m.bpm - baselineMember.bpm : null;
+                      return (
+                        <View key={j} style={styles.memberRow}>
+                          <Text style={styles.memberName}>{m.name}</Text>
+                          <Text style={styles.memberBpm}>{Math.round(m.bpm)} bpm</Text>
+                          {diff != null && (
+                            <Text style={[styles.memberBpm, { color: diff > 0 ? "#EF4444" : "#0F766E" }]}>
+                              {diff > 0 ? "+" : ""}{Math.round(diff)}
+                            </Text>
+                          )}
+                        </View>
+                      );
+                    })}
+                  </View>
+                  {increase != null && (
+                    <Text style={styles.breathingIncrease}>
+                      Team avg increase: +{Math.round(increase)} bpm
+                    </Text>
+                  )}
+                </View>
+              );
+            })}
+          </View>
+        );
+      })()}
+
       {hasVideoEvidence && (
         <View style={styles.card}>
           <View style={styles.cardTitleRow}>
@@ -761,6 +902,52 @@ export default function ResultsScreen() {
                     </View>
                   </View>
                 )}
+              </View>
+            );
+          })}
+        </View>
+      )}
+
+      {handFanPhysics && handFanPhysics.some((c) => c != null) && (
+        <View style={styles.card}>
+          <View style={styles.cardTitleRow}>
+            <Ionicons name="flask-outline" size={16} color={colors.text} />
+            <Text style={styles.cardTitle}>Step-by-Step Physics (F ≈ k × θ)</Text>
+          </View>
+          <Text style={styles.physicsIntro}>
+            Force estimated from your recorded bend angle and material stiffness.
+          </Text>
+          {handFanPhysics.map((calc, i) => {
+            if (!calc) return null;
+            const proto = draft.prototypes[i];
+            const material = String(proto?.measurements.material ?? "");
+            const deg = parseFloat(String(proto?.measurements.bendAngle ?? ""));
+            return (
+              <View key={i} style={styles.physicsBlock}>
+                <Text style={styles.physicsBlockLabel}>Design {i + 1}</Text>
+                <View style={styles.physicsStep}>
+                  <Text style={styles.physicsStepNum}>1. Convert degrees → radians</Text>
+                  <Text style={styles.physicsFormula}>
+                    θ = {deg.toFixed(1)}° × π ÷ 180
+                  </Text>
+                  <Text style={styles.physicsResult}>
+                    θ = {calc.bendAngleRadians.toFixed(4)} rad
+                  </Text>
+                </View>
+                <View style={styles.physicsStep}>
+                  <Text style={styles.physicsStepNum}>2. Material stiffness (k)</Text>
+                  <Text style={styles.physicsFormula}>{material}</Text>
+                  <Text style={styles.physicsResult}>k = {calc.stiffnessK} N/rad</Text>
+                </View>
+                <View style={[styles.physicsStep, styles.physicsStepGForce]}>
+                  <Text style={styles.physicsStepNum}>3. Estimated air force</Text>
+                  <Text style={styles.physicsFormula}>
+                    F = k × θ = {calc.stiffnessK} × {calc.bendAngleRadians.toFixed(4)}
+                  </Text>
+                  <Text style={styles.physicsResult}>
+                    F ≈ {calc.estimatedForceN.toFixed(4)} N
+                  </Text>
+                </View>
               </View>
             );
           })}
@@ -996,6 +1183,14 @@ function createStyles(c: ColorTokens) {
     headerMeta: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6, flexWrap: "wrap", justifyContent: "center" },
     headerMetaText: { fontSize: 12, color: c.textSecondary },
     headerMetaDot: { fontSize: 12, color: c.textSecondary },
+    reactionSummaryRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingTop: 6, flexWrap: "wrap" },
+    reactionSummaryLabel: { fontSize: 12, color: c.textSecondary },
+    reactionSummaryValue: { fontSize: 13, fontWeight: "700", color: c.text },
+    breathingBaselineRow: { paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: c.border, marginBottom: 8 },
+    breathingBaselineLabel: { fontSize: 13, fontWeight: "700", color: c.text },
+    breathingConditionBlock: { paddingTop: 8, borderTopWidth: 1, borderTopColor: c.border, marginTop: 4 },
+    breathingConditionTitle: { fontSize: 13, fontWeight: "700", color: c.text, marginBottom: 4 },
+    breathingIncrease: { fontSize: 12, color: c.textSecondary, marginTop: 4 },
 
     penaltyBanner: {
       flexDirection: "row",

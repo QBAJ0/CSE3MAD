@@ -9,7 +9,7 @@ import { ensureFirebaseAuth } from "../services/authSession";
 import { syncChallengeResultToCloud } from "../services/challengeCloudSync";
 import { persistChallengeResultToSqlite } from "../services/challengeResultLocal";
 import { enqueueMediaUploadsForResult } from "../services/mediaUploadQueue";
-import { deriveParachute } from "../services/physics";
+import { deriveHandFan, deriveParachute } from "../services/physics";
 import {
   ActivityResult,
   DifficultyMode,
@@ -168,6 +168,19 @@ function buildDerivedByPrototype(
       Object.entries(calc).forEach(([key, value]) => {
         if (value != null && Number.isFinite(value)) values[key] = value;
       });
+    }
+
+    if (challengeId === 3) {
+      const bendAngle = numberFromMeasurement(measurements.bendAngle);
+      const material = String(measurements.material ?? "");
+      if (bendAngle != null && material) {
+        const calc = deriveHandFan({ bendAngleDegrees: bendAngle, material });
+        if (calc) {
+          values.bendAngleRadians = calc.bendAngleRadians;
+          values.stiffnessK = calc.stiffnessK;
+          values.estimatedForceN = calc.estimatedForceN;
+        }
+      }
     }
 
     if (Object.keys(values).length > 0) {

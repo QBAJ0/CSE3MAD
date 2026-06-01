@@ -297,7 +297,11 @@ export default function ProfileScreen() {
             const gpsAttached = Boolean(activity.location);
 
             return (
-              <View key={activity.id} style={styles.historyCard}>
+              <Pressable
+                key={activity.id}
+                style={({ pressed }) => [styles.historyCard, pressed && styles.pressed]}
+                onPress={() => router.push(`/results/${activity.id}`)}
+              >
                 <View style={styles.historyTopRow}>
                   <View style={[styles.historyIcon, { backgroundColor: accent.tint }]}>
                     <Ionicons name={challenge.icon as any} size={22} color={accent.accent} />
@@ -339,7 +343,7 @@ export default function ProfileScreen() {
                     {activity.reflection}
                   </Text>
                 ) : null}
-              </View>
+              </Pressable>
             );
           })
         )}
