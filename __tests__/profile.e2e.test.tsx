@@ -1,3 +1,20 @@
+// Mock storage so the profile screen gets predictable data without touching AsyncStorage.
+jest.mock("@/src/utils/storage", () => ({
+  storage: {
+    getTeam: jest.fn().mockResolvedValue(null),
+    getCompletedActivities: jest.fn().mockResolvedValue([]),
+    getReminderHour: jest.fn().mockResolvedValue(19),
+    getReminderMinute: jest.fn().mockResolvedValue(0),
+    getStreak: jest.fn().mockResolvedValue(0),
+    saveReminderHour: jest.fn().mockResolvedValue(undefined),
+    saveReminderMinute: jest.fn().mockResolvedValue(undefined),
+    clearAll: jest.fn().mockResolvedValue(undefined),
+    clearTeam: jest.fn().mockResolvedValue(undefined),
+  },
+  DEFAULT_REMINDER_HOUR: 19,
+  DEFAULT_REMINDER_MINUTE: 0,
+}));
+
 // expo-battery is used by BatteryStatusCard.native.tsx — mock listeners so .remove() exists.
 jest.mock("expo-battery", () => ({
   getBatteryLevelAsync: jest.fn().mockResolvedValue(0.75),
