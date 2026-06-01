@@ -412,6 +412,19 @@ export default function ResultsScreen() {
         </View>
         <Text style={styles.headerTitle}>Reflect</Text>
         <Text style={styles.headerSubtitle}>{challenge.title}</Text>
+        <View style={styles.headerMeta}>
+          <Text style={styles.headerMetaText}>
+            {team.teamName} {team.discriminator}
+          </Text>
+          <Text style={styles.headerMetaDot}>·</Text>
+          <Text style={styles.headerMetaText}>
+            {draft.difficulty === "highSchool" ? "High School" : "Primary"}
+          </Text>
+          <Text style={styles.headerMetaDot}>·</Text>
+          <Text style={styles.headerMetaText}>
+            {new Date().toLocaleDateString()}
+          </Text>
+        </View>
       </View>
 
       {hasTimeExpired && (
@@ -980,6 +993,9 @@ function createStyles(c: ColorTokens) {
     },
     headerTitle: { fontSize: 28, fontWeight: "800", color: c.text },
     headerSubtitle: { fontSize: 14, color: c.textSecondary, marginTop: 2 },
+    headerMeta: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6, flexWrap: "wrap", justifyContent: "center" },
+    headerMetaText: { fontSize: 12, color: c.textSecondary },
+    headerMetaDot: { fontSize: 12, color: c.textSecondary },
 
     penaltyBanner: {
       flexDirection: "row",

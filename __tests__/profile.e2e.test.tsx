@@ -1,3 +1,5 @@
+// @author Stacey
+
 // Mock storage so the profile screen gets predictable data without touching AsyncStorage.
 jest.mock("@/src/utils/storage", () => ({
   storage: {

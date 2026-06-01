@@ -1,3 +1,5 @@
+// @author QB
+
 import {
   buildIncompleteSummary,
   getRequiredMeasurements,

@@ -1,3 +1,5 @@
+// @author Stacey
+
 import {
   computeMovementUnits,
   computeSmoothnessScore,

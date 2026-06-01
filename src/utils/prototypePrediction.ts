@@ -159,13 +159,19 @@ function parseTeamReaction(raw: unknown): string {
   try {
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed) && parsed.length > 0) {
-      const values = parsed
-        .map((entry) => num((entry as Record<string, unknown>).average))
-        .filter((value): value is number => value != null);
-      if (values.length > 0) {
-        const fastest = Math.min(...values);
-        return `${fastest.toFixed(3)} s fastest team average`;
-      }
+      type Entry = Record<string, unknown>;
+      const dominant = parsed
+        .map((e) => num((e as Entry).dominantTime))
+        .filter((v): v is number => v != null);
+      const nonDominant = parsed
+        .map((e) => num((e as Entry).nonDominantTime))
+        .filter((v): v is number => v != null);
+      const parts: string[] = [];
+      if (dominant.length > 0)
+        parts.push(`${Math.min(...dominant).toFixed(3)} s fastest (dominant)`);
+      if (nonDominant.length > 0)
+        parts.push(`${Math.min(...nonDominant).toFixed(3)} s (non-dominant)`);
+      if (parts.length > 0) return parts.join(" | ");
     }
   } catch {
     return "";
@@ -175,7 +181,8 @@ function parseTeamReaction(raw: unknown): string {
 
 export function getPrototypePredictionText(prototype: Prototype): string {
   const m = prototype.measurements;
-  return String(m.predictedOutcomeText ?? m.predictedMovementText ?? "").trim();
+  // designPrediction is the parachute-specific per-design text field (challenge 1)
+  return String(m.predictedOutcomeText ?? m.predictedMovementText ?? m.designPrediction ?? "").trim();
 }
 
 export function getPrototypePredictionValue(prototype: Prototype): string {

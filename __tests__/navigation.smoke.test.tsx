@@ -1,3 +1,5 @@
+// @author QB
+
 import { ActivityProvider } from "@/src/context/ActivityContext";
 import { TeamProvider } from "@/src/context/TeamContext";
 import { ThemeProvider } from "@/src/theme/themeContext";

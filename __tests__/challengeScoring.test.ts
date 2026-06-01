@@ -1,3 +1,5 @@
+// @author QB
+
 import { GAMIFICATION, SCORING } from "@/src/config/constants";
 import {
   buildChallengePointsBreakdown,

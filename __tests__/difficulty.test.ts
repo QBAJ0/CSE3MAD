@@ -1,3 +1,5 @@
+// @author Stacey
+
 import { getDifficultyFromYearLevels } from "@/src/utils/difficulty";
 import { TeamMember } from "@/src/types";
 
