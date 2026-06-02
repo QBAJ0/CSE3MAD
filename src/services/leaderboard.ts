@@ -13,7 +13,7 @@ import {
   buildLeaderboardFirestoreDoc,
   LeaderboardFirestoreDoc,
 } from "./leaderboardFirestore";
-import { ActivityResult, LeaderboardEntry } from "../types";
+import { ActivityResult, LeaderboardEntry, TeamData } from "../types";
 
 type SyncFailReason = "offline" | "permission" | "unknown";
 
@@ -197,6 +197,54 @@ export async function pushResultToCloud(result: ActivityResult): Promise<boolean
       error: e,
     });
     return false;
+  }
+}
+
+const TEAMS_COLLECTION = "teams";
+
+export async function saveTeamToCloud(team: TeamData): Promise<void> {
+  if (!db) return;
+  const uid = currentOwnerUid();
+  if (!uid) return;
+  try {
+    await setDoc(doc(db, TEAMS_COLLECTION, team.discriminator), {
+      teamName: team.teamName,
+      discriminator: team.discriminator,
+      members: team.members,
+      createdAt: team.createdAt,
+    });
+    console.log("[firestore:team] save ok", team.discriminator);
+  } catch (e) {
+    console.warn("[firestore:team] save fail", e);
+  }
+}
+
+export async function lookupTeamFromCloud(
+  teamName: string,
+  discriminator: string,
+): Promise<TeamData | null> {
+  if (!db) return null;
+  try {
+    const snap = await getDoc(doc(db, TEAMS_COLLECTION, discriminator));
+    if (!snap.exists()) return null;
+    const data = snap.data() as {
+      teamName: string;
+      discriminator: string;
+      members: TeamData["members"];
+      createdAt: string;
+    };
+    if (data.teamName !== teamName) return null;
+    return {
+      teamName: data.teamName,
+      discriminator: data.discriminator,
+      members: data.members ?? [],
+      createdAt: data.createdAt,
+      totalPoints: 0,
+      completedChallenges: [],
+    };
+  } catch (e) {
+    console.warn("[firestore:team] lookup fail", e);
+    return null;
   }
 }
 

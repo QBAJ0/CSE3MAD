@@ -20,6 +20,7 @@ import { useTeam } from "../../src/context/TeamContext";
 import type { ColorTokens } from "../../src/theme/colors";
 import { useTheme } from "../../src/theme/themeContext";
 import { ensureFirebaseAuth } from "../../src/services/authSession";
+import { saveTeamToCloud } from "../../src/services/leaderboard";
 
 const YEAR_OPTIONS = ["Year 5", "Year 6", "Year 7", "Year 8", "Year 9", "Year 10"];
 
@@ -84,12 +85,25 @@ export default function RegisterScreen() {
     }
 
     setIsCreating(true);
+    const createdAt = new Date().toISOString();
     await setTeamData({
       teamName: trimmedName,
       discriminator,
       members: filledMembers,
     });
-    void ensureFirebaseAuth().catch(() => {});
+    // Save team to Firestore so teammates can find it via Join Team
+    ensureFirebaseAuth()
+      .then(() =>
+        saveTeamToCloud({
+          teamName: trimmedName,
+          discriminator,
+          members: filledMembers,
+          createdAt,
+          totalPoints: 0,
+          completedChallenges: [],
+        }),
+      )
+      .catch(() => {});
     router.push("/(onboarding)/team-confirmation");
     setIsCreating(false);
   };

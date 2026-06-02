@@ -44,6 +44,12 @@ export function VideoRecorder({
     requestMicPermission();
   }, []);
 
+  // Sync local videoUri when the parent switches to a different test (existingUri changes).
+  // useState only runs once on mount, so without this the test-1 video persists into test-2+.
+  useEffect(() => {
+    setVideoUri(existingUri || null);
+  }, [existingUri]);
+
   const saveVideo = (uri: string) => {
     setVideoUri(uri);
     onCapture(uri);

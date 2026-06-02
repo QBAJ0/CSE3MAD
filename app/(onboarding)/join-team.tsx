@@ -20,6 +20,8 @@ import { useTeam } from "../../src/context/TeamContext";
 import type { ColorTokens } from "../../src/theme/colors";
 import { useTheme } from "../../src/theme/themeContext";
 import { storage } from "../../src/utils/storage";
+import { ensureFirebaseAuth } from "../../src/services/authSession";
+import { lookupTeamFromCloud } from "../../src/services/leaderboard";
 
 export default function JoinTeamScreen() {
   const { setTeamData } = useTeam();
@@ -41,33 +43,45 @@ export default function JoinTeamScreen() {
 
     setIsJoining(true);
 
+    // Check local storage first (same device)
     const savedTeam = await storage.getTeam();
-
-    if (
-      savedTeam &&
-      savedTeam.teamName === name &&
-      savedTeam.discriminator === id
-    ) {
+    if (savedTeam && savedTeam.teamName === name && savedTeam.discriminator === id) {
       await setTeamData({
         teamName: savedTeam.teamName,
         discriminator: savedTeam.discriminator,
         members: savedTeam.members,
       });
       router.push("/(onboarding)/team-confirmation");
-    } else {
-      setIsJoining(false);
-      Alert.alert(
-        "Team Not Found",
-        "We couldn't find that team. Double-check the name and ID, or create a new team.",
-        [
-          { text: "Try Again", style: "cancel" },
-          {
-            text: "Create Team",
-            onPress: () => router.replace("/(onboarding)/register"),
-          },
-        ]
-      );
+      return;
     }
+
+    // Fall back to Firestore so students on different devices can join
+    try {
+      await ensureFirebaseAuth();
+      const cloudTeam = await lookupTeamFromCloud(name, id);
+      if (cloudTeam) {
+        await setTeamData({
+          teamName: cloudTeam.teamName,
+          discriminator: cloudTeam.discriminator,
+          members: cloudTeam.members,
+        });
+        router.push("/(onboarding)/team-confirmation");
+        return;
+      }
+    } catch {}
+
+    setIsJoining(false);
+    Alert.alert(
+      "Team Not Found",
+      "We couldn't find that team. Double-check the name and ID, or create a new team.",
+      [
+        { text: "Try Again", style: "cancel" },
+        {
+          text: "Create Team",
+          onPress: () => router.replace("/(onboarding)/register"),
+        },
+      ]
+    );
   };
 
   const canJoin = teamName.trim().length > 0 && teamId.trim().length > 0;
