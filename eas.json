@@ -6,26 +6,10 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal",
-      "env": {
-        "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyDBMpv1pTzxaHPmsSPnPjnB7MwTz-O5OZs",
-        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "stemm-lab-765d1.firebaseapp.com",
-        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "stemm-lab-765d1",
-        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "stemm-lab-765d1.firebasestorage.app",
-        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "278606462864",
-        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:278606462864:web:1538adbae2a1b37f4ffd15"
-      }
+      "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal",
-      "env": {
-        "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyDBMpv1pTzxaHPmsSPnPjnB7MwTz-O5OZs",
-        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "stemm-lab-765d1.firebaseapp.com",
-        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "stemm-lab-765d1",
-        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "stemm-lab-765d1.firebasestorage.app",
-        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "278606462864",
-        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:278606462864:web:1538adbae2a1b37f4ffd15"
-      }
+      "distribution": "internal"
     },
     "production": {
       "autoIncrement": true

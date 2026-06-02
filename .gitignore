@@ -3,11 +3,14 @@
 # dependencies
 node_modules/
 
-# local IDE
+# local IDE and AI tools
 .claude/
+.vscode/
+.cursor/
 
 # Expo
 .expo/
+.expo-smoke-web/
 dist/
 web-build/
 expo-env.d.ts
@@ -35,6 +38,8 @@ yarn-error.*
 
 # local env files
 .env
+.env.local
+.env.*.local
 .env*.local
 
 # typescript
