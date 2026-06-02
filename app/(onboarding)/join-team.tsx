@@ -68,7 +68,32 @@ export default function JoinTeamScreen() {
         router.push("/(onboarding)/team-confirmation");
         return;
       }
-    } catch {}
+      // Team ID exists in Firestore but name didn't match
+      setIsJoining(false);
+      Alert.alert(
+        "Team Name Mismatch",
+        "A team with that ID exists but the name doesn't match. Check the exact team name.",
+        [{ text: "OK", style: "cancel" }],
+      );
+      return;
+    } catch (e: unknown) {
+      setIsJoining(false);
+      const msg = e instanceof Error ? e.message : String(e);
+      if (msg.includes("permission")) {
+        Alert.alert(
+          "Firebase Unavailable",
+          "Cannot reach the team database right now. Make sure you're connected and try again.",
+          [{ text: "OK", style: "cancel" }],
+        );
+      } else {
+        Alert.alert(
+          "Team Not Found",
+          "We couldn't find that team. Double-check the name and ID, or create a new team.",
+          [{ text: "Try Again", style: "cancel" }],
+        );
+      }
+      return;
+    }
 
     setIsJoining(false);
     Alert.alert(

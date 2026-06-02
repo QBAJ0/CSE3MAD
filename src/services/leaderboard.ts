@@ -234,7 +234,7 @@ export async function lookupTeamFromCloud(
       members: TeamData["members"];
       createdAt: string;
     };
-    if (data.teamName !== teamName) return null;
+    if (data.teamName.trim().toLowerCase() !== teamName.trim().toLowerCase()) return null;
     return {
       teamName: data.teamName,
       discriminator: data.discriminator,
