@@ -212,6 +212,7 @@ export async function saveTeamToCloud(team: TeamData): Promise<void> {
       discriminator: team.discriminator,
       members: team.members,
       createdAt: team.createdAt,
+      ownerUid: uid,
     });
     console.log("[firestore:team] save ok", team.discriminator);
   } catch (e) {
