@@ -1,5 +1,5 @@
 // components/recorders/TapReactionGame.tsx
-import { ComponentProps, useEffect, useRef, useState } from "react";
+import { ComponentProps, useCallback, useEffect, useRef, useState } from "react";
 import {
     Animated,
     Dimensions,
@@ -39,12 +39,28 @@ export function TapReactionGame({
   const [showTarget, setShowTarget] = useState(false);
 
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const nextTrialRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startTimeRef = useRef<number>(0);
+  const trialCountRef = useRef(0);
+  const reactionTimesRef = useRef<number[]>(existingTimes || []);
+  const tooEarlyCountRef = useRef(0);
+  const completedRef = useRef(false);
   const targetScale = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const { haptic } = useHaptic();
 
   const TOTAL_TRIALS = 5;
+
+  const clearTimers = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    if (nextTrialRef.current) {
+      clearTimeout(nextTrialRef.current);
+      nextTrialRef.current = null;
+    }
+  }, []);
 
   // Animate pulse when ready
   useEffect(() => {
@@ -69,9 +85,10 @@ export function TapReactionGame({
   }, [phase, pulseAnim]);
 
   // Start a new trial
-  const startTrial = () => {
-    if (trialCount >= TOTAL_TRIALS) return;
+  const startTrial = useCallback(() => {
+    if (completedRef.current || trialCountRef.current >= TOTAL_TRIALS) return;
 
+    clearTimers();
     setPhase("waiting");
     setShowTarget(false);
     targetScale.setValue(0);
@@ -80,6 +97,7 @@ export function TapReactionGame({
     const delay = 1500 + Math.random() * 3000;
 
     timeoutRef.current = setTimeout(() => {
+      if (completedRef.current) return;
       setPhase("ready");
       setShowTarget(true);
       startTimeRef.current = Date.now();
@@ -93,22 +111,46 @@ export function TapReactionGame({
         bounciness: 8,
       }).start();
     }, delay);
-  };
+  }, [clearTimers, haptic, targetScale]);
+
+  // Start the game
+  const startGame = useCallback(() => {
+    clearTimers();
+    completedRef.current = false;
+    trialCountRef.current = 0;
+    reactionTimesRef.current = [];
+    tooEarlyCountRef.current = 0;
+    setReactionTimes([]);
+    setTooEarlyCount(0);
+    setTrialCount(0);
+    setCurrentTime(null);
+    setShowTarget(false);
+    setPhase("waiting");
+
+    nextTrialRef.current = setTimeout(() => {
+      startTrial();
+    }, 700);
+  }, [clearTimers, startTrial]);
+
+  useEffect(() => {
+    if ((existingTimes?.length ?? 0) >= TOTAL_TRIALS) return;
+    startGame();
+    return clearTimers;
+  }, [clearTimers, existingTimes?.length, startGame]);
 
   // Handle tap on the target
   const handleTap = () => {
+    if (completedRef.current) return;
+
     if (phase === "waiting") {
       // Tapped too early!
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
+      clearTimers();
       haptic("error");
       setPhase("too-early");
-      setTooEarlyCount((prev) => prev + 1);
+      tooEarlyCountRef.current += 1;
+      setTooEarlyCount(tooEarlyCountRef.current);
 
-      setTimeout(() => {
-        setPhase("waiting");
+      nextTrialRef.current = setTimeout(() => {
         startTrial();
       }, 1000);
       return;
@@ -120,8 +162,11 @@ export function TapReactionGame({
       haptic("success");
       setPhase("reacted");
       setCurrentTime(reactionTime);
-      setReactionTimes((prev) => [...prev, reactionTime]);
-      setTrialCount((prev) => prev + 1);
+      const nextTimes = [...reactionTimesRef.current, reactionTime];
+      reactionTimesRef.current = nextTimes;
+      trialCountRef.current += 1;
+      setReactionTimes(nextTimes);
+      setTrialCount(trialCountRef.current);
 
       // Animate the tap feedback
       Animated.sequence([
@@ -140,16 +185,17 @@ export function TapReactionGame({
       setShowTarget(false);
 
       // Check if all trials are complete
-      if (trialCount + 1 >= TOTAL_TRIALS) {
-        setTimeout(() => {
+      if (trialCountRef.current >= TOTAL_TRIALS) {
+        completedRef.current = true;
+        nextTrialRef.current = setTimeout(() => {
           onComplete({
-            times: [...reactionTimes, reactionTime],
-            tooEarly: tooEarlyCount,
+            times: nextTimes,
+            tooEarly: tooEarlyCountRef.current,
           });
         }, 500);
       } else {
         // Start next trial after short pause
-        setTimeout(() => {
+        nextTrialRef.current = setTimeout(() => {
           startTrial();
         }, 1000);
       }
@@ -157,21 +203,12 @@ export function TapReactionGame({
     }
   };
 
-  // Start the game
-  const startGame = () => {
-    setReactionTimes([]);
-    setTooEarlyCount(0);
-    setTrialCount(0);
-    setCurrentTime(null);
-    startTrial();
-  };
-
   // Get reaction time classification
   const getClassification = (ms: number): { label: string; color: string; icon: IoniconName } => {
     if (ms < 200)
-      return { label: "Lightning Fast!", color: "#2F80ED", icon: "flash" };
-    if (ms < 300) return { label: "Fast!", color: "#F28C28", icon: "rocket" };
-    if (ms < 450) return { label: "Good", color: "#F6B84A", icon: "thumbs-up" };
+      return { label: "Lightning Fast!", color: "#2563EB", icon: "flash" };
+    if (ms < 300) return { label: "Fast!", color: "#F97316", icon: "rocket" };
+    if (ms < 450) return { label: "Good", color: "#F59E0B", icon: "thumbs-up" };
     return { label: "Keep Practicing", color: "#F97316", icon: "barbell" };
   };
 
@@ -186,7 +223,7 @@ export function TapReactionGame({
       <View style={styles.resultsContainer}>
         <View style={styles.resultsHeader}>
           <Text style={styles.resultsTitle}>Results</Text>
-          <Ionicons name="stats-chart" size={20} color="#2F80ED" />
+          <Ionicons name="stats-chart" size={20} color="#2563EB" />
         </View>
         <View style={styles.resultsStats}>
           <View style={styles.resultStat}>
@@ -253,9 +290,7 @@ export function TapReactionGame({
             ]}
           >
             <View style={styles.targetInner}>
-              <Ionicons name="flash" size={18} color="#FFF" />
               <Text style={styles.targetText}>TAP</Text>
-              <Ionicons name="flash" size={18} color="#FFF" />
             </View>
           </Animated.View>
         ) : (
@@ -270,7 +305,9 @@ export function TapReactionGame({
                 ? "Get Ready..."
                 : phase === "too-early"
                   ? "Too Early!"
-                  : "Ready?"}
+                  : phase === "reacted"
+                    ? "Nice!"
+                    : "Ready?"}
             </Animated.Text>
             {phase === "waiting" && (
               <View style={styles.progressBar}>
@@ -282,7 +319,13 @@ export function TapReactionGame({
       </TouchableOpacity>
 
       <Text style={styles.instruction}>
-        {phase === "waiting" ? "Wait for the target to appear..." : "TAP NOW!"}
+        {phase === "waiting"
+          ? "Wait for the target to appear..."
+          : phase === "too-early"
+            ? "Wait until the red target appears."
+            : phase === "reacted"
+              ? "Next trial starting..."
+              : "TAP NOW!"}
       </Text>
     </View>
   );
@@ -304,11 +347,11 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   trialText: { color: "#64748B", fontSize: 14, fontWeight: "600" },
-  lastTime: { color: "#2F80ED", fontSize: 14, fontWeight: "700" },
+  lastTime: { color: "#2563EB", fontSize: 14, fontWeight: "700" },
   tapArea: {
     width: width - 80,
     height: 300,
-    backgroundColor: "#F0F6FF",
+    backgroundColor: "#EFF6FF",
     borderRadius: 30,
     alignItems: "center",
     justifyContent: "center",
@@ -332,7 +375,7 @@ const styles = StyleSheet.create({
   targetInner: { flexDirection: "row", alignItems: "center", gap: 12 },
   waitingArea: { alignItems: "center" },
   waitingText: {
-    color: "#12343B",
+    color: "#0F172A",
     fontSize: 28,
     fontWeight: "700",
     textAlign: "center",
@@ -348,7 +391,7 @@ const styles = StyleSheet.create({
   progressFill: {
     width: "100%",
     height: "100%",
-    backgroundColor: "#2F80ED",
+    backgroundColor: "#2563EB",
     position: "absolute",
   },
   instruction: { color: "#64748B", fontSize: 14, textAlign: "center" },
@@ -363,7 +406,7 @@ const styles = StyleSheet.create({
   resultsTitle: {
     fontSize: 24,
     fontWeight: "800",
-    color: "#12343B",
+    color: "#0F172A",
   },
   resultsHeader: {
     flexDirection: "row",
@@ -376,7 +419,7 @@ const styles = StyleSheet.create({
   resultValue: {
     fontSize: 28,
     fontWeight: "800",
-    color: "#2F80ED",
+    color: "#2563EB",
     fontVariant: ["tabular-nums"],
   },
   resultLabel: { color: "#64748B", fontSize: 12, marginTop: 4 },
@@ -388,14 +431,14 @@ const styles = StyleSheet.create({
   },
   tooEarlyNote: { color: "#F97316", fontSize: 12 },
   retakeButton: {
-    backgroundColor: "#3B82F6",
+    backgroundColor: "#2563EB",
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 12,
   },
   retakeButtonText: { color: "#FFF", fontWeight: "700" },
   handBadge: {
-    backgroundColor: "#3B82F6",
+    backgroundColor: "#2563EB",
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 6,

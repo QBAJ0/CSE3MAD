@@ -1,4 +1,5 @@
 // components/recorders/PhotoRecorder.tsx
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { CameraType, CameraView, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 import { useRef, useState } from "react";
@@ -28,6 +29,7 @@ export function PhotoRecorder({
   const [photoUri, setPhotoUri] = useState<string | null>(existingUri || null);
   const [cameraOpen, setCameraOpen] = useState(false);
   const [facing, setFacing] = useState<CameraType>("back");
+  const [torchOn, setTorchOn] = useState(false);
   const cameraRef = useRef<CameraView>(null);
   const { haptic } = useHaptic();
 
@@ -78,7 +80,7 @@ export function PhotoRecorder({
   if (!permission) {
     return (
       <View style={styles.container}>
-        <Text style={styles.permissionText}>📷 Camera permission required</Text>
+        <Text style={styles.permissionText}>Camera permission required</Text>
         <TouchableOpacity
           style={styles.permissionButton}
           onPress={requestPermission}
@@ -98,10 +100,10 @@ export function PhotoRecorder({
             style={styles.retakeButton}
             onPress={() => setPhotoUri(null)}
           >
-            <Text style={styles.retakeButtonText}>📷 Retake</Text>
+            <Text style={styles.retakeButtonText}>Retake</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.deleteButton} onPress={deletePhoto}>
-            <Text style={styles.deleteButtonText}>🗑️ Delete</Text>
+            <Text style={styles.deleteButtonText}>Delete</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -113,40 +115,77 @@ export function PhotoRecorder({
       <View style={styles.buttonRow}>
         <TouchableOpacity
           style={styles.cameraButton}
-          onPress={() => setCameraOpen(true)}
+          onPress={() => {
+            setTorchOn(false);
+            setCameraOpen(true);
+          }}
         >
-          <Text style={styles.cameraButtonText}>📷 {label}</Text>
+          <Text style={styles.cameraButtonText}>{label}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.galleryButton}
           onPress={pickFromGallery}
         >
-          <Text style={styles.galleryButtonText}>🖼️ Choose from Gallery</Text>
+          <Text style={styles.galleryButtonText}>Choose from Gallery</Text>
         </TouchableOpacity>
       </View>
 
       <Modal
         visible={cameraOpen}
         animationType="slide"
-        onRequestClose={() => setCameraOpen(false)}
+        onRequestClose={() => {
+          setCameraOpen(false);
+          setTorchOn(false);
+        }}
       >
         <View style={styles.cameraContainer}>
-          <CameraView ref={cameraRef} style={styles.camera} facing={facing} />
-          <View style={styles.cameraControls}>
+          <CameraView
+            ref={cameraRef}
+            style={styles.camera}
+            facing={facing}
+            enableTorch={torchOn && facing === "back"}
+          />
+          <View style={styles.cameraTopBar}>
             <TouchableOpacity
               style={styles.closeButton}
-              onPress={() => setCameraOpen(false)}
+              onPress={() => {
+                setCameraOpen(false);
+                setTorchOn(false);
+              }}
             >
-              <Text style={styles.closeButtonText}>✕</Text>
+              <Ionicons name="close" size={24} color="#FFF" />
             </TouchableOpacity>
+            {facing === "back" && (
+              <TouchableOpacity
+                style={[
+                  styles.torchButton,
+                  torchOn && styles.torchButtonActive,
+                ]}
+                onPress={() => {
+                  haptic("light");
+                  setTorchOn((on) => !on);
+                }}
+              >
+                <Ionicons name={torchOn ? "flash" : "flash-off"} size={22} color="#FFF" />
+              </TouchableOpacity>
+            )}
+          </View>
+          <View style={styles.cameraControls}>
             <TouchableOpacity style={styles.captureButton} onPress={takePhoto}>
               <View style={styles.captureButtonInner} />
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.flipButton}
-              onPress={() => setFacing(facing === "back" ? "front" : "back")}
+              onPress={() => {
+                haptic("light");
+                setFacing((current) => {
+                  const next = current === "back" ? "front" : "back";
+                  if (next === "front") setTorchOn(false);
+                  return next;
+                });
+              }}
             >
-              <Text style={styles.flipButtonText}>🔄</Text>
+              <Ionicons name="camera-reverse-outline" size={26} color="#FFF" />
             </TouchableOpacity>
           </View>
         </View>
@@ -163,18 +202,18 @@ const styles = StyleSheet.create({
     borderColor: "#E2E8F0",
     padding: 12,
   },
-  permissionText: { color: "#12343B", textAlign: "center", marginBottom: 12 },
+  permissionText: { color: "#0F172A", textAlign: "center", marginBottom: 12 },
   permissionButton: {
-    backgroundColor: "#2F80ED",
+    backgroundColor: "#2563EB",
     padding: 12,
     borderRadius: 10,
     alignItems: "center",
   },
-  permissionButtonText: { color: "#F0F6FF", fontWeight: "700" },
+  permissionButtonText: { color: "#EFF6FF", fontWeight: "700" },
   buttonRow: { flexDirection: "row", gap: 12 },
   cameraButton: {
     flex: 1,
-    backgroundColor: "#2F80ED",
+    backgroundColor: "#2563EB",
     padding: 14,
     borderRadius: 12,
     alignItems: "center",
@@ -182,7 +221,7 @@ const styles = StyleSheet.create({
   cameraButtonText: { color: "#FFF", fontWeight: "700" },
   galleryButton: {
     flex: 1,
-    backgroundColor: "#3B82F6",
+    backgroundColor: "#2563EB",
     padding: 14,
     borderRadius: 12,
     alignItems: "center",
@@ -191,7 +230,7 @@ const styles = StyleSheet.create({
   preview: { width: "100%", height: 200, borderRadius: 12, marginBottom: 12 },
   retakeButton: {
     flex: 1,
-    backgroundColor: "#3B82F6",
+    backgroundColor: "#2563EB",
     padding: 10,
     borderRadius: 8,
     alignItems: "center",
@@ -207,15 +246,36 @@ const styles = StyleSheet.create({
   deleteButtonText: { color: "#FFF", fontWeight: "600" },
   cameraContainer: { flex: 1, backgroundColor: "#000" },
   camera: { flex: 1 },
+  cameraTopBar: {
+    position: "absolute",
+    top: 48,
+    left: 20,
+    right: 20,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
   cameraControls: {
     position: "absolute",
     bottom: 40,
     left: 0,
     right: 0,
     flexDirection: "row",
-    justifyContent: "space-around",
+    justifyContent: "center",
     alignItems: "center",
+    gap: 48,
     paddingHorizontal: 40,
+  },
+  torchButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  torchButtonActive: {
+    backgroundColor: "rgba(250,204,21,0.85)",
   },
   closeButton: {
     width: 50,
@@ -225,7 +285,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  closeButtonText: { color: "#FFF", fontSize: 24 },
   captureButton: {
     width: 70,
     height: 70,
@@ -250,5 +309,4 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  flipButtonText: { color: "#FFF", fontSize: 24 },
 });

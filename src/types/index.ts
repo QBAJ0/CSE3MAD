@@ -2,7 +2,6 @@ export type DifficultyMode = "primary" | "highSchool";
 
 export type TeamMember = {
   name: string;
-  year: string;
   grade?: string;
 };
 
@@ -36,6 +35,7 @@ export type Measurement = {
     | "soundMeter"
     | "accelerometer"
     | "breathing"
+    | "teamBreathing"
     | "tapReaction"
     | "teamReaction"
     | "gyroscope"
@@ -43,8 +43,11 @@ export type Measurement = {
     | "photo"
     | "tracing";
   choices?: string[];
+  allowOther?: boolean;
   placeholder?: string;
   difficulty?: DifficultyMode;
+  vibrate?: boolean;
+  optional?: boolean;
 };
 
 export type DerivedMetric = {
@@ -73,6 +76,7 @@ export type Challenge = {
   instructions: string[];
   features: string[];
   maxPrototypes: number;
+  minPrototypes?: number;
   estimatedMinutes: number;
   difficultyLevels: DifficultyMode[];
   measurements: Measurement[];
@@ -82,6 +86,8 @@ export type Challenge = {
   observationQuestions?: string[];
   predictionPrompt?: string;
   extensionTip?: string;
+  setupImage?: number;
+  discussion?: string;
 };
 
 export type ActivityResult = {
@@ -89,29 +95,27 @@ export type ActivityResult = {
   challengeId: number;
   teamId: string;
   teamName: string;
+  /** Same as teamId — team discriminator shown to students (e.g. #1234). */
+  discriminator?: string;
+  activityTitle?: string;
+  yearLevel?: string;
   difficulty: DifficultyMode;
   prediction: string;
   prototypes: Prototype[];
   derivedByPrototype?: Record<number, Record<string, number>>;
   rating: number;
+  /** Observation answers (without the optional team comment line). */
   reflection: string;
+  /** Short team comment from the Reflect screen, if provided. */
+  comment?: string;
   location?: { lat: number; lng: number };
   points?: number;
   completedInTime?: boolean;
   createdAt: string;
+  updatedAt?: string;
 };
 
 export type CompletedActivity = ActivityResult;
-
-export type Comment = {
-  id: string;
-  activityId: string;
-  challengeId: number;
-  teamName: string;
-  discriminator: string;
-  text: string;
-  createdAt: string;
-};
 
 export type LeaderboardEntry = {
   teamName: string;

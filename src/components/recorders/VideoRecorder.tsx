@@ -1,4 +1,7 @@
+import { useMemo } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import type { ColorTokens } from "../../theme/colors";
+import { useTheme } from "../../theme/themeContext";
 
 interface VideoRecorderProps {
   onCapture: (uri: string) => void;
@@ -7,6 +10,9 @@ interface VideoRecorderProps {
 }
 
 export function VideoRecorder({ onCapture, existingUri }: VideoRecorderProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   if (existingUri) {
     return (
       <View style={styles.container}>
@@ -31,28 +37,30 @@ export function VideoRecorder({ onCapture, existingUri }: VideoRecorderProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    padding: 20,
-    alignItems: "center",
-    gap: 12,
-  },
-  message: {
-    color: "#64748B",
-    fontSize: 14,
-    textAlign: "center",
-    lineHeight: 22,
-  },
-  saved: { color: "#2F80ED", fontSize: 14, fontWeight: "700" },
-  button: {
-    backgroundColor: "#E2E8F0",
-    paddingVertical: 10,
-    paddingHorizontal: 24,
-    borderRadius: 10,
-  },
-  buttonText: { color: "#12343B", fontWeight: "600" },
-});
+function createStyles(c: ColorTokens) {
+  return StyleSheet.create({
+    container: {
+      backgroundColor: c.surface,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: c.border,
+      padding: 20,
+      alignItems: "center",
+      gap: 12,
+    },
+    message: {
+      color: c.textSecondary,
+      fontSize: 14,
+      textAlign: "center",
+      lineHeight: 22,
+    },
+    saved: { color: c.info, fontSize: 14, fontWeight: "700" },
+    button: {
+      backgroundColor: c.backgroundSecondary,
+      paddingVertical: 10,
+      paddingHorizontal: 24,
+      borderRadius: 10,
+    },
+    buttonText: { color: c.text, fontWeight: "600" },
+  });
+}

@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\stace\\\\Stemmlab\" -Recurse -Depth 2)",
+      "Bash(Select-Object FullName, PSIsContainer)",
+      "Bash(Sort-Object FullName)",
+      "Bash(npx tsc *)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\stace\\\\Stemmlab\" -Force)",
+      "Bash(Select-Object Name, FullName)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\('scripts',{}\\), indent=2\\)\\)\")",
+      "Bash(npx expo *)",
+      "Bash(curl -s http://localhost:8081/status)",
+      "Bash(curl -s http://localhost:8082/status)",
+      "Bash(netstat -ano)",
+      "Bash(findstr \":8081 \")",
+      "Bash(awk '-Fstyles\\\\.' '{for\\(i=2;i<=NF;i++\\) {match\\($i, /^[a-zA-Z_]+/, arr\\); print arr[0]}}')"
+    ]
+  }
+}

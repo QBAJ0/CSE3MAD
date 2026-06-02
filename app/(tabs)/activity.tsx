@@ -3,7 +3,7 @@
 
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -14,22 +14,19 @@ import {
 } from "react-native";
 import { CHALLENGES } from "../../src/data/challenges";
 import { useActivityCompletion } from "../../src/hooks/useActivityCompletion";
+import type { ColorTokens } from "../../src/theme/colors";
+import { useTheme } from "../../src/theme/themeContext";
 
 const ALL_CATEGORIES = [
   "All",
   ...Array.from(new Set(CHALLENGES.map((c) => c.category))),
 ];
 
-function baseXP(maxPrototypes: number): number {
-  let xp = 100;
-  if (maxPrototypes >= 2) xp += 30;
-  if (maxPrototypes >= 3) xp += 50;
-  return xp;
-}
-
 export default function ActivityScreen() {
   const { completedIds, loading } = useActivityCompletion();
   const [activeFilter, setActiveFilter] = useState("All");
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const filtered =
     activeFilter === "All"
@@ -53,8 +50,7 @@ export default function ActivityScreen() {
       {/* ── Header ── */}
       <View style={styles.header}>
         <View style={styles.titleRow}>
-          <Ionicons name="flash" size={26} color="#007C7A" />
-          <Text style={styles.title}>Challenges</Text>
+          <Text style={styles.title}>Lab Missions</Text>
         </View>
         <View style={styles.progressPill}>
           <Text style={styles.progressPillText}>
@@ -65,13 +61,15 @@ export default function ActivityScreen() {
 
       {/* ── Overall progress bar ── */}
       {loading ? (
-        <ActivityIndicator size="small" color="#2F80ED" style={styles.progressLoading} />
+        <ActivityIndicator size="small" color={colors.info} style={styles.progressLoading} />
       ) : (
         <>
           <View style={styles.progressTrack}>
             <View style={[styles.progressFill, { width: `${completionPercent}%` }]} />
           </View>
-          <Text style={styles.progressLabel}>{completionPercent}% complete</Text>
+          <Text style={styles.progressLabel}>
+            {completionPercent === 100 ? "All done — legend!" : `${completionPercent}% done`}
+          </Text>
         </>
       )}
 
@@ -105,7 +103,6 @@ export default function ActivityScreen() {
       {filtered.map((challenge) => {
         const isDone = completedIds.has(challenge.id);
         const isNext = challenge.id === firstIncompleteId && !isDone;
-        const xp = baseXP(challenge.maxPrototypes);
 
         return (
           <TouchableOpacity
@@ -114,11 +111,11 @@ export default function ActivityScreen() {
               styles.card,
               isDone && styles.cardDone,
               isNext && styles.cardNext,
+              { borderLeftColor: challenge.color, borderLeftWidth: 4 },
             ]}
             onPress={() => router.push(`/challenge/${challenge.id}`)}
             activeOpacity={0.85}
           >
-            {/* "Start Here" badge */}
             {isNext && (
               <View style={styles.startBadge}>
                 <Text style={styles.startBadgeText}>START HERE</Text>
@@ -126,7 +123,6 @@ export default function ActivityScreen() {
               </View>
             )}
 
-            {/* Icon circle */}
             <View
               style={[
                 styles.iconCircle,
@@ -141,14 +137,12 @@ export default function ActivityScreen() {
               )}
             </View>
 
-            {/* Card body */}
             <View style={styles.cardBody}>
               <View style={styles.titleRowCard}>
                 <Text
                   style={[
                     styles.challengeTitle,
                     isDone && styles.challengeTitleDone,
-                    isNext && styles.challengeTitleNext,
                   ]}
                   numberOfLines={1}
                 >
@@ -175,23 +169,18 @@ export default function ActivityScreen() {
                 {challenge.shortDescription}
               </Text>
 
-              {/* Meta: time, designs, XP */}
               <View style={styles.metaRow}>
                 <View style={styles.metaItem}>
-                  <Ionicons name="time-outline" size={11} color="#94A3B8" />
+                  <Ionicons name="time-outline" size={11} color={colors.textMuted} />
                   <Text style={styles.metaText}>{challenge.estimatedMinutes}m</Text>
                 </View>
                 <View style={styles.metaItem}>
-                  <Ionicons name="refresh-outline" size={11} color="#94A3B8" />
+                  <Ionicons name="refresh-outline" size={11} color={colors.textMuted} />
                   <Text style={styles.metaText}>
                     {challenge.maxPrototypes > 1
                       ? `${challenge.maxPrototypes} designs`
                       : "1 design"}
                   </Text>
-                </View>
-                <View style={styles.xpPill}>
-                  <Ionicons name="flash" size={11} color="#F28C28" />
-                  <Text style={styles.xpPillText}>{xp}+ XP</Text>
                 </View>
               </View>
             </View>
@@ -199,10 +188,9 @@ export default function ActivityScreen() {
         );
       })}
 
-      {/* Empty state */}
       {filtered.length === 0 && (
         <View style={styles.emptyState}>
-          <Ionicons name="flask-outline" size={40} color="#94A3B8" />
+          <Ionicons name="flask-outline" size={40} color={colors.textMuted} />
           <Text style={styles.emptyText}>No challenges in this category</Text>
         </View>
       )}
@@ -210,254 +198,145 @@ export default function ActivityScreen() {
   );
 }
 
-// --- Styles ---
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: "#FFF5E8",
-  },
-  content: {
-    padding: 20,
-    paddingBottom: 36,
-  },
+function createStyles(c: ColorTokens) {
+  return StyleSheet.create({
+    screen: { flex: 1, backgroundColor: c.background },
+    content: { paddingHorizontal: 20, paddingTop: 58, paddingBottom: 36 },
 
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  title: {
-    fontSize: 30,
-    fontWeight: "800",
-    color: "#007C7A",
-  },
-  progressPill: {
-    backgroundColor: "#F6D7A8",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#F28C28",
-  },
-  progressPillText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#007C7A",
-  },
+    header: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 12,
+    },
+    titleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+    title: { fontSize: 30, fontWeight: "800", color: c.primary },
+    progressPill: {
+      backgroundColor: c.ctaLight,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: c.cta,
+    },
+    progressPillText: { fontSize: 12, fontWeight: "700", color: c.primary },
 
-  progressTrack: {
-    height: 7,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 4,
-    overflow: "hidden",
-    marginBottom: 4,
-  },
-  progressFill: {
-    height: "100%",
-    backgroundColor: "#2F80ED",
-    borderRadius: 4,
-  },
-  progressLabel: {
-    fontSize: 11,
-    color: "#94A3B8",
-    fontWeight: "600",
-    marginBottom: 16,
-  },
-  progressLoading: {
-    marginBottom: 16,
-    alignSelf: "flex-start",
-  },
+    progressTrack: {
+      height: 7,
+      backgroundColor: c.surface,
+      borderRadius: 4,
+      overflow: "hidden",
+      marginBottom: 4,
+    },
+    progressFill: { height: "100%", backgroundColor: c.cta, borderRadius: 4 },
+    progressLabel: {
+      fontSize: 11,
+      color: c.textMuted,
+      fontWeight: "600",
+      marginBottom: 16,
+    },
+    progressLoading: { marginBottom: 16, alignSelf: "flex-start" },
 
-  filterScroll: {
-    marginHorizontal: -20,
-    marginBottom: 20,
-  },
-  filterRow: {
-    paddingHorizontal: 20,
-    gap: 8,
-  },
-  chip: {
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-    borderRadius: 12,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1.5,
-    borderColor: "#FFF5E8",
-  },
-  chipActive: {
-    backgroundColor: "#F28C28",
-    borderColor: "#F28C28",
-  },
-  chipText: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#007C7A",
-  },
-  chipTextActive: {
-    color: "#FFFFFF",
-  },
+    filterScroll: { marginHorizontal: -20, marginBottom: 20 },
+    filterRow: { paddingHorizontal: 20, gap: 8 },
+    chip: {
+      paddingHorizontal: 18,
+      paddingVertical: 9,
+      borderRadius: 999,
+      backgroundColor: c.surface,
+      borderWidth: 1.5,
+      borderColor: c.border,
+    },
+    chipActive: { backgroundColor: c.cta, borderColor: c.cta },
+    chipText: { fontSize: 13, fontWeight: "700", color: c.primary },
+    chipTextActive: { color: "#FFFFFF" },
 
-  card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 14,
-    flexDirection: "row",
-    borderWidth: 2,
-    borderColor: "transparent",
-  },
-  cardDone: {
-    backgroundColor: "#FFF5E8",
-    borderColor: "#2F80ED",
-  },
-  cardNext: {
-    backgroundColor: "#FFF4EC",
-    borderColor: "#F28C28",
-  },
+    card: {
+      backgroundColor: c.surface,
+      borderRadius: 20,
+      padding: 16,
+      marginBottom: 14,
+      flexDirection: "row",
+      borderWidth: 2,
+      borderColor: "transparent",
+    },
+    cardDone: { backgroundColor: c.surface, borderColor: c.info },
+    cardNext: { backgroundColor: c.ctaLight, borderColor: c.cta },
 
-  startBadge: {
-    position: "absolute",
-    top: 12,
-    right: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
-    backgroundColor: "#F28C28",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-    zIndex: 1,
-  },
-  startBadgeText: {
-    fontSize: 9,
-    fontWeight: "800",
-    color: "#FFFFFF",
-    letterSpacing: 0.5,
-  },
+    startBadge: {
+      position: "absolute",
+      top: 12,
+      right: 12,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 3,
+      backgroundColor: c.cta,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 8,
+      zIndex: 1,
+    },
+    startBadgeText: { fontSize: 9, fontWeight: "800", color: "#FFFFFF", letterSpacing: 0.5 },
 
-  iconCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 14,
-    flexShrink: 0,
-  },
-  doneTick: {
-    position: "absolute",
-    bottom: -2,
-    right: -2,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: "#2F80ED",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderColor: "#FFFFFF",
-  },
+    iconCircle: {
+      width: 60,
+      height: 60,
+      borderRadius: 30,
+      justifyContent: "center",
+      alignItems: "center",
+      marginRight: 14,
+      flexShrink: 0,
+    },
+    doneTick: {
+      position: "absolute",
+      bottom: -2,
+      right: -2,
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      backgroundColor: c.info,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 2,
+      borderColor: c.surface,
+    },
 
-  cardBody: { flex: 1 },
-  titleRowCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 3,
-  },
-  challengeTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#007C7A",
-    flex: 1,
-  },
-  challengeTitleDone: {
-    color: "#007C7A",
-    opacity: 0.7,
-  },
-  challengeTitleNext: {
-    color: "#007C7A",
-  },
-  doneBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
-    backgroundColor: "#2F80ED",
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  doneBadgeText: {
-    fontSize: 10,
-    fontWeight: "700",
-    color: "#FFFFFF",
-  },
-  category: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#2F80ED",
-    marginBottom: 4,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  categoryDone: {
-    color: "#94A3B8",
-  },
-  categoryNext: {
-    color: "#F28C28",
-  },
-  description: {
-    fontSize: 13,
-    color: "#64748B",
-    marginBottom: 10,
-    lineHeight: 18,
-  },
+    cardBody: { flex: 1 },
+    titleRowCard: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      marginBottom: 3,
+    },
+    challengeTitle: { fontSize: 16, fontWeight: "700", color: c.primary, flex: 1 },
+    challengeTitleDone: { opacity: 0.7 },
+    doneBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 3,
+      backgroundColor: c.info,
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      borderRadius: 8,
+    },
+    doneBadgeText: { fontSize: 10, fontWeight: "700", color: "#FFFFFF" },
+    category: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: c.info,
+      marginBottom: 4,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+    },
+    categoryDone: { color: c.textMuted },
+    categoryNext: { color: c.cta },
+    description: { fontSize: 13, color: c.textSecondary, marginBottom: 10, lineHeight: 18 },
 
-  metaRow: {
-    flexDirection: "row",
-    gap: 8,
-    alignItems: "center",
-    flexWrap: "wrap",
-  },
-  metaItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
-  },
-  metaText: {
-    fontSize: 11,
-    color: "#94A3B8",
-  },
-  xpPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
-    backgroundColor: "#F6D7A8",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-    marginLeft: "auto",
-  },
-  xpPillText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#F28C28",
-  },
+    metaRow: { flexDirection: "row", gap: 8, alignItems: "center", flexWrap: "wrap" },
+    metaItem: { flexDirection: "row", alignItems: "center", gap: 3 },
+    metaText: { fontSize: 11, color: c.textMuted },
 
-  emptyState: {
-    alignItems: "center",
-    gap: 12,
-    paddingVertical: 40,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: "#94A3B8",
-    fontWeight: "600",
-  },
-});
+    emptyState: { alignItems: "center", gap: 12, paddingVertical: 40 },
+    emptyText: { fontSize: 16, color: c.textMuted, fontWeight: "600" },
+  });
+}

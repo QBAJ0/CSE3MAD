@@ -1,4 +1,7 @@
+import { useMemo } from "react";
 import { StyleSheet, TextInput } from "react-native";
+import type { ColorTokens } from "../../theme/colors";
+import { useTheme } from "../../theme/themeContext";
 import { Measurement } from "../../types";
 
 interface Props {
@@ -8,6 +11,9 @@ interface Props {
 }
 
 export function NumberRecorder({ measurement, value, onChange }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const handleChange = (text: string) => {
     const normalized = text.replace(",", ".");
     let next = "";
@@ -30,7 +36,7 @@ export function NumberRecorder({ measurement, value, onChange }: Props) {
     <TextInput
       style={styles.input}
       placeholder={measurement.placeholder || `Enter ${measurement.label}`}
-      placeholderTextColor="#64748B"
+      placeholderTextColor={colors.textSecondary}
       value={value}
       onChangeText={handleChange}
       keyboardType="decimal-pad"
@@ -39,14 +45,16 @@ export function NumberRecorder({ measurement, value, onChange }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  input: {
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 12,
-    padding: 14,
-    fontSize: 16,
-    backgroundColor: "#FFFFFF",
-    color: "#12343B",
-  },
-});
+function createStyles(c: ColorTokens) {
+  return StyleSheet.create({
+    input: {
+      borderWidth: 1,
+      borderColor: c.inputBorder,
+      borderRadius: 12,
+      padding: 14,
+      fontSize: 16,
+      backgroundColor: c.input,
+      color: c.text,
+    },
+  });
+}

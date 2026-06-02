@@ -1,0 +1,53 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /teams/{teamId} {
+      allow read, update, delete: if request.auth != null
+        && request.auth.uid == resource.data.ownerUid;
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.ownerUid;
+    }
+
+    match /activities/{activityId} {
+      allow read: if request.auth != null;
+      allow update, delete: if request.auth != null
+        && request.auth.uid == resource.data.ownerUid;
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.ownerUid;
+    }
+
+    // Doc id is team discriminator (e.g. #1234), shared across devices — not per-user.
+    // Updates must allow a new signed-in user to merge stats (ownerUid on the write payload).
+    match /leaderboard/{teamId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.ownerUid;
+      allow update: if request.auth != null
+        && request.auth.uid == request.resource.data.ownerUid;
+      allow delete: if request.auth != null
+        && request.auth.uid == resource.data.ownerUid;
+    }
+
+    match /comments/{commentId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.ownerUid;
+      allow update, delete: if request.auth != null
+        && request.auth.uid == resource.data.ownerUid;
+    }
+
+    match /results/{resultId} {
+      allow read, update, delete: if request.auth != null
+        && request.auth.uid == resource.data.ownerUid;
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.ownerUid;
+    }
+
+    match /activity_results/{docId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+    }
+  }
+}

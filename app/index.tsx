@@ -42,8 +42,6 @@ export default function SplashScreen() {
       router.replace("/(onboarding)/welcome");
     }
 
-    // TODO: When Firebase is added, also check if the team exists in the database
-    // and sync any remote data before navigating.
   }, [splashFinished, isLoadingTeam, team]);
 
   // --- UI: Show the splash screen while waiting ---
@@ -67,7 +65,7 @@ export default function SplashScreen() {
       {/* Loading spinner — shows while we wait for data */}
       <ActivityIndicator
         size="small"
-        color="#2F80ED"
+        color="#2563EB"
         style={styles.spinner}
       />
     </View>
@@ -78,7 +76,7 @@ export default function SplashScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#007C7A",
+    backgroundColor: "#0F766E",
     alignItems: "center",
     justifyContent: "center",
     padding: 24,
@@ -88,7 +86,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,             // makes it a perfect circle
-    backgroundColor: "#F28C28",
+    backgroundColor: "#F97316",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 24,

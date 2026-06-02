@@ -3,7 +3,7 @@
 
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -17,10 +17,14 @@ import {
   View,
 } from "react-native";
 import { useTeam } from "../../src/context/TeamContext";
+import type { ColorTokens } from "../../src/theme/colors";
+import { useTheme } from "../../src/theme/themeContext";
 import { storage } from "../../src/utils/storage";
 
 export default function JoinTeamScreen() {
   const { setTeamData } = useTeam();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const [teamName, setTeamName] = useState("");
   const [teamId, setTeamId] = useState("");
@@ -80,7 +84,7 @@ export default function JoinTeamScreen() {
       >
         {/* ── Header ── */}
         <View style={styles.header}>
-          <Ionicons name="enter-outline" size={32} color="#2F80ED" style={styles.headerIcon} />
+          <Ionicons name="enter-outline" size={32} color="#FFFFFF" style={styles.headerIcon} />
           <Text style={styles.headerTitle}>Join a Team</Text>
           <Text style={styles.headerSubtitle}>
             Enter the team name and the ID your team leader shared with you.
@@ -91,7 +95,7 @@ export default function JoinTeamScreen() {
         <View style={styles.card}>
           {/* Hint box */}
           <View style={styles.hintBox}>
-            <Ionicons name="bulb-outline" size={16} color="#007C7A" />
+            <Ionicons name="bulb-outline" size={16} color={colors.primary} />
             <Text style={styles.hintText}>
               Ask your team leader for the Team ID — it looks like{" "}
               <Text style={styles.hintBold}>#4821</Text>
@@ -104,7 +108,7 @@ export default function JoinTeamScreen() {
             <TextInput
               style={[styles.input, teamName.trim() ? styles.inputFilled : null]}
               placeholder="e.g. STEM Stars"
-              placeholderTextColor="#94A3B8"
+              placeholderTextColor={colors.textMuted}
               value={teamName}
               onChangeText={setTeamName}
               returnKeyType="next"
@@ -119,7 +123,7 @@ export default function JoinTeamScreen() {
             <TextInput
               style={[styles.input, teamId.trim() ? styles.inputFilled : null]}
               placeholder="e.g. #4821"
-              placeholderTextColor="#94A3B8"
+              placeholderTextColor={colors.textMuted}
               value={teamId}
               onChangeText={setTeamId}
               returnKeyType="done"
@@ -161,7 +165,6 @@ export default function JoinTeamScreen() {
             onPress={() => router.replace("/(onboarding)/register")}
           >
             <View style={styles.createBtnRow}>
-              <Ionicons name="rocket-outline" size={17} color="#007C7A" />
               <Text style={styles.createBtnText}>Create a New Team</Text>
             </View>
           </Pressable>
@@ -178,166 +181,168 @@ export default function JoinTeamScreen() {
   );
 }
 
-// --- Styles ---
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: "#FFF5E8",
-  },
-  content: {
-    paddingBottom: 48,
-  },
+function createStyles(c: ColorTokens) {
+  return StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: c.background,
+    },
+    content: {
+      paddingBottom: 48,
+    },
 
-  header: {
-    backgroundColor: "#007C7A",
-    paddingTop: 56,
-    paddingBottom: 32,
-    paddingHorizontal: 24,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
-    marginBottom: 24,
-    gap: 6,
-  },
-  headerIcon: {
-    marginBottom: 4,
-  },
-  headerTitle: {
-    fontSize: 30,
-    fontWeight: "900",
-    color: "#FFFFFF",
-  },
-  headerSubtitle: {
-    fontSize: 15,
-    color: "rgba(255,255,255,0.85)",
-    lineHeight: 22,
-  },
+    // Header — teal kept hardcoded as brand splash
+    header: {
+      backgroundColor: "#0F766E",
+      paddingTop: 56,
+      paddingBottom: 32,
+      paddingHorizontal: 24,
+      borderBottomLeftRadius: 32,
+      borderBottomRightRadius: 32,
+      marginBottom: 24,
+      gap: 6,
+    },
+    headerIcon: {
+      marginBottom: 4,
+    },
+    headerTitle: {
+      fontSize: 30,
+      fontWeight: "900",
+      color: "#FFFFFF",
+    },
+    headerSubtitle: {
+      fontSize: 15,
+      color: "rgba(255,255,255,0.85)",
+      lineHeight: 22,
+    },
 
-  card: {
-    marginHorizontal: 20,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 24,
-    padding: 24,
-    gap: 16,
-    borderWidth: 1,
-    borderColor: "#FFF5E8",
-  },
+    card: {
+      marginHorizontal: 20,
+      backgroundColor: c.surface,
+      borderRadius: 24,
+      padding: 24,
+      gap: 16,
+      borderWidth: 1,
+      borderColor: c.borderFaint,
+    },
 
-  hintBox: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 10,
-    backgroundColor: "#FFF5E8",
-    borderRadius: 12,
-    padding: 14,
-    borderWidth: 1.5,
-    borderColor: "#2F80ED",
-  },
-  hintText: {
-    flex: 1,
-    fontSize: 13,
-    color: "#007C7A",
-    lineHeight: 20,
-  },
-  hintBold: {
-    fontWeight: "800",
-  },
+    hintBox: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: 10,
+      backgroundColor: c.background,
+      borderRadius: 12,
+      padding: 14,
+      borderWidth: 1.5,
+      borderColor: c.info,
+    },
+    hintText: {
+      flex: 1,
+      fontSize: 13,
+      color: c.primary,
+      lineHeight: 20,
+    },
+    hintBold: {
+      fontWeight: "800",
+    },
 
-  fieldGroup: {
-    gap: 8,
-  },
-  fieldLabel: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#94A3B8",
-    letterSpacing: 1,
-  },
-  input: {
-    borderWidth: 1.5,
-    borderColor: "#FFF5E8",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: "#007C7A",
-    backgroundColor: "#FFFFFF",
-  },
-  inputFilled: {
-    borderColor: "#2F80ED",
-    backgroundColor: "#FFFFFF",
-  },
+    fieldGroup: {
+      gap: 8,
+    },
+    fieldLabel: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: c.textMuted,
+      letterSpacing: 1,
+    },
+    input: {
+      borderWidth: 1.5,
+      borderColor: c.inputBorder,
+      borderRadius: 12,
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      fontSize: 16,
+      color: c.text,
+      backgroundColor: c.input,
+    },
+    inputFilled: {
+      borderColor: c.inputFilledBorder,
+      backgroundColor: c.inputFilled,
+    },
 
-  joinBtn: {
-    backgroundColor: "#F28C28",
-    paddingVertical: 18,
-    borderRadius: 16,
-    alignItems: "center",
-    marginTop: 4,
-  },
-  joinBtnDisabled: {
-    backgroundColor: "#CBD5E1",
-  },
-  joinBtnText: {
-    color: "#FFFFFF",
-    fontSize: 17,
-    fontWeight: "800",
-  },
+    joinBtn: {
+      backgroundColor: c.cta,
+      paddingVertical: 18,
+      borderRadius: 16,
+      alignItems: "center",
+      marginTop: 4,
+    },
+    joinBtnDisabled: {
+      backgroundColor: c.border,
+    },
+    joinBtnText: {
+      color: "#FFFFFF",
+      fontSize: 17,
+      fontWeight: "800",
+    },
 
-  divider: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginHorizontal: 24,
-    marginVertical: 24,
-    gap: 12,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: "#FFF5E8",
-  },
-  dividerText: {
-    fontSize: 13,
-    color: "#94A3B8",
-    fontWeight: "600",
-  },
+    divider: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginHorizontal: 24,
+      marginVertical: 24,
+      gap: 12,
+    },
+    dividerLine: {
+      flex: 1,
+      height: 1,
+      backgroundColor: c.borderFaint,
+    },
+    dividerText: {
+      fontSize: 13,
+      color: c.textMuted,
+      fontWeight: "600",
+    },
 
-  footer: {
-    paddingHorizontal: 20,
-    alignItems: "center",
-    gap: 12,
-  },
-  footerHint: {
-    fontSize: 14,
-    color: "#64748B",
-    fontWeight: "600",
-  },
-  createBtn: {
-    width: "100%",
-    borderWidth: 2,
-    borderColor: "#007C7A",
-    paddingVertical: 16,
-    borderRadius: 16,
-    alignItems: "center",
-    backgroundColor: "#FFF5E8",
-  },
-  createBtnRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  createBtnText: {
-    color: "#007C7A",
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  pressed: {
-    opacity: 0.85,
-  },
-  backLink: {
-    paddingVertical: 8,
-  },
-  backLinkText: {
-    fontSize: 14,
-    color: "#94A3B8",
-    fontWeight: "600",
-  },
-});
+    footer: {
+      paddingHorizontal: 20,
+      alignItems: "center",
+      gap: 12,
+    },
+    footerHint: {
+      fontSize: 14,
+      color: c.textSecondary,
+      fontWeight: "600",
+    },
+    createBtn: {
+      width: "100%",
+      borderWidth: 2,
+      borderColor: c.primary,
+      paddingVertical: 16,
+      borderRadius: 16,
+      alignItems: "center",
+      backgroundColor: c.background,
+    },
+    createBtnRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    createBtnText: {
+      color: c.primary,
+      fontSize: 16,
+      fontWeight: "700",
+    },
+    pressed: {
+      opacity: 0.85,
+    },
+    backLink: {
+      paddingVertical: 8,
+    },
+    backLinkText: {
+      fontSize: 14,
+      color: c.textMuted,
+      fontWeight: "600",
+    },
+  });
+}

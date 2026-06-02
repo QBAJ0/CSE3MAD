@@ -3,14 +3,16 @@
 
 export const SCORING = {
   BASE_XP: 100,
-  MULTI_DESIGN_2: 30,     // +XP for testing 2+ prototypes
-  MULTI_DESIGN_3: 50,     // +XP for testing 3+ prototypes
+  PREDICTION_BONUS: 15,   // +XP for making a testable prediction
+  MULTI_DESIGN_2: 25,     // +XP for testing 2+ prototypes
+  MULTI_DESIGN_3: 45,     // +XP for testing 3+ prototypes
   DATA_QUALITY: 25,       // +XP for completing the required measurements
-  REFLECTION_BONUS: 25,   // +XP for thoughtful observations/reflection
+  REFLECTION_BONUS_1: 20, // +XP for thoughtful observations/reflection
+  REFLECTION_BONUS_2: 15, // extra +XP for stronger reflection
   EVIDENCE_BONUS: 20,     // +XP for GPS, photo, video, or analysis evidence
   TEAMWORK_BONUS: 20,     // +XP for team participation evidence
   GPS_TAGGED: 20,         // Legacy alias kept for older references
-  HIGH_SCHOOL_MULTIPLIER: 1.5,
+  HIGH_SCHOOL_MULTIPLIER: 1.3,
   TIME_PENALTY_MULTIPLIER: 0.8,
 } as const;
 
@@ -30,8 +32,8 @@ export const TIMING = {
 } as const;
 
 export const SOUND_DB_TIERS = [
-  { max: 60, color: "#2F80ED", label: "< 60 dB  Safe" },
-  { max: 85, color: "#F6B84A", label: "60–85 dB  Moderate" },
+  { max: 60, color: "#2563EB", label: "< 60 dB  Safe" },
+  { max: 85, color: "#F59E0B", label: "60–85 dB  Moderate" },
   { max: 100, color: "#F97316", label: "85–100 dB  Loud" },
   { max: Infinity, color: "#EF4444", label: "> 100 dB  Dangerous" },
 ] as const;
@@ -39,32 +41,32 @@ export const SOUND_DB_TIERS = [
 // App-specific brand palette
 export const BRAND = {
   // Core palette requested for a warmer, kid-friendly look
-  orangeLuster: "#F28C28",   // CTAs, active states, energy moments
-  aspiringBlue: "#2F80ED",   // progress, information, completion states
-  jewelTeal: "#007C7A",      // headers, primary headings, navigation
-  caramelPowder: "#F6D7A8",  // warm highlights and friendly surfaces
-  warmCream: "#FFF5E8",      // screen backgrounds
-  deepInk: "#12343B",        // main body text and dark surfaces
+  orangeLuster: "#F97316",   // CTAs, active states, energy moments
+  aspiringBlue: "#2563EB",   // progress, information, completion states
+  jewelTeal: "#0F766E",      // headers, primary headings, navigation
+  caramelPowder: "#FED7AA",  // warm highlights and friendly surfaces
+  warmCream: "#FFF7ED",      // screen backgrounds
+  deepInk: "#0F172A",        // main body text and dark surfaces
 
   // Backward-compatible alias from the earlier palette iteration
-  persianPlum: "#007C7A",
+  persianPlum: "#0F766E",
 
   // Legacy aliases kept so existing imports stay stable
-  payneGray: "#007C7A",
-  skyBlue: "#2F80ED",
-  ghostWhite: "#FFF5E8",
-  peach: "#F6D7A8",
-  ochre: "#F28C28",
+  payneGray: "#0F766E",
+  skyBlue: "#2563EB",
+  ghostWhite: "#FFF7ED",
+  peach: "#FED7AA",
+  ochre: "#F97316",
 
   // Semantic aliases
-  primary: "#F28C28",
-  primaryLight: "#F6D7A8",
-  primaryDark: "#007C7A",
-  primaryText: "#007C7A",
-  bg: "#FFF5E8",
+  primary: "#F97316",
+  primaryLight: "#FED7AA",
+  primaryDark: "#0F766E",
+  primaryText: "#0F766E",
+  bg: "#FFF7ED",
 
   // Neutral grays (kept for subtle text / borders)
-  slate900: "#12343B",
+  slate900: "#0F172A",
   slate700: "#334155",
   slate600: "#475569",
   slate500: "#64748B",
@@ -78,5 +80,5 @@ export const BRAND = {
   white: "#FFFFFF",
   error: "#DC2626",
   errorLight: "#FEE2E2",
-  splash: "#007C7A",
+  splash: "#0F766E",
 } as const;

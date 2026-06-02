@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Stemmlab",
-    "slug": "Stemmlab",
+    "slug": "stemmlab",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -10,8 +10,11 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.StaceyJepkemoi.Stemmlab",
       "infoPlist": {
-        "UIBackgroundModes": ["fetch"]
+        "UIBackgroundModes": [
+          "fetch"
+        ]
       }
     },
     "android": {
@@ -22,10 +25,11 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.StaceyJepkemoi.Stemmlab"
     },
     "web": {
-      "output": "static",
+      "output": "single",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
@@ -34,19 +38,66 @@
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
+          "imageWidth": 300,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
+          "backgroundColor": "#FFF7ED",
           "dark": {
-            "backgroundColor": "#000000"
+            "backgroundColor": "#0F766E"
           }
         }
+      ],
+      "expo-sqlite",
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-3940256099942544~3347511713",
+          "iosAppId": "ca-app-pub-3940256099942544~1458002511"
+        }
+      ],
+      "expo-web-browser",
+      "expo-asset",
+      "expo-font",
+      [
+        "expo-notifications",
+        {
+          "color": "#0F766E"
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "STEMM Lab uses your camera to record experiment evidence such as slow-motion videos and photos.",
+          "microphonePermission": "STEMM Lab uses the microphone with the camera to capture video with sound."
+        }
+      ],
+      [
+        "expo-av",
+        {
+          "microphonePermission": "STEMM Lab uses your microphone to measure sound levels in the Sound Pollution Hunter activity."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "STEMM Lab tags your experiment location on a map and attaches GPS coordinates to your results."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "STEMM Lab accesses your photo library to attach images as experiment evidence."
+        }
       ]
-      //  "expo-custom-assets"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    } //
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "f216fb29-f47a-4ba7-9bdb-5de5249d8d4f"
+      }
+    }
   }
 }

@@ -69,6 +69,34 @@ export function deriveParachute(inputs: ParachuteInputs): ParachuteDerived {
   return out;
 }
 
+// Material stiffness coefficients (N/rad) from spec discussion.
+const HAND_FAN_K: Record<string, number> = {
+  "Thin printer paper": 0.05,
+  "Standard card stock": 0.2,
+  "Thin cardboard": 0.5,
+  "Corrugated cardboard": 2.5,
+};
+
+type HandFanInputs = {
+  bendAngleDegrees: number;
+  material: string;
+};
+
+export type HandFanDerived = {
+  bendAngleRadians: number;
+  stiffnessK: number;
+  estimatedForceN: number;
+};
+
+export function deriveHandFan(inputs: HandFanInputs): HandFanDerived | null {
+  const { bendAngleDegrees, material } = inputs;
+  if (!isNum(bendAngleDegrees) || bendAngleDegrees <= 0) return null;
+  const k = HAND_FAN_K[material];
+  if (k == null) return null;
+  const theta = bendAngleDegrees * (Math.PI / 180);
+  return { bendAngleRadians: theta, stiffnessK: k, estimatedForceN: k * theta };
+}
+
 // Categorise g-force per the spec's injury-risk table.
 export function gForceRiskCategory(
   g: number,

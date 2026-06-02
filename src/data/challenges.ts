@@ -1,19 +1,23 @@
-// data/challenges.ts
+// data/challenges.ts — canonical XP challenge catalog (Challenges tab, `/challenge/...`).
+
+// Official STEMM challenge definitions for the `/challenge/[id]` flow.
 import { Challenge } from "../types";
 
 export const CHALLENGES: Challenge[] = [
   // Activity 1: Parachute Drop
   {
     id: 1,
+    setupImage: require("../../assets/images/Parachute-setup.png"),
     title: "Parachute Drop",
-    category: "Engineering + Physics",
+    category: "Engineering Challenges",
     icon: "arrow-down-circle-outline",
-    color: "#F28C28",
+    color: "#F97316",
     shortDescription:
       "Design and test a parachute for the slowest, safest landing.",
     overview:
       "Design, build, and test a parachute for a small toy to reduce landing speed and impact force.",
     equipment: [
+      "Mobile phone with STEMM Lab app",
       "Small toy",
       "Paper/plastic",
       "String",
@@ -22,11 +26,12 @@ export const CHALLENGES: Challenge[] = [
       "Table",
     ],
     instructions: [
-      "Drop without parachute (baseline)",
-      "Build parachute",
-      "Record fall time",
-      "📹 Record a slow-motion video of the landing",
-      "Redesign and test up to 3 prototypes",
+      "Drop the toy without a parachute and record the fall as a baseline test",
+      "Build a parachute using paper or plastic, string, scissors, and tape",
+      "Drop the toy from the same height and record fall time",
+      "Record a slow-motion video of the landing",
+      "Review speed, landing safety, and accuracy results in the app",
+      "Redesign and test up to 3 prototypes within 20 minutes",
     ],
     features: ["predictionRequired", "video", "gps", "multiplePrototypes"],
     maxPrototypes: 3,
@@ -40,6 +45,13 @@ export const CHALLENGES: Challenge[] = [
         placeholder: "e.g. Plastic, 4 corners",
       },
       {
+        key: "designPrediction",
+        label: "What is your prediction for this design?",
+        recorder: "manualText",
+        placeholder: "e.g. I think this design will fall slowly because the canopy is large",
+        optional: true,
+      },
+      {
         key: "dropHeightMeters",
         label: "Drop height (measure once for all designs)",
         unit: "m",
@@ -47,11 +59,21 @@ export const CHALLENGES: Challenge[] = [
         placeholder: "e.g. 0.75",
       },
       {
+        key: "slowMotionVideo",
+        label: "Slow-motion Video",
+        recorder: "video",
+      },
+      {
         key: "fallTimeSeconds",
         label: "Fall time",
         unit: "s",
         recorder: "stopwatch",
         placeholder: "0.00",
+      },
+      {
+        key: "videoAnalysis",
+        label: "Frame Analysis",
+        recorder: "videoAnalyzer",
       },
       {
         key: "toyMassKg",
@@ -77,14 +99,13 @@ export const CHALLENGES: Challenge[] = [
         difficulty: "highSchool",
       },
       {
-        key: "slowMotionVideo",
-        label: "Slow-motion Video",
-        recorder: "video",
-      },
-      {
-        key: "videoAnalysis",
-        label: "Frame Analysis",
-        recorder: "videoAnalyzer",
+        key: "timeToMaxHeightSeconds",
+        label: "Time to bounce peak",
+        unit: "s",
+        recorder: "manualNumber",
+        placeholder: "Only if it bounced",
+        difficulty: "highSchool",
+        optional: true,
       },
       { key: "location", label: "GPS Location", recorder: "gps" },
     ],
@@ -120,68 +141,106 @@ export const CHALLENGES: Challenge[] = [
         difficulty: "highSchool",
       },
     ],
-    curriculumLinks: ["ACSSU076 - Forces affect motion"],
+    curriculumLinks: [
+      "ACSSU076 – Forces affect motion",
+      "ACSSU117 – Forces affect motion (High School)",
+      "ACSIS124 – Planning and conducting investigations",
+      "ACSIS126 – Analysing patterns in data",
+      "ACTDEP036 – Generate, test, and improve solutions",
+      "ACMMG108 – Measuring speed",
+      "ACMSP147 – Comparing data and averages",
+    ],
     predictionPrompt: "Which parachute design do you think will fall the slowest? What size and material will work best?",
     extensionTip: "Try cutting a small hole in the centre of your canopy — does it actually fall more steadily? Engineers use this trick on real parachutes!",
+    discussion:
+      "Gravity pulls objects downward, causing them to speed up as they fall. A parachute increases air resistance (also called drag). Drag acts upward, opposing the motion and slowing the fall. A slower fall reduces the force when the toy hits the ground, making the landing safer. Engineers improve parachute designs through repeated testing and redesign.",
     thingsToKnow: [
       {
         heading: "What is drag?",
-        color: "#3B82F6",
+        color: "#2563EB",
         bullets: [
           "Drag is a force that opposes movement through air.",
-          "A bigger canopy catches more air = more drag = slower fall.",
+          "A bigger canopy catches more air → more drag → slower fall.",
           "Drag force increases with canopy area and air density.",
+          "A slower fall reduces impact force, making landing safer.",
         ],
       },
       {
-        heading: "Materials matter!",
-        color: "#2F80ED",
+        heading: "Forces on the toy",
+        color: "#2563EB",
         bullets: [
-          "Lighter, larger canopies create more drag.",
-          "Thin plastic is better than paper — it doesn't crumple.",
-          "String length affects stability during descent.",
+          "Weight (downward) = mass × g  (g = 9.8 m/s²)",
+          "Drag force (upward) = air resistance from the parachute",
+          "Net force = Weight − Drag force",
+          "A larger parachute increases drag, reducing net force and acceleration.",
         ],
       },
       {
-        heading: "Newton's laws at work",
+        heading: "Newton's Second Law",
         color: "#F97316",
         bullets: [
+          "Net Force = mass × acceleration  (F = ma)",
           "Gravity pulls your toy downward at 9.8 m/s².",
-          "When drag force equals gravity, the toy reaches terminal velocity.",
-          "The net force = Gravity − Drag.",
+          "When drag equals weight, net force = 0 — the toy reaches terminal velocity.",
+          "Measuring fall time and height lets you calculate the actual acceleration.",
+        ],
+      },
+      {
+        heading: "Student Focus",
+        color: "#0F766E",
+        bullets: [
+          "Primary school: measure drop time and calculate final speed.",
+          "High school: calculate final velocity, acceleration, net force, drag force, and g-force on impact.",
+          "G-force tells you how hard the toy hits the ground — important for safe landing design.",
         ],
       },
     ],
     observationQuestions: [
-      "Were you correct about which design would fall slowest?",
-      "Which prototype performed best, and why do you think that is?",
-      "What would you change to improve your best design?",
+      "Which parachute design did you predict would fall the slowest?",
+      "Were your timing predictions correct?",
+      "Which design was the easiest to make?",
       "Did anything surprise you about the results?",
     ],
   },
   // Activity 2: Sound Pollution
   {
     id: 2,
+    setupImage: require("../../assets/images/sound-pollution-setup.png"),
     title: "Sound Pollution Hunter",
-    category: "Environmental Science",
+    category: "Engineering Challenges",
     icon: "volume-high-outline",
-    color: "#2F80ED",
+    color: "#2563EB",
     shortDescription:
       "Measure classroom sounds and compare loud and quiet zones.",
     overview:
       "Measure sound levels in different activities and map noise pollution zones.",
-    equipment: ["Mobile phone with microphone"],
+    equipment: ["Mobile phone with STEMM Lab app and microphone"],
     instructions: [
-      'Tap "Start Measuring"',
-      "Hold phone near the sound source",
-      "Wait 5-10 seconds for measurement",
-      "Record the peak dB level",
+      "Measure actions such as dropping objects, talking, walking, and stamping",
+      "Record peak dB levels and GPS-tagged locations",
+      "Map loud and quiet zones",
     ],
     features: ["predictionRequired", "gps", "sensors"],
-    maxPrototypes: 3,
+    maxPrototypes: 8,
+    minPrototypes: 1,
     estimatedMinutes: 15,
     difficultyLevels: ["primary", "highSchool"],
     measurements: [
+      {
+        key: "predictedOutcomeText",
+        label: "What is your prediction for this test?",
+        recorder: "manualText",
+        placeholder: "e.g. I think stomping will be loudest at around 85 dB",
+        optional: true,
+      },
+      {
+        key: "predictedOutcomeValue",
+        label: "Predicted sound level",
+        unit: "dB",
+        recorder: "manualNumber",
+        placeholder: "e.g. 85",
+        optional: true,
+      },
       {
         key: "action",
         label: "Action",
@@ -193,6 +252,7 @@ export const CHALLENGES: Challenge[] = [
           "Walking",
           "Stomping",
         ],
+        allowOther: true,
       },
       {
         key: "soundLevel",
@@ -201,73 +261,93 @@ export const CHALLENGES: Challenge[] = [
         recorder: "soundMeter",
         placeholder: "0",
       },
-      {
-        key: "videoUri",
-        label: "Video Evidence",
-        recorder: "video",
-      },
       { key: "location", label: "GPS Location", recorder: "gps" },
     ],
-    curriculumLinks: ["ACSSU073 - Sound and energy"],
+    curriculumLinks: [
+      "ACSSU073 - Sound and energy",
+      "ACSIS125 - Processing and analysing data",
+      "ACPPS053 - Health and wellbeing",
+    ],
     predictionPrompt: "Which classroom action do you think makes the most noise? Will the quietest action surprise you?",
     extensionTip: "Compare readings from different rooms or outside. How does distance from the source change the dB level?",
+    discussion:
+      "Sound exposure causes hearing damage when noise levels are too high or exposure time is too long. " +
+      "Use this table to understand the risk zones your team measured:\n\n" +
+      "0–30 dB  — Safe. Library whisper, rustling leaves.\n" +
+      "30–60 dB — Safe. Normal conversation, classroom at work.\n" +
+      "60–85 dB — Moderate. Busy traffic, vacuum cleaner. Safe for short periods.\n" +
+      "85–100 dB — Dangerous. Power tools, motorcycles. Hearing damage possible with prolonged exposure.\n" +
+      "100–120 dB — Very dangerous. Concerts, chainsaws. Ear protection required.\n" +
+      "120–140+ dB — Instant permanent damage. Jet engines, gunshots.\n\n" +
+      "Discussion questions: Which of your measurements fell in the danger zone? " +
+      "Would you recommend ear protection for any activity in your classroom? " +
+      "How could you redesign the classroom or the activity to reduce noise levels?",
     thingsToKnow: [
       {
-        heading: "What is a decibel?",
-        color: "#3B82F6",
+        heading: "Your mission: hunt the noise",
+        color: "#2563EB",
         bullets: [
-          "Sound is measured in decibels (dB).",
-          "A whisper is ~30 dB; normal conversation is ~60 dB.",
-          "Every 10 dB increase sounds twice as loud to our ears.",
+          "Sound detectives measure decibels (dB) — the unit for sound intensity.",
+          "A whisper is ~30 dB; a normal conversation is ~60 dB.",
+          "Every 10 dB step sounds roughly twice as loud to human ears.",
         ],
       },
       {
-        heading: "How sound travels",
-        color: "#2F80ED",
+        heading: "How sound waves work",
+        color: "#2563EB",
         bullets: [
-          "Sound travels as vibrations (pressure waves) through air.",
-          "Hard surfaces reflect sound; soft surfaces absorb it.",
-          "Closer to the source = higher dB reading.",
+          "Sound travels as pressure waves radiating outward from the source.",
+          "Hard surfaces (walls, desks) reflect waves and make readings higher.",
+          "Soft surfaces (carpet, curtains) absorb waves — quieter zones.",
+          "Doubling your distance from a source drops the dB level noticeably.",
         ],
       },
       {
-        heading: "Sound safety",
+        heading: "Danger zones — protect your ears",
         color: "#EF4444",
         bullets: [
-          "Sounds above 85 dB can damage hearing over time.",
-          "Ear protection is vital in loud environments.",
-          "Noise pollution affects concentration and wellbeing.",
+          "Above 85 dB: prolonged exposure starts damaging hearing.",
+          "Above 100 dB: even short bursts can cause permanent damage.",
+          "Noise pollution also affects concentration, memory, and wellbeing.",
+          "Real workplaces must keep noise below 85 dB by law.",
         ],
       },
     ],
     observationQuestions: [
-      "Were your predictions about noise levels correct?",
-      "Which action made the most noise — was this expected?",
-      "How could you reduce sound pollution in this space?",
-      "Did any measurement surprise you?",
+      "Which action did you predict would create the loudest sound?",
+      "Were your predictions correct?",
+      "Did anything surprise you about the results?",
+      "Should we wear ear muffs in our classroom? Why or why not?",
     ],
   },
   // Activity 3: Hand Fan
   {
     id: 3,
+    setupImage: require("../../assets/images/fan-setup.png"),
     title: "Hand Fan Challenge",
-    category: "Physics",
-    icon: "thermometer-outline",
-    color: "#F6B84A",
+    category: "Engineering Challenges",
+    icon: "paper-plane-outline",
+    color: "#EF4444",
     shortDescription: "Test how air movement affects flexible materials.",
     overview:
       "Test how air movement affects materials by building different fan designs.",
-    equipment: ["Paper", "Cardboard", "Scissors", "Tape"],
-    instructions: [
-      "Stand paper upright",
-      "Place phone flat on the paper strip",
-      "Fan air from 30cm",
-      "Measure bend angle with a protractor",
-      "Check tilt sensor reading",
-      "Try different distances (15cm, 30cm, 45cm)",
+    equipment: [
+      "Mobile phone with STEMM Lab app",
+      "Paper",
+      "Cardboard",
+      "Scissors",
+      "Sticky tape",
     ],
-    features: ["predictionRequired", "multiplePrototypes"],
-    maxPrototypes: 3,
+    instructions: [
+      "Stand paper upright on a table.",
+      "Fan air from 30 cm away.",
+      "Observe and record movement.",
+      "Repeat with different fan designs and fan distance (15cm, 30cm, 45cm).",
+      "Repeat with a cardboard instead of a paper vertical.",
+    ],
+    features: ["predictionRequired", "gps", "multiplePrototypes"],
+    maxPrototypes: 6,
+    minPrototypes: 1,
     estimatedMinutes: 15,
     difficultyLevels: ["primary", "highSchool"],
     measurements: [
@@ -276,6 +356,13 @@ export const CHALLENGES: Challenge[] = [
         label: "Fan design",
         recorder: "manualText",
         placeholder: "e.g. Folded fan",
+      },
+      {
+        key: "predictedOutcomeText",
+        label: "What is your prediction for this design?",
+        recorder: "manualText",
+        placeholder: "e.g. The folded fan at 15 cm will bend the paper the most",
+        optional: true,
       },
       {
         key: "material",
@@ -287,19 +374,7 @@ export const CHALLENGES: Challenge[] = [
           "Thin cardboard",
           "Corrugated cardboard",
         ],
-      },
-      {
-        key: "bendAngle",
-        label: "Bend angle (protractor)",
-        unit: "°",
-        recorder: "manualNumber",
-        placeholder: "0",
-      },
-      {
-        key: "tiltData",
-        label: "Tilt sensor",
-        unit: "g",
-        recorder: "accelerometer",
+        allowOther: true,
       },
       {
         key: "distance",
@@ -309,19 +384,30 @@ export const CHALLENGES: Challenge[] = [
         choices: ["15", "30", "45"],
       },
       {
+        key: "bendAngle",
+        label: "Bend angle",
+        unit: "°",
+        recorder: "manualNumber",
+        placeholder: "e.g. 45",
+      },
+      {
         key: "photoUri",
         label: "Fan Photo",
         recorder: "photo",
       },
       { key: "location", label: "GPS Location", recorder: "gps" },
     ],
-    curriculumLinks: ["ACSSU076 - Forces and motion"],
+    curriculumLinks: ["ACSSU076 – Forces and motion"],
     predictionPrompt: "Which fan design and material do you think will create the most air movement? Which distance will have the biggest effect?",
     extensionTip: "Try wetting your fan strip — does moisture change how it bends? What does this tell you about the material properties?",
+    discussion:
+      "Moving air applies force to objects. Paper bends due to its flexibility, and repeated bending can weaken it over time. " +
+      "To estimate the force applied: F ≈ k × θ, where F is force (N), θ is the bend angle in radians, and k is the stiffness coefficient. " +
+      "Students can rank forces by stiffness and bend angle without exact units if needed.",
     thingsToKnow: [
       {
         heading: "Air pressure",
-        color: "#3B82F6",
+        color: "#2563EB",
         bullets: [
           "Fanning creates moving air (wind).",
           "Moving air has lower pressure than still air.",
@@ -338,41 +424,64 @@ export const CHALLENGES: Challenge[] = [
         ],
       },
       {
-        heading: "Material properties",
-        color: "#2F80ED",
+        heading: "Material stiffness (k values)",
+        color: "#2563EB",
         bullets: [
-          "Lighter, thinner materials bend more easily.",
-          "Corrugated cardboard is stiffer due to its structure.",
+          "Lighter, thinner materials bend more easily — lower k value.",
+          "Thin printer paper (0.1 mm): k ≈ 0.05 N/rad — bends very easily.",
+          "Standard card stock (0.25 mm): k ≈ 0.2 N/rad — moderate bend.",
+          "Thin cardboard (0.5 mm): k ≈ 0.5 N/rad — much harder to bend.",
+          "Corrugated cardboard (3 mm): k ≈ 2–3 N/rad — very stiff, almost no bend.",
           "The shape of your fan changes how much airflow it creates.",
+        ],
+      },
+      {
+        heading: "Estimating force (optional)",
+        color: "#F59E0B",
+        bullets: [
+          "Formula: F ≈ k × θ  (force = stiffness × bend angle in radians).",
+          "Convert degrees to radians: θ (rad) = degrees × π ÷ 180.",
+          "Example — thin paper (k = 0.05), bend angle 30°: θ = 0.524 rad → F ≈ 0.026 N.",
+          "Same 30° bend on thin cardboard (k = 0.5): F ≈ 0.26 N — 10× more force needed.",
+          "The key insight: force increases strongly with material stiffness.",
         ],
       },
     ],
     observationQuestions: [
-      "Which fan design created the most air movement?",
-      "Did the material or the fan shape matter more?",
+      "Which fan design did you predict would make the paper move the most?",
       "Were your predictions correct?",
-      "What would you try next to maximise the bend angle?",
+      "Did anything surprise you about the results?",
+      "How does material stiffness affect the bend angle of the paper?",
+      "How does fan design influence air velocity and paper movement?",
+      "How does distance from the fan affect the bending of the paper?",
     ],
   },
   // Activity 4: Earthquake
   {
     id: 4,
-    title: "Earthquake Structure",
-    category: "Engineering",
+    setupImage: require("../../assets/images/earthquake-setup.png"),
+    title: "Earthquake-Resistant Structure",
+    category: "Engineering Challenges",
     icon: "construct-outline",
-    color: "#007C7A",
+    color: "#22C55E",
     shortDescription: "Build a structure that resists vibration.",
     overview:
       "Design structures that withstand vibration, simulating earthquakes.",
-    equipment: ["Cardboard", "Paper", "Scissors", "Tape", "Cups"],
-    instructions: [
-      "Build anti-vibration layer",
-      "Place phone on platform",
-      "Activate vibration",
-      "Measure movement",
-      "Modify structure and retest",
+    equipment: [
+      "Mobile phone with STEMM Lab app",
+      "Cardboard",
+      "Paper",
+      "Scissors",
+      "Sticky tape",
+      "Plastic or paper cups",
     ],
-    features: ["predictionRequired", "multiplePrototypes", "sensors"],
+    instructions: [
+      "Build an anti-vibration layer, by folding paper/cardboard.",
+      "Place a flat cardboard platform on top.",
+      "Place the phone in the centre and activate vibration mode on the STEMM App.",
+      "Modify the structure to reduce movement (e.g. more pillars, more folds, etc).",
+    ],
+    features: ["predictionRequired", "gps", "multiplePrototypes", "sensors"],
     maxPrototypes: 3,
     estimatedMinutes: 25,
     difficultyLevels: ["primary", "highSchool"],
@@ -384,26 +493,46 @@ export const CHALLENGES: Challenge[] = [
         placeholder: "e.g. 4 folds + 4 pillars",
       },
       {
-        key: "movement",
-        label: "Movement distance",
-        unit: "cm",
-        recorder: "manualNumber",
-        placeholder: "0",
+        key: "predictedOutcomeText",
+        label: "Your prediction",
+        recorder: "manualText",
+        placeholder: "e.g. Wider base will shake less",
+        optional: true,
       },
       {
-        key: "vibrationData",
-        label: "Vibration",
-        unit: "g",
-        recorder: "accelerometer",
+        key: "predictedOutcomeValue",
+        label: "Predicted shake (g)",
+        recorder: "manualNumber",
+        placeholder: "0.12",
+        optional: true,
       },
       {
         key: "photoUri",
         label: "Structure Photo",
         recorder: "photo",
       },
+      {
+        key: "vibrationData",
+        label: "Vibration",
+        unit: "g",
+        recorder: "accelerometer",
+        vibrate: true,
+      },
+      {
+        key: "movement",
+        label: "Movement distance",
+        unit: "cm",
+        recorder: "manualNumber",
+        placeholder: "0",
+      },
       { key: "location", label: "GPS Location", recorder: "gps" },
     ],
-    curriculumLinks: ["ACSSU096 - Earth processes"],
+    discussion:
+      "Earthquakes cause ground vibrations that can collapse poorly designed structures. Engineers design buildings to absorb and distribute energy safely.",
+    curriculumLinks: [
+      "ACSSU096 – Earth processes",
+      "ACTDEP036 – Testing and improving designs",
+    ],
     predictionPrompt: "Which structure design do you think will withstand the most vibration? What building features help resist earthquakes?",
     extensionTip: "Try adding a 'base isolator' layer of foam or rubber under your structure. How does it change the vibration readings?",
     thingsToKnow: [
@@ -418,7 +547,7 @@ export const CHALLENGES: Challenge[] = [
       },
       {
         heading: "Vibration damping",
-        color: "#3B82F6",
+        color: "#2563EB",
         bullets: [
           "Anti-vibration layers absorb and spread energy.",
           "Soft materials (foam, rubber) dampen vibrations better than hard materials.",
@@ -427,7 +556,7 @@ export const CHALLENGES: Challenge[] = [
       },
       {
         heading: "Engineering solutions",
-        color: "#2F80ED",
+        color: "#2563EB",
         bullets: [
           "Real buildings use base isolators and tuned mass dampers.",
           "Flexible structures absorb energy better than rigid ones.",
@@ -436,19 +565,18 @@ export const CHALLENGES: Challenge[] = [
       },
     ],
     observationQuestions: [
-      "Which design was most resistant to vibration?",
-      "Were your predictions about the best structure correct?",
-      "What would you change to improve your best design?",
-      "Which part of the design made the biggest difference?",
+      "Which fold design did you predict would make the phone move the least?",
+      "Were your predictions correct?",
+      "Did anything surprise you about the results?",
     ],
   },
   // Activity 5: Stretch & Grace
   {
     id: 5,
     title: "Human Performance Lab",
-    category: "Medical Science + Biomechanics",
+    category: "Health and Medical Sciences",
     icon: "body-outline",
-    color: "#F6D7A8",
+    color: "#7C3AED",
     shortDescription: "Measure speed, smoothness, and control during movement.",
     overview:
       "Measure speed, smoothness, and coordination using phone sensors.",
@@ -456,11 +584,12 @@ export const CHALLENGES: Challenge[] = [
     instructions: [
       "Hold phone firmly",
       "Perform guided movements",
+      "Repeat the activity with vibration feedback enabled",
       "Record time to complete",
-      "Review smoothness",
+      "Review speed, smoothness, and range-of-motion data",
     ],
-    features: ["predictionRequired", "sensors"],
-    maxPrototypes: 1,
+    features: ["predictionRequired", "gps", "sensors"],
+    maxPrototypes: 3,
     estimatedMinutes: 12,
     difficultyLevels: ["primary", "highSchool"],
     measurements: [
@@ -468,13 +597,7 @@ export const CHALLENGES: Challenge[] = [
         key: "movementType",
         label: "Movement",
         recorder: "manualChoice",
-        choices: ["Wrist circle", "Wrist figure-8", "Side arm raise"],
-      },
-      {
-        key: "smoothness",
-        label: "Smoothness",
-        unit: "%",
-        recorder: "gyroscope",
+        choices: ["Hand circles", "Hand up and down", "Hand side to side"],
       },
       {
         key: "timeSeconds",
@@ -484,19 +607,32 @@ export const CHALLENGES: Challenge[] = [
         placeholder: "0.00",
       },
       {
-        key: "videoUri",
-        label: "Movement Video",
-        recorder: "video",
+        key: "vibrationData",
+        label: "Phone vibration",
+        unit: "g",
+        recorder: "accelerometer",
+      },
+      {
+        key: "smoothness",
+        label: "Smoothness",
+        unit: "%",
+        recorder: "gyroscope",
+        optional: true,
       },
       { key: "location", label: "GPS Location", recorder: "gps" },
     ],
-    curriculumLinks: ["ACPPS051 - Movement skills"],
-    predictionPrompt: "Which movement do you think will have the smoothest score? Do you think practice will improve your results?",
+    curriculumLinks: [
+      "ACPPS051 - Movement skills",
+      "ACPPS054 - Physical performance",
+      "ACSSU176 - Structure and function of body systems",
+    ],
+    predictionPrompt:
+      "Which movement will produce the most movement units in the least time? How smooth do you think it will feel?",
     extensionTip: "Try the same movement with your non-dominant hand. Is there a difference in smoothness?",
     thingsToKnow: [
       {
         heading: "What is biomechanics?",
-        color: "#3B82F6",
+        color: "#2563EB",
         bullets: [
           "Biomechanics is the study of how living things move using physics.",
           "Muscles, bones, and joints all work together to create movement.",
@@ -505,7 +641,7 @@ export const CHALLENGES: Challenge[] = [
       },
       {
         heading: "Muscle control",
-        color: "#2F80ED",
+        color: "#2563EB",
         bullets: [
           "Smooth movement requires many muscles coordinating together.",
           "Your brain sends signals through nerves 100s of times per second.",
@@ -523,53 +659,68 @@ export const CHALLENGES: Challenge[] = [
       },
     ],
     observationQuestions: [
-      "Which movement produced the smoothest score?",
-      "Did practice between attempts improve your results?",
+      "Which movement was the hardest to keep the vibration low?",
       "Were your predictions correct?",
-      "What does a high smoothness score tell you about movement control?",
+      "Did anything surprise you about the results?",
     ],
   },
   // Activity 6: Reaction Board
   {
     id: 6,
+    setupImage: require("../../assets/images/reaction-board-setup.png"),
     title: "Reaction Board",
-    category: "Neuroscience",
+    category: "Health and Medical Sciences",
     icon: "pulse-outline",
-    color: "#8E3D59",
+    color: "#EC4899",
     shortDescription: "Test reaction time and coordination.",
     overview:
       "Measure reaction time and coordination through digital challenges.",
-    equipment: ["Mobile phone"],
+    equipment: ["Mobile phone with STEMM Lab app", "Clear working space"],
     instructions: [
       "Tap when button appears (5 trials)",
       "Record fastest time",
       "Repeat with non-dominant hand",
+      "Trace a moving shape on the screen",
+      "Rotate through each team member",
     ],
-    features: ["predictionRequired"],
+    features: ["predictionRequired", "gps"],
     maxPrototypes: 1,
     estimatedMinutes: 15,
     difficultyLevels: ["primary", "highSchool"],
     measurements: [
+      {
+        key: "predictedOutcomeText",
+        label: "Who do you think will react fastest?",
+        recorder: "manualText",
+        placeholder: "e.g. Ava will be fastest because she plays sport",
+        optional: true,
+      },
+      {
+        key: "predictedOutcomeValue",
+        label: "Predicted fastest reaction time",
+        unit: "s",
+        recorder: "manualNumber",
+        placeholder: "e.g. 0.25",
+        optional: true,
+      },
       { key: "teamResults", label: "Team Results", recorder: "teamReaction" },
-      {
-        key: "tracingResult",
-        label: "Tracing Test",
-        recorder: "tracing",
-      },
-      {
-        key: "videoUri",
-        label: "Team Test Video",
-        recorder: "video",
-      },
       { key: "location", label: "GPS Location", recorder: "gps" },
     ],
-    curriculumLinks: ["ACSIS130 - Collecting data"],
+    curriculumLinks: [
+      "ACSIS130 – Collecting and analysing data",
+      "ACMSP147 – Averages and variation",
+      "ACPPS057 – Understanding physical performance",
+    ],
     predictionPrompt: "Who do you think has the fastest reaction time in your team? Will the dominant hand always be faster?",
     extensionTip: "Try the test again after 5 minutes of exercise. Does your reaction time change when your heart rate is elevated?",
+    discussion:
+      "Reaction time measures how quickly the brain processes information and sends signals to muscles. " +
+      "Practice can improve speed and coordination. " +
+      "Comparing hands shows how dominance affects performance.",
     thingsToKnow: [
       {
         heading: "How fast is reaction time?",
-        color: "#3B82F6",
+        color: "#2563EB",
         bullets: [
           "Average human reaction time is 200–300 milliseconds.",
           "Elite athletes can react in as little as 100 ms.",
@@ -587,7 +738,7 @@ export const CHALLENGES: Challenge[] = [
       },
       {
         heading: "Dominant hand advantage",
-        color: "#2F80ED",
+        color: "#2563EB",
         bullets: [
           "Your dominant hand is usually faster due to better-trained pathways.",
           "This gap narrows with deliberate practice of the non-dominant hand.",
@@ -596,29 +747,29 @@ export const CHALLENGES: Challenge[] = [
       },
     ],
     observationQuestions: [
-      "Who had the fastest reaction time in your team?",
-      "Was there a difference between dominant and non-dominant hands?",
-      "Were your team predictions correct?",
-      "What factors do you think affected the results most?",
+      "What did you predict your reaction time would be?",
+      "Were your predictions correct?",
+      "Did anything surprise you about the results?",
     ],
   },
-  // Activity 7: Breathing Trainer
+  // Activity 7: Breathing Pace Trainer
   {
     id: 7,
-    title: "Breathing Trainer",
-    category: "Medical Science",
+    setupImage: require("../../assets/images/breathing-setup.png"),
+    title: "Breathing Pace Trainer",
+    category: "Medical Science / Health Science",
     icon: "heart-outline",
-    color: "#78A6F5",
+    color: "#06B6D4",
     shortDescription: "Analyse breathing patterns before and after exercise.",
     overview:
-      "Analyse breathing patterns using phone sensors to measure chest movement.",
-    equipment: ["Mobile phone", "Flat surface"],
+      "Students analyse breathing patterns at rest and after exercise using the phone's motion sensors.",
+    equipment: ["Mobile phone with STEMM Lab app", "Flat surface or mat"],
     instructions: [
-      "Place phone on chest",
-      "Record breathing for 1 minute",
-      "Perform exercise (jog/star jumps)",
-      "Record again",
-      "Compare rates",
+      "Place the phone gently on your chest",
+      "Record your breathing at rest for 30 seconds",
+      "Perform light exercise — jog on the spot for 1 minute OR do 100 star jumps",
+      "Record breathing again straight after exercise",
+      "Rotate through each team member and compare results",
     ],
     features: ["predictionRequired", "sensors"],
     maxPrototypes: 3,
@@ -632,36 +783,35 @@ export const CHALLENGES: Challenge[] = [
         choices: [
           "At rest",
           "After Exercise 1 – Jog (1 min)",
-          "After Exercise 2 – Star jumps (100)",
+          "After Exercise 2 – 100 Star Jumps",
         ],
       },
       {
-        key: "breathingData",
-        label: "Breaths per minute",
-        unit: "bpm",
-        recorder: "breathing",
-      },
-      {
-        key: "recoveryMinutes",
-        label: "Recovery time (back to rest)",
-        unit: "min",
+        key: "predictedOutcomeValue",
+        label: "Predicted breaths per minute",
         recorder: "manualNumber",
-        placeholder: "e.g. 2",
+        placeholder: "e.g. 15",
+        optional: true,
       },
       {
-        key: "videoUri",
-        label: "Exercise Video",
-        recorder: "video",
+        key: "breathingData",
+        label: "Team Breathing",
+        recorder: "teamBreathing",
       },
       { key: "location", label: "GPS Location", recorder: "gps" },
     ],
-    curriculumLinks: ["ACSSU176 - Body systems"],
-    predictionPrompt: "How many breaths per minute do you take at rest? How much do you think exercise will change it?",
-    extensionTip: "Try different types of exercise (slow jog vs. star jumps). Does the intensity of exercise change your recovery time?",
+    curriculumLinks: [
+      "ACSSU176 – Body systems",
+      "ACPPS054 – Physical activity and health",
+    ],
+    predictionPrompt: "Predict how your breathing rate will change after exercise.",
+    extensionTip: "Try different types of exercise (slow jog vs. star jumps). Does the intensity affect how long it takes to recover?",
+    discussion:
+      "Breathing rate increases during exercise to supply more oxygen to muscles. Sensors detect chest movement, helping students visualise breathing patterns.",
     thingsToKnow: [
       {
         heading: "Why do we breathe?",
-        color: "#3B82F6",
+        color: "#0F766E",
         bullets: [
           "Breathing delivers oxygen to your blood and removes CO₂.",
           "Every cell in your body needs oxygen to produce energy.",
@@ -670,7 +820,7 @@ export const CHALLENGES: Challenge[] = [
       },
       {
         heading: "Breathing rate",
-        color: "#2F80ED",
+        color: "#0F766E",
         bullets: [
           "Normal resting breathing rate: 12–20 breaths per minute.",
           "Exercise can double or triple your breathing rate.",
@@ -688,10 +838,9 @@ export const CHALLENGES: Challenge[] = [
       },
     ],
     observationQuestions: [
-      "How much did exercise change your breathing rate?",
-      "Were your predictions about breaths per minute correct?",
-      "Which exercise caused the biggest change?",
-      "How long did it take for your breathing to return to normal?",
+      "Were you right? How close was your prediction?",
+      "Did anything surprise you about the results?",
+      "What changed in your breathing after exercise?",
     ],
   },
 ];

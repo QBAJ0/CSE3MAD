@@ -1,5 +1,4 @@
 import {
-  addDoc,
   collection,
   doc,
   getDoc,
@@ -7,20 +6,16 @@ import {
   orderBy,
   query,
   setDoc,
-  where,
 } from "firebase/firestore";
-import { ActivityResult, Comment, LeaderboardEntry } from "../types";
-import { db } from "./firebase";
+import { auth, db } from "@/src/firebase";
+import { buildActivityFirestoreDoc } from "./activityFirestore";
+import {
+  buildLeaderboardFirestoreDoc,
+  LeaderboardFirestoreDoc,
+} from "./leaderboardFirestore";
+import { ActivityResult, LeaderboardEntry } from "../types";
 
-export type SyncFailReason = "offline" | "permission" | "unknown";
-
-export class CloudSyncError extends Error {
-  constructor(public readonly reason: SyncFailReason, cause?: unknown) {
-    super(`Cloud sync failed: ${reason}`);
-    this.name = "CloudSyncError";
-    if (cause instanceof Error) this.stack = cause.stack;
-  }
-}
+type SyncFailReason = "offline" | "permission" | "unknown";
 
 function classifyError(e: unknown): SyncFailReason {
   if (e && typeof e === "object" && "code" in e) {
@@ -91,142 +86,151 @@ export function buildLocalLeaderboard(
 
 const COLLECTION = "leaderboard";
 
+/** @deprecated Use LeaderboardFirestoreDoc */
+export type LeaderboardCloudDoc = LeaderboardFirestoreDoc;
+
+function currentOwnerUid(): string | null {
+  return auth?.currentUser?.uid ?? null;
+}
+
+function cloudDocToEntry(
+  docId: string,
+  data: LeaderboardFirestoreDoc,
+): Omit<LeaderboardEntry, "rank"> {
+  const ratingCount = data.ratingCount ?? 0;
+  const ratingSum = data.ratingSum ?? 0;
+  return {
+    teamName: data.teamName,
+    discriminator: data.discriminator ?? data.teamId ?? docId,
+    totalPoints: data.totalPoints ?? 0,
+    challengesCompleted: data.challengesCompleted ?? 0,
+    averageRating: ratingCount > 0 ? ratingSum / ratingCount : 0,
+    lastActive: data.lastActive ?? data.updatedAt ?? "",
+  };
+}
+
+function rankEntries(entries: Omit<LeaderboardEntry, "rank">[]): LeaderboardEntry[] {
+  return [...entries]
+    .sort((a, b) => b.totalPoints - a.totalPoints)
+    .map((e, i) => ({ ...e, rank: i + 1 }));
+}
+
+export async function fetchLeaderboardFromCloud(
+  cutoff: Date | null,
+): Promise<LeaderboardEntry[]> {
+  const uid = currentOwnerUid();
+
+  if (!db) {
+    console.warn("[firestore:leaderboard] fetch skipped — not configured");
+    return [];
+  }
+
+  if (!uid) {
+    console.warn("[firestore:leaderboard] fetch skipped — not signed in");
+    return [];
+  }
+
+  try {
+    const q = query(collection(db, COLLECTION), orderBy("totalPoints", "desc"));
+    const snap = await getDocs(q);
+    const entries: Omit<LeaderboardEntry, "rank">[] = [];
+
+    snap.forEach((docSnap) => {
+      const data = docSnap.data() as LeaderboardFirestoreDoc;
+      const entry = cloudDocToEntry(docSnap.id, data);
+
+      if (cutoff && entry.lastActive) {
+        if (new Date(entry.lastActive) < cutoff) {
+          return;
+        }
+      }
+
+      entries.push(entry);
+    });
+
+    const ranked = rankEntries(entries);
+    console.log("[firestore:leaderboard] fetch ok", { teams: ranked.length });
+    return ranked;
+  } catch (e) {
+    console.warn("[firestore:leaderboard] fetch fail", e);
+    return [];
+  }
+}
+
 export async function pushResultToCloud(result: ActivityResult): Promise<boolean> {
-  if (!db) return false;
+  const ownerUid = currentOwnerUid();
+  const path = `${COLLECTION}/${result.teamId}`;
+
+  if (!db || !ownerUid) {
+    console.warn("[firestore:leaderboard] write fail — not configured or signed in", {
+      path,
+      resultId: result.id,
+    });
+    return false;
+  }
+
   try {
     const teamRef = doc(db, COLLECTION, result.teamId);
     const snap = await getDoc(teamRef);
+    const existing = snap.exists()
+      ? (snap.data() as LeaderboardFirestoreDoc)
+      : undefined;
 
-    if (snap.exists()) {
-      const existing = snap.data();
-      await setDoc(teamRef, {
-        teamName: result.teamName,
-        discriminator: result.teamId,
-        totalPoints: (existing.totalPoints || 0) + (result.points || 0),
-        challengesCompleted: (existing.challengesCompleted || 0) + 1,
-        ratingSum: (existing.ratingSum || 0) + result.rating,
-        ratingCount: (existing.ratingCount || 0) + 1,
-        lastActive: result.createdAt,
-      });
-    } else {
-      await setDoc(teamRef, {
-        teamName: result.teamName,
-        discriminator: result.teamId,
-        totalPoints: result.points || 0,
-        challengesCompleted: 1,
-        ratingSum: result.rating,
-        ratingCount: 1,
-        lastActive: result.createdAt,
-      });
-    }
+    const docPayload = buildLeaderboardFirestoreDoc(
+      result,
+      ownerUid,
+      existing,
+    );
+
+    await setDoc(teamRef, docPayload);
+    console.log("[firestore:leaderboard] write ok", {
+      path,
+      resultId: result.id,
+      totalPoints: docPayload.totalPoints,
+    });
     return true;
   } catch (e) {
-    console.warn(`[leaderboard] pushResultToCloud (${classifyError(e)}):`, e);
+    console.warn("[firestore:leaderboard] write fail", {
+      path,
+      resultId: result.id,
+      reason: classifyError(e),
+      error: e,
+    });
     return false;
   }
 }
 
-// Saves the full activity result (including GPS location) to the
-// "activities" collection so teachers can query per-submission data.
 export async function pushActivityToCloud(result: ActivityResult): Promise<boolean> {
-  if (!db) return false;
+  const ownerUid = currentOwnerUid();
+  const path = `activities/${result.id}`;
+
+  if (!db || !ownerUid) {
+    console.warn("[firestore:activity] write fail — not configured or signed in", {
+      path,
+      resultId: result.id,
+    });
+    return false;
+  }
+
   try {
-    await setDoc(doc(db, "activities", result.id), {
-      id: result.id,
+    const updatedAt = new Date().toISOString();
+    const firestoreDoc = buildActivityFirestoreDoc(result, ownerUid, updatedAt);
+    await setDoc(doc(db, "activities", result.id), firestoreDoc);
+    console.log("[firestore:activity] write ok", {
+      path,
+      resultId: result.id,
       challengeId: result.challengeId,
-      teamId: result.teamId,
-      teamName: result.teamName,
-      difficulty: result.difficulty,
-      points: result.points ?? 0,
-      rating: result.rating,
-      completedInTime: result.completedInTime ?? true,
-      location: result.location ?? null,
-      createdAt: result.createdAt,
+      ownerUid,
+      evidencePending: firestoreDoc.evidence.files.length,
     });
     return true;
   } catch (e) {
-    console.warn(`[leaderboard] pushActivityToCloud (${classifyError(e)}):`, e);
-    return false;
-  }
-}
-
-export async function fetchActivitiesByChallenge(
-  challengeId: number,
-): Promise<Pick<ActivityResult, "id" | "teamName" | "teamId" | "rating" | "reflection" | "createdAt">[]> {
-  if (!db) return [];
-  try {
-    const q = query(
-      collection(db, "activities"),
-      where("challengeId", "==", challengeId),
-      orderBy("createdAt", "desc"),
-    );
-    const snap = await getDocs(q);
-    return snap.docs.map((d) => {
-      const data = d.data();
-      return {
-        id: data.id,
-        teamName: data.teamName,
-        teamId: data.teamId,
-        rating: data.rating ?? 0,
-        reflection: data.reflection ?? "",
-        createdAt: data.createdAt,
-      };
+    console.warn("[firestore:activity] write fail", {
+      path,
+      resultId: result.id,
+      reason: classifyError(e),
+      error: e,
     });
-  } catch (e) {
-    throw new CloudSyncError(classifyError(e), e);
-  }
-}
-
-export async function postComment(
-  comment: Omit<Comment, "id">,
-): Promise<boolean> {
-  if (!db) return false;
-  try {
-    await addDoc(collection(db, "comments"), comment);
-    return true;
-  } catch (e) {
-    console.warn(`[leaderboard] postComment (${classifyError(e)}):`, e);
     return false;
-  }
-}
-
-export async function fetchComments(challengeId: number): Promise<Comment[]> {
-  if (!db) return [];
-  try {
-    const q = query(
-      collection(db, "comments"),
-      where("challengeId", "==", challengeId),
-      orderBy("createdAt", "desc"),
-    );
-    const snap = await getDocs(q);
-    return snap.docs.map((d) => ({ id: d.id, ...d.data() } as Comment));
-  } catch (e) {
-    throw new CloudSyncError(classifyError(e), e);
-  }
-}
-
-export async function fetchCloudLeaderboard(): Promise<LeaderboardEntry[]> {
-  if (!db) return [];
-  try {
-    const snap = await getDocs(collection(db, COLLECTION));
-    const entries = snap.docs.map((d) => {
-      const data = d.data();
-      return {
-        teamName: data.teamName,
-        discriminator: data.discriminator,
-        totalPoints: data.totalPoints || 0,
-        challengesCompleted: data.challengesCompleted || 0,
-        averageRating:
-          data.ratingCount > 0 ? data.ratingSum / data.ratingCount : 0,
-        lastActive: data.lastActive || "",
-        rank: 0,
-      } as LeaderboardEntry;
-    });
-
-    return entries
-      .sort((a, b) => b.totalPoints - a.totalPoints)
-      .map((e, i) => ({ ...e, rank: i + 1 }));
-  } catch (e) {
-    throw new CloudSyncError(classifyError(e), e);
   }
 }

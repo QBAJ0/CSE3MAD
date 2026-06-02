@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Tabs } from 'expo-router';
 import { Platform, StyleSheet, View } from 'react-native';
+import { useTheme } from '../../src/theme/themeContext';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -9,30 +10,34 @@ function TabIcon({
   activeName,
   focused,
   color,
+  glowColor,
 }: {
   name: IconName;
   activeName: IconName;
   focused: boolean;
   color: string;
+  glowColor: string;
 }) {
   return (
-    <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
+    <View style={[styles.iconWrap, focused && { backgroundColor: glowColor }]}>
       <Ionicons name={focused ? activeName : name} size={22} color={color} />
     </View>
   );
 }
 
 export default function TabsLayout() {
+  const { colors } = useTheme();
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#F28C28',
-        tabBarInactiveTintColor: '#94A3B8',
+        tabBarActiveTintColor: colors.tabActive,
+        tabBarInactiveTintColor: colors.tabInactive,
         tabBarStyle: {
-          backgroundColor: '#FFFFFF',
+          backgroundColor: colors.tabBar,
           borderTopWidth: 1,
-          borderTopColor: '#F1F5F9',
+          borderTopColor: colors.tabBarBorder,
           height: Platform.OS === 'ios' ? 88 : 68,
           paddingTop: 8,
           paddingBottom: Platform.OS === 'ios' ? 28 : 10,
@@ -59,6 +64,7 @@ export default function TabsLayout() {
               activeName="home"
               focused={focused}
               color={color}
+              glowColor={colors.tabActiveGlow}
             />
           ),
         }}
@@ -66,13 +72,14 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="activity"
         options={{
-          title: 'Challenges',
+          title: 'Missions',
           tabBarIcon: ({ focused, color }) => (
             <TabIcon
               name="flash-outline"
               activeName="flash"
               focused={focused}
               color={color}
+              glowColor={colors.tabActiveGlow}
             />
           ),
         }}
@@ -87,6 +94,7 @@ export default function TabsLayout() {
               activeName="trophy"
               focused={focused}
               color={color}
+              glowColor={colors.tabActiveGlow}
             />
           ),
         }}
@@ -101,6 +109,7 @@ export default function TabsLayout() {
               activeName="person"
               focused={focused}
               color={color}
+              glowColor={colors.tabActiveGlow}
             />
           ),
         }}
@@ -116,8 +125,5 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  iconWrapActive: {
-    backgroundColor: 'rgba(242,140,40,0.16)',
   },
 });

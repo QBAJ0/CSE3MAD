@@ -10,6 +10,8 @@ export const STORAGE_KEYS = {
   EARNED_BADGES: "stemm_earned_badges",
   REMINDER_HOUR: "reminder_hour",
   REMINDER_MINUTE: "reminder_minute",
+  PENDING_CLOUD_SYNC: "stemm_pending_challenge_cloud_sync",
+  PENDING_MEDIA_UPLOAD: "stemm_pending_media_upload",
 } as const;
 
 export const DEFAULT_REMINDER_HOUR = 19;
@@ -34,7 +36,7 @@ export const storage = {
     }
   },
 
-  async saveCompletedActivity(activity: ActivityResult): Promise<void> {
+  async saveCompletedActivity(activity: ActivityResult): Promise<boolean> {
     try {
       const stored = await AsyncStorage.getItem(
         STORAGE_KEYS.COMPLETED_ACTIVITIES,
@@ -45,8 +47,10 @@ export const storage = {
         STORAGE_KEYS.COMPLETED_ACTIVITIES,
         JSON.stringify(activities),
       );
+      return true;
     } catch (e) {
       console.error("Failed to save activity:", e);
+      return false;
     }
   },
 

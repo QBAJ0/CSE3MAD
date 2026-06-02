@@ -1,5 +1,13 @@
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { useHaptic } from "../../hooks/useHaptic";
+import { useMemo, useState } from "react";
+import {
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import type { ColorTokens } from "../../theme/colors";
+import { useTheme } from "../../theme/themeContext";
 import { Measurement } from "../../types";
 
 interface Props {
@@ -9,48 +17,107 @@ interface Props {
 }
 
 export function ChoiceRecorder({ measurement, value, onChange }: Props) {
-  const { haptic } = useHaptic();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const choices = measurement.choices || [];
+
+  const isCustom = value !== "" && !choices.includes(value);
+  const [showOtherInput, setShowOtherInput] = useState(isCustom);
+  const [otherText, setOtherText] = useState(isCustom ? value : "");
+
+  const selectChoice = (choice: string) => {
+    setShowOtherInput(false);
+    onChange(choice);
+  };
+
+  const selectOther = () => {
+    setShowOtherInput(true);
+    onChange(otherText);
+  };
+
+  const handleOtherChange = (text: string) => {
+    setOtherText(text);
+    onChange(text);
+  };
 
   return (
     <View style={styles.container}>
-      {choices.map((choice) => (
-        <TouchableOpacity
-          key={choice}
-          style={[styles.choice, value === choice && styles.choiceSelected]}
-          onPress={() => {
-            haptic("light");
-            onChange(choice);
-          }}
-        >
-          <Text
-            style={[
-              styles.choiceText,
-              value === choice && styles.choiceTextSelected,
-            ]}
+      <View style={styles.chipsRow}>
+        {choices.map((choice) => (
+          <TouchableOpacity
+            key={choice}
+            style={[styles.choice, value === choice && styles.choiceSelected]}
+            onPress={() => selectChoice(choice)}
           >
-            {choice}
-          </Text>
-        </TouchableOpacity>
-      ))}
+            <Text
+              style={[
+                styles.choiceText,
+                value === choice && styles.choiceTextSelected,
+              ]}
+            >
+              {choice}
+            </Text>
+          </TouchableOpacity>
+        ))}
+
+        {measurement.allowOther && (
+          <TouchableOpacity
+            style={[styles.choice, showOtherInput && styles.choiceSelected]}
+            onPress={selectOther}
+          >
+            <Text
+              style={[
+                styles.choiceText,
+                showOtherInput && styles.choiceTextSelected,
+              ]}
+            >
+              Other
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {showOtherInput && (
+        <TextInput
+          style={styles.otherInput}
+          placeholder="Describe the action…"
+          placeholderTextColor={colors.textMuted}
+          value={otherText}
+          onChangeText={handleOtherChange}
+          autoFocus
+        />
+      )}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
-  choice: {
-    flex: 1,
-    minWidth: 80,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    backgroundColor: "#FFFFFF",
-    alignItems: "center",
-  },
-  choiceSelected: { backgroundColor: "#2F80ED", borderColor: "#2F80ED" },
-  choiceText: { color: "#12343B", fontSize: 14 },
-  choiceTextSelected: { color: "#F0F6FF", fontWeight: "700" },
-});
+function createStyles(c: ColorTokens) {
+  return StyleSheet.create({
+    container: { gap: 10 },
+    chipsRow: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+    choice: {
+      flex: 1,
+      minWidth: 80,
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: c.border,
+      backgroundColor: c.surface,
+      alignItems: "center",
+    },
+    choiceSelected: { backgroundColor: c.info, borderColor: c.info },
+    choiceText: { color: c.text, fontSize: 14 },
+    choiceTextSelected: { color: c.infoLight, fontWeight: "700" },
+    otherInput: {
+      borderWidth: 1,
+      borderColor: c.info,
+      borderRadius: 12,
+      paddingHorizontal: 14,
+      paddingVertical: 11,
+      fontSize: 14,
+      color: c.text,
+      backgroundColor: c.surface,
+    },
+  });
+}

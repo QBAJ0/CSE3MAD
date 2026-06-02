@@ -1,14 +1,27 @@
 import React, { createContext, useContext, useState } from "react";
-import { GAMIFICATION, SCORING } from "../config/constants";
+import { GAMIFICATION } from "../config/constants";
 import { getChallengeById } from "../data/challenges";
-import { pushActivityToCloud, pushResultToCloud } from "../services/leaderboard";
+import {
+  resolveSubmissionLocation,
+  scoreActivityResult,
+} from "../services/challengeScoring";
+import { ensureFirebaseAuth } from "../services/authSession";
+import { syncChallengeResultToCloud } from "../services/challengeCloudSync";
+import { persistChallengeResultToSqlite } from "../services/challengeResultLocal";
+import { deriveHandFan, deriveParachute } from "../services/physics";
 import {
   ActivityResult,
   DifficultyMode,
   Measurement,
   Prototype,
 } from "../types";
+import { getTeamYearLevelLabel } from "../utils/difficulty";
 import { storage } from "../utils/storage";
+import { HUMAN_PERFORMANCE_TRIALS } from "../data/humanPerformanceTrials";
+import {
+  HUMAN_PERFORMANCE_CHALLENGE_ID,
+  isHumanPerformancePrototypeComplete,
+} from "../utils/humanPerformance";
 
 type Draft = Partial<ActivityResult> & {
   prototypes: Prototype[];
@@ -23,7 +36,6 @@ type ActivityContextValue = {
     teamName: string;
     difficulty: DifficultyMode;
   }) => void;
-  setPrediction: (prediction: string) => void;
   updatePrototype: (
     index: number,
     patch: Partial<Omit<Prototype, "index">>,
@@ -38,6 +50,7 @@ type ActivityContextValue = {
   finalize: (args: {
     rating: 1 | 2 | 3 | 4 | 5;
     reflection: string;
+    comment?: string;
     completedInTime?: boolean;
   }) => Promise<ActivityResult | null>;
   clearDraft: () => void;
@@ -65,12 +78,17 @@ const getScoredMeasurements = (
   measurements.filter(
     (measurement) =>
       (!measurement.difficulty || measurement.difficulty === difficulty) &&
-      !EVIDENCE_RECORDERS.has(measurement.recorder),
+      !EVIDENCE_RECORDERS.has(measurement.recorder) &&
+      !measurement.optional,
   );
 
 const hasCompleteRequiredData = (result: Omit<ActivityResult, "points">) => {
   const challenge = getChallengeById(result.challengeId);
   if (!challenge || result.prototypes.length === 0) return false;
+
+  if (result.challengeId === HUMAN_PERFORMANCE_CHALLENGE_ID) {
+    return result.prototypes.every(isHumanPerformancePrototypeComplete);
+  }
 
   const requiredMeasurements = getScoredMeasurements(
     challenge.measurements,
@@ -119,6 +137,60 @@ const hasTeamworkEvidence = (result: Omit<ActivityResult, "points">) =>
     }
   });
 
+function numberFromMeasurement(value: unknown): number | undefined {
+  const parsed = Number.parseFloat(String(value ?? ""));
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function buildDerivedByPrototype(
+  challengeId: number,
+  prototypes: Prototype[],
+): Record<number, Record<string, number>> {
+  const derived: Record<number, Record<string, number>> = {};
+
+  prototypes.forEach((prototype) => {
+    const measurements = prototype.measurements;
+    const values: Record<string, number> = {};
+
+    if (challengeId === 1) {
+      const calc = deriveParachute({
+        dropHeightMeters: numberFromMeasurement(measurements.dropHeightMeters) ?? NaN,
+        fallTimeSeconds: numberFromMeasurement(measurements.fallTimeSeconds) ?? NaN,
+        toyMassKg: numberFromMeasurement(measurements.toyMassKg),
+        contactTimeSeconds:
+          numberFromMeasurement(measurements.contactTimeSeconds) ??
+          numberFromMeasurement(measurements.contactTime),
+        bounced: String(measurements.bounced) === "Yes",
+        timeToMaxHeightSeconds:
+          numberFromMeasurement(measurements.timeToMaxHeightSeconds) ??
+          numberFromMeasurement(measurements.timeToBouncePeak),
+      });
+      Object.entries(calc).forEach(([key, value]) => {
+        if (value != null && Number.isFinite(value)) values[key] = value;
+      });
+    }
+
+    if (challengeId === 3) {
+      const bendAngle = numberFromMeasurement(measurements.bendAngle);
+      const material = String(measurements.material ?? "");
+      if (bendAngle != null && material) {
+        const calc = deriveHandFan({ bendAngleDegrees: bendAngle, material });
+        if (calc) {
+          values.bendAngleRadians = calc.bendAngleRadians;
+          values.stiffnessK = calc.stiffnessK;
+          values.estimatedForceN = calc.estimatedForceN;
+        }
+      }
+    }
+
+    if (Object.keys(values).length > 0) {
+      derived[prototype.index] = values;
+    }
+  });
+
+  return derived;
+}
+
 export function ActivityProvider({ children }: { children: React.ReactNode }) {
   const [draft, setDraft] = useState<Draft>(emptyDraft);
 
@@ -128,6 +200,7 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
     teamName,
     difficulty,
   }) => {
+    const isHumanPerformance = challengeId === HUMAN_PERFORMANCE_CHALLENGE_ID;
     setDraft({
       id: `draft-${Date.now()}`,
       challengeId,
@@ -136,16 +209,19 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
       difficulty,
       prediction: "",
       prototypes: [
-        { index: 1, measurements: {}, capturedAt: new Date().toISOString() },
+        {
+          index: 1,
+          measurements: isHumanPerformance
+            ? { movementType: HUMAN_PERFORMANCE_TRIALS[0].movementType }
+            : {},
+          capturedAt: new Date().toISOString(),
+        },
       ],
       derivedByPrototype: {},
       currentPrototypeIndex: 0,
       createdAt: new Date().toISOString(),
     });
   };
-
-  const setPrediction = (prediction: string) =>
-    setDraft((prev) => ({ ...prev, prediction }));
 
   const updatePrototype: ActivityContextValue["updatePrototype"] = (
     index,
@@ -171,13 +247,19 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
   const addPrototype = () =>
     setDraft((prev) => {
       const nextIndex = prev.prototypes.length + 1;
+      const hpTrial =
+        prev.challengeId === HUMAN_PERFORMANCE_CHALLENGE_ID
+          ? HUMAN_PERFORMANCE_TRIALS.find((t) => t.prototypeIndex === nextIndex)
+          : undefined;
       return {
         ...prev,
         prototypes: [
           ...prev.prototypes,
           {
             index: nextIndex,
-            measurements: {},
+            measurements: hpTrial
+              ? { movementType: hpTrial.movementType }
+              : {},
             capturedAt: new Date().toISOString(),
           },
         ],
@@ -205,28 +287,10 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
   const setLocation = (lat: number, lng: number) =>
     setDraft((prev) => ({ ...prev, location: { lat, lng } }));
 
-  const calculatePoints = (
-    result: Omit<ActivityResult, "points">,
-    completedInTime: boolean,
-  ): number => {
-    let points: number = SCORING.BASE_XP;
-    if (result.prototypes.length >= 2) points += SCORING.MULTI_DESIGN_2;
-    if (result.prototypes.length >= 3) points += SCORING.MULTI_DESIGN_3;
-    if (hasCompleteRequiredData(result)) points += SCORING.DATA_QUALITY;
-    if (result.reflection.length > GAMIFICATION.REFLECTION_THRESHOLD_1)
-      points += SCORING.REFLECTION_BONUS;
-    if (hasEvidenceAttached(result)) points += SCORING.EVIDENCE_BONUS;
-    if (hasTeamworkEvidence(result)) points += SCORING.TEAMWORK_BONUS;
-    if (result.difficulty === "highSchool")
-      points = Math.floor(points * SCORING.HIGH_SCHOOL_MULTIPLIER);
-    if (!completedInTime)
-      points = Math.floor(points * SCORING.TIME_PENALTY_MULTIPLIER);
-    return points;
-  };
-
   const finalize: ActivityContextValue["finalize"] = async ({
     rating,
     reflection,
+    comment = "",
     completedInTime = true,
   }) => {
     if (
@@ -239,29 +303,82 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
       return null;
     }
 
-    // Keep every prototype measurement, including video, photo, and GPS evidence.
-    const baseResult = {
-      id: draft.id,
-      challengeId: draft.challengeId,
-      teamId: draft.teamId,
-      teamName: draft.teamName,
-      difficulty: draft.difficulty,
-      prediction: draft.prediction ?? "",
-      prototypes: draft.prototypes, // Includes all measurements.video, measurements.photo, etc.
-      derivedByPrototype: draft.derivedByPrototype ?? {},
-      rating,
-      reflection,
-      location: draft.location,
-      createdAt: draft.createdAt ?? new Date().toISOString(),
-    };
+    try {
+      const submittedLocation = resolveSubmissionLocation(
+        draft.location,
+        draft.prototypes,
+      );
 
-    const points = calculatePoints(baseResult, completedInTime);
-    const result: ActivityResult = { ...baseResult, points, completedInTime };
+      const derivedByPrototype = {
+        ...buildDerivedByPrototype(draft.challengeId, draft.prototypes),
+        ...(draft.derivedByPrototype ?? {}),
+      };
 
-    await storage.saveCompletedActivity(result); // Videos persisted to local storage
-    pushResultToCloud(result);   // updates team aggregate on leaderboard
-    pushActivityToCloud(result); // saves full result + GPS to activities collection
-    return result;
+      const savedTeam = await storage.getTeam();
+      const challenge = getChallengeById(draft.challengeId);
+      const now = new Date().toISOString();
+
+      const baseResult = {
+        id: draft.id,
+        challengeId: draft.challengeId,
+        teamId: draft.teamId,
+        teamName: draft.teamName,
+        discriminator: draft.teamId,
+        activityTitle: challenge?.title,
+        yearLevel: savedTeam
+          ? getTeamYearLevelLabel(savedTeam.members)
+          : "Unknown",
+        difficulty: draft.difficulty,
+        prediction: draft.prediction ?? "",
+        prototypes: draft.prototypes,
+        derivedByPrototype,
+        rating,
+        reflection,
+        comment: comment.trim(),
+        location: submittedLocation,
+        createdAt: draft.createdAt ?? now,
+        updatedAt: now,
+      };
+
+      const points = scoreActivityResult(baseResult, completedInTime);
+      const result: ActivityResult = { ...baseResult, points, completedInTime };
+
+      console.log("[claim] saving challenge result to sqlite", {
+        resultId: result.id,
+        teamId: result.teamId,
+        challengeId: result.challengeId,
+      });
+      const sqliteSaved = await persistChallengeResultToSqlite(result);
+      if (!sqliteSaved) {
+        console.warn("[claim] sqlite save failed; aborting claim", {
+          resultId: result.id,
+        });
+        return null;
+      }
+      console.log("[claim] sqlite save ok", { resultId: result.id });
+
+      const saved = await storage.saveCompletedActivity(result);
+      if (!saved) return null;
+
+      void (async () => {
+        try {
+          console.log("[claim] starting cloud sync", {
+            resultId: result.id,
+            teamId: result.teamId,
+          });
+          await ensureFirebaseAuth();
+          await syncChallengeResultToCloud(result);
+          console.log("[claim] cloud sync completed", { resultId: result.id });
+        } catch (e) {
+          console.warn("[ActivityContext] cloud sync after claim:", e);
+        }
+      })();
+
+      return result;
+    } catch (e) {
+      console.error("finalize failed:", e);
+      return null;
+    }
   };
 
   const clearDraft = () => setDraft(emptyDraft);
@@ -271,7 +388,6 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
       value={{
         draft,
         startDraft,
-        setPrediction,
         updatePrototype,
         addPrototype,
         setCurrentPrototypeIndex,

@@ -1,15 +1,16 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   Animated,
   StyleSheet,
   Text,
   TouchableOpacity,
-  Vibration,
   View,
 } from "react-native";
 import { useHaptic } from "../../hooks/useHaptic";
+import { useTheme } from "../../theme/themeContext";
+import type { ColorTokens } from "../../theme/colors";
 
 interface ChallengeTimerProps {
   minutes: number;
@@ -24,19 +25,23 @@ export function ChallengeTimer({
   onTimeUpdate,
   autoStart = true,
 }: ChallengeTimerProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const [timeLeft, setTimeLeft] = useState(minutes * 60);
   const [isActive, setIsActive] = useState(autoStart);
   const [isWarning, setIsWarning] = useState(false);
   const { haptic } = useHaptic();
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const warned60Ref = useRef(false);
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
   const handleTimeout = useCallback(() => {
     setIsActive(false);
-    Vibration.vibrate([1000, 500, 1000, 500, 1000]);
+    haptic("error");
     Alert.alert(
       "Time's Up!",
-      `Your ${minutes}-minute challenge has ended.\n\nPoints will be reduced by 20%.`,
+      `Your ${minutes}-minute challenge time has ended.`,
       [
         { text: "Submit Results", onPress: onTimeout, style: "default" },
         {
@@ -49,51 +54,51 @@ export function ChallengeTimer({
         },
       ],
     );
-  }, [minutes, onTimeout]);
+  }, [minutes, onTimeout, haptic]);
 
   useEffect(() => {
-    if (isActive && timeLeft > 0) {
-      intervalRef.current = setInterval(() => {
-        setTimeLeft((prev) => {
-          const newTime = prev - 1;
-          onTimeUpdate?.(newTime);
-          if (newTime <= 60 && newTime > 0 && !isWarning) {
-            setIsWarning(true);
-            haptic("warning");
-            Vibration.vibrate(500);
-          }
-          if (newTime === 30) {
-            haptic("heavy");
-            Vibration.vibrate([500, 200, 500]);
-          }
-          if (newTime === 0) {
-            clearInterval(intervalRef.current!);
-            haptic("error");
-            handleTimeout();
-          }
-          return newTime;
-        });
-      }, 1000);
+    if (!isActive) {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      return;
     }
+
+    intervalRef.current = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 0) return 0;
+        const newTime = prev - 1;
+        onTimeUpdate?.(newTime);
+        if (newTime <= 60 && newTime > 0 && !warned60Ref.current) {
+          warned60Ref.current = true;
+          setIsWarning(true);
+          haptic("warning");
+        }
+        if (newTime === 30) {
+          haptic("heavy");
+        }
+        if (newTime === 0) {
+          handleTimeout();
+        }
+        return newTime;
+      });
+    }, 1000);
+
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
     };
-  }, [handleTimeout, haptic, isActive, isWarning, onTimeUpdate, timeLeft]);
+  }, [handleTimeout, haptic, isActive, onTimeUpdate]);
 
   useEffect(() => {
     if (isWarning) {
       Animated.loop(
         Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1.1,
-            duration: 500,
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 1,
-            duration: 500,
-            useNativeDriver: true,
-          }),
+          Animated.timing(pulseAnim, { toValue: 1.1, duration: 500, useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
         ]),
       ).start();
     } else {
@@ -108,11 +113,12 @@ export function ChallengeTimer({
   };
 
   const getProgressPercentage = () => (timeLeft / (minutes * 60)) * 100;
+
   const getTimerColor = () => {
     if (timeLeft <= 30) return "#EF4444";
     if (timeLeft <= 60) return "#F97316";
     if (timeLeft <= 120) return "#FBBF24";
-    return "#2F80ED";
+    return colors.info;
   };
 
   const toggleTimer = () => {
@@ -130,15 +136,11 @@ export function ChallengeTimer({
     >
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Ionicons name="timer-outline" size={20} color="#64748B" />
+          <Ionicons name="timer-outline" size={20} color={colors.textSecondary} />
           <Text style={styles.timerLabel}>Challenge Timer</Text>
         </View>
         <TouchableOpacity onPress={toggleTimer} style={styles.timerControl}>
-          <Ionicons
-            name={isActive ? "pause" : "play"}
-            size={20}
-            color="#12343B"
-          />
+          <Ionicons name={isActive ? "pause" : "play"} size={20} color={colors.text} />
         </TouchableOpacity>
       </View>
       <View style={styles.timerCircle}>
@@ -155,10 +157,7 @@ export function ChallengeTimer({
         <View
           style={[
             styles.progressBar,
-            {
-              width: `${getProgressPercentage()}%`,
-              backgroundColor: getTimerColor(),
-            },
+            { width: `${getProgressPercentage()}%`, backgroundColor: getTimerColor() },
           ]}
         />
       </View>
@@ -166,45 +165,51 @@ export function ChallengeTimer({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  warningContainer: {
-    backgroundColor: "#FEF2F2",
-    borderWidth: 2,
-    borderColor: "#EF4444",
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  headerLeft: { flexDirection: "row", alignItems: "center", gap: 8 },
-  timerLabel: { fontSize: 14, fontWeight: "600", color: "#64748B" },
-  timerControl: { padding: 8 },
-  timerCircle: { alignItems: "center", marginVertical: 12 },
-  timerText: {
-    fontSize: 52,
-    fontWeight: "800",
-    fontVariant: ["tabular-nums"],
-    marginBottom: 4,
-  },
-  timerMessage: { fontSize: 12, color: "#64748B" },
-  progressBarContainer: {
-    width: "100%",
-    height: 8,
-    backgroundColor: "#E2E8F0",
-    borderRadius: 4,
-    overflow: "hidden",
-  },
-  progressBar: { height: "100%", borderRadius: 4 },
-});
+function createStyles(c: ColorTokens) {
+  return StyleSheet.create({
+    container: {
+      backgroundColor: c.surface,
+      borderRadius: 14,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: c.borderFaint,
+      shadowColor: "#000",
+      shadowOpacity: 0.05,
+      shadowRadius: 6,
+      elevation: 2,
+    },
+    warningContainer: {
+      backgroundColor: c.dangerLight,
+      borderColor: c.danger,
+      borderWidth: 1.5,
+    },
+    header: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 6,
+    },
+    headerLeft: { flexDirection: "row", alignItems: "center", gap: 6 },
+    timerLabel: { fontSize: 12, fontWeight: "600", color: c.textSecondary },
+    timerControl: { padding: 4 },
+    timerCircle: { alignItems: "center", marginVertical: 4 },
+    timerText: {
+      fontSize: 34,
+      fontWeight: "800",
+      fontVariant: ["tabular-nums"],
+      marginBottom: 2,
+    },
+    timerMessage: { fontSize: 11, color: c.textSecondary },
+    progressBarContainer: {
+      width: "100%",
+      height: 6,
+      backgroundColor: c.border,
+      borderRadius: 3,
+      overflow: "hidden",
+      marginTop: 6,
+    },
+    progressBar: { height: "100%", borderRadius: 3 },
+  });
+}

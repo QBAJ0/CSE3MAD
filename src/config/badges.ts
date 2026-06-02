@@ -99,7 +99,7 @@ export const BADGES: Badge[] = [
 
 export const RARITY_COLOR: Record<BadgeRarity, string> = {
   common: '#64748B',
-  rare: '#3B82F6',
+  rare: '#2563EB',
   epic: '#8B5CF6',
   legendary: '#F59E0B',
 };

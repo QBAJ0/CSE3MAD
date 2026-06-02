@@ -4,16 +4,17 @@
 
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router, useLocalSearchParams } from "expo-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Alert,
+  Image,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -21,33 +22,36 @@ import { ChallengeTabBar } from "../../../src/components/challenge/ChallengeTabB
 import { useActivity } from "../../../src/context/ActivityContext";
 import { useTeam } from "../../../src/context/TeamContext";
 import { getChallengeById } from "../../../src/data/challenges";
+import type { ColorTokens } from "../../../src/theme/colors";
+import { useTheme } from "../../../src/theme/themeContext";
+import {
+  buildIncompleteSummary,
+  getRequiredMeasurements,
+  isPrototypeComplete,
+} from "../../../src/utils/challengeRecordValidation";
+import { HUMAN_PERFORMANCE_CHALLENGE_ID } from "../../../src/utils/humanPerformance";
 
 export default function ChallengeBriefScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const challenge = getChallengeById(Number(id));
-  const { team } = useTeam();
-  const { startDraft, setPrediction, draft } = useActivity();
+  const { team, computedDifficulty } = useTeam();
+  const { startDraft, draft } = useActivity();
 
-  // Which difficulty level is selected
-  const [difficulty, setDifficulty] = useState<"primary" | "highSchool">(
-    "primary"
-  );
-
-  // The team's prediction text (optional, earns bonus XP)
-  const [prediction, setPredictionText] = useState("");
-
-  // Whether to show all steps or just the first 3
   const [showAllSteps, setShowAllSteps] = useState(false);
-
-  // Whether to show extra detail sections (equipment, science info)
   const [showDetails, setShowDetails] = useState(false);
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
+  const goBackToChallenges = () => {
+    router.replace("/(tabs)/activity");
+  };
 
   // Safety check — shouldn't happen, but handles bad URLs
   if (!challenge) {
     return (
       <View style={styles.errorScreen}>
         <Text style={styles.errorText}>Challenge not found</Text>
-        <Pressable style={styles.backBtn} onPress={() => router.back()}>
+        <Pressable style={styles.backBtn} onPress={goBackToChallenges}>
           <Text style={styles.backBtnText}>← Go Back</Text>
         </Pressable>
       </View>
@@ -58,8 +62,16 @@ export default function ChallengeBriefScreen() {
   const hasDraft =
     draft.challengeId === challenge.id && draft.prototypes.length > 0;
 
-  // True if this challenge has a harder high school mode
-  const hasHighSchool = challenge.difficultyLevels.includes("highSchool");
+  const draftMeasurements = challenge.measurements.filter(
+    (m) => !m.difficulty || m.difficulty === draft.difficulty,
+  );
+  const requiredForDraft = getRequiredMeasurements(draftMeasurements);
+  const reflectReady =
+    hasDraft &&
+    draft.prototypes.length >= challenge.maxPrototypes &&
+    draft.prototypes.every((p) =>
+      isPrototypeComplete(p, requiredForDraft, challenge.id),
+    );
 
   // How many steps to show (all or first 3)
   const visibleSteps = showAllSteps
@@ -84,11 +96,8 @@ export default function ChallengeBriefScreen() {
       challengeId: challenge.id,
       teamId: team.discriminator,
       teamName: team.teamName,
-      difficulty,
+      difficulty: computedDifficulty,
     });
-
-    // Save the prediction if they wrote one
-    setPrediction(prediction.trim());
 
     router.push(`/challenge/${challenge.id}/record`);
   };
@@ -108,8 +117,18 @@ export default function ChallengeBriefScreen() {
           onBrief={() => {}}
           onDoit={() => router.push(`/challenge/${challenge.id}/record`)}
           onReflect={() => router.push(`/challenge/${challenge.id}/results`)}
+          onReflectDisabledPress={() =>
+            Alert.alert(
+              hasDraft
+                ? "Reflect not ready yet"
+                : "Start the challenge first",
+              hasDraft
+                ? buildIncompleteSummary(draft.prototypes, requiredForDraft)
+                : "Complete measurements in Do It before opening Reflect.",
+            )
+          }
           doitEnabled={hasDraft}
-          reflectEnabled={hasDraft}
+          reflectEnabled={reflectReady}
         />
 
         {/* ── Hero section ── */}
@@ -141,89 +160,65 @@ export default function ChallengeBriefScreen() {
 
           <View style={styles.heroBadgeRow}>
             <View style={styles.heroBadge}>
-              <Ionicons name="time-outline" size={13} color="#64748B" />
+              <Ionicons name="time-outline" size={13} color={colors.textMuted} />
               <Text style={styles.heroBadgeText}>
-                {challenge.estimatedMinutes} min
+                ~{challenge.estimatedMinutes} min
               </Text>
             </View>
             <View style={styles.heroBadge}>
-              <Ionicons name="refresh-outline" size={13} color="#64748B" />
+              <Ionicons name="flask-outline" size={13} color={colors.textMuted} />
               <Text style={styles.heroBadgeText}>
                 {challenge.maxPrototypes === 1
                   ? "1 design"
-                  : `Up to ${challenge.maxPrototypes} designs`}
+                  : `Up to ${challenge.maxPrototypes} tests`}
               </Text>
             </View>
           </View>
+
+          <View
+            style={[
+              styles.difficultyBadge,
+              computedDifficulty === "highSchool"
+                ? styles.difficultyBadgeHS
+                : styles.difficultyBadgePrimary,
+            ]}
+          >
+            <Ionicons
+              name={computedDifficulty === "highSchool" ? "school" : "star"}
+              size={13}
+              color={computedDifficulty === "highSchool" ? "#2563EB" : "#0F766E"}
+            />
+            <Text
+              style={[
+                styles.difficultyBadgeText,
+                computedDifficulty === "highSchool"
+                  ? styles.difficultyBadgeTextHS
+                  : styles.difficultyBadgeTextPrimary,
+              ]}
+            >
+              {computedDifficulty === "highSchool"
+                ? "High School Mode"
+                : "Primary Mode"}
+            </Text>
+          </View>
+
         </View>
 
-        {/* ── Difficulty selector (only if challenge has high school mode) ── */}
-        {hasHighSchool && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Choose your level</Text>
-            <View style={styles.diffRow}>
-              {/* Primary option */}
-              <TouchableOpacity
-                style={[
-                  styles.diffCard,
-                  difficulty === "primary" && styles.diffCardActive,
-                ]}
-                onPress={() => setDifficulty("primary")}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="school-outline" size={32} color="#64748B" style={styles.diffEmoji} />
-                <Text
-                  style={[
-                    styles.diffLabel,
-                    difficulty === "primary" && styles.diffLabelActive,
-                  ]}
-                >
-                  Primary
-                </Text>
-                <Text style={styles.diffSub}>
-                  Measurements &{"\n"}observations
-                </Text>
-                {difficulty === "primary" && (
-                  <View style={styles.diffCheck}>
-                    <Ionicons name="checkmark" size={13} color="#FFFFFF" />
-                  </View>
-                )}
-              </TouchableOpacity>
-
-              {/* High school option */}
-              <TouchableOpacity
-                style={[
-                  styles.diffCard,
-                  difficulty === "highSchool" && styles.diffCardActive,
-                ]}
-                onPress={() => setDifficulty("highSchool")}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="book-outline" size={32} color="#64748B" style={styles.diffEmoji} />
-                <Text
-                  style={[
-                    styles.diffLabel,
-                    difficulty === "highSchool" && styles.diffLabelActive,
-                  ]}
-                >
-                  High School
-                </Text>
-                <Text style={styles.diffSub}>
-                  Calculations +{"\n"}50% more XP
-                </Text>
-                {difficulty === "highSchool" && (
-                  <View style={styles.diffCheck}>
-                    <Ionicons name="checkmark" size={13} color="#FFFFFF" />
-                  </View>
-                )}
-              </TouchableOpacity>
-            </View>
+        {/* ── Equipment ── */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Equipment</Text>
+          <View style={styles.equipRow}>
+            {challenge.equipment.map((item, i) => (
+              <View key={i} style={styles.equipChip}>
+                <Text style={styles.equipText}>{item}</Text>
+              </View>
+            ))}
           </View>
-        )}
+        </View>
 
         {/* ── Steps (show first 3 by default) ── */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>What to do</Text>
+          <Text style={styles.sectionTitle}>Instructions</Text>
           <View style={styles.stepsCard}>
             {visibleSteps.map((step, i) => (
               <View key={i} style={styles.stepRow}>
@@ -249,12 +244,24 @@ export default function ChallengeBriefScreen() {
                 <Text style={styles.showMoreText}>
                   {showAllSteps
                     ? "▲ Show less"
-                    : `▼ Show all ${challenge.instructions.length} steps`}
+                    : `Show all ${challenge.instructions.length} steps`}
                 </Text>
               </TouchableOpacity>
             )}
           </View>
         </View>
+
+        {/* ── Setup diagram (challenge-specific) ── */}
+        {challenge.setupImage && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Setup</Text>
+            <Image
+              source={challenge.setupImage}
+              style={styles.setupImage}
+              resizeMode="contain"
+            />
+          </View>
+        )}
 
         {/* ── Equipment & science info (collapsed by default) ── */}
         <TouchableOpacity
@@ -263,32 +270,17 @@ export default function ChallengeBriefScreen() {
           activeOpacity={0.75}
         >
           <Text style={styles.detailsToggleText}>
-            {showDetails ? "▲ Hide details" : "▼ Equipment & science info"}
+            {showDetails ? "Hide the science stuff" : "Show the science stuff"}
           </Text>
         </TouchableOpacity>
 
         {showDetails && (
           <>
-            {/* Equipment list */}
-            <View style={styles.section}>
-              <View style={styles.sectionTitleRow}>
-                <Ionicons name="build-outline" size={17} color="#12343B" />
-                <Text style={styles.sectionTitle}>You will need</Text>
-              </View>
-              <View style={styles.equipRow}>
-                {challenge.equipment.map((item, i) => (
-                  <View key={i} style={styles.equipChip}>
-                    <Text style={styles.equipText}>{item}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-
             {/* Science concept cards */}
             {challenge.thingsToKnow && challenge.thingsToKnow.length > 0 && (
               <View style={styles.section}>
                 <View style={styles.sectionTitleRow}>
-                  <Ionicons name="bulb-outline" size={17} color="#12343B" />
+                  <Ionicons name="bulb-outline" size={17} color={colors.text} />
                   <Text style={styles.sectionTitle}>Things to Know</Text>
                 </View>
                 {challenge.thingsToKnow.map((card, i) => (
@@ -320,50 +312,57 @@ export default function ChallengeBriefScreen() {
               </View>
             )}
 
-            {/* Extension tip */}
-            {challenge.extensionTip && (
-              <View style={styles.extensionBox}>
-                <View style={styles.extensionLabelRow}>
-                  <Ionicons name="rocket-outline" size={13} color="#854D0E" />
-                  <Text style={styles.extensionLabel}>Extension Challenge</Text>
+            {/* Discussion section */}
+            {challenge.discussion && (
+              <View style={styles.section}>
+                <View style={styles.sectionTitleRow}>
+                  <Ionicons name="chatbubble-ellipses-outline" size={17} color={colors.text} />
+                  <Text style={styles.sectionTitle}>Discussion</Text>
                 </View>
-                <Text style={styles.extensionText}>
-                  {challenge.extensionTip}
-                </Text>
+                <View style={styles.discussionCard}>
+                  <Text style={styles.discussionText}>{challenge.discussion}</Text>
+                </View>
+              </View>
+            )}
+
+            {/* Curriculum links */}
+            {challenge.curriculumLinks && challenge.curriculumLinks.length > 0 && (
+              <View style={styles.section}>
+                <View style={styles.sectionTitleRow}>
+                  <Ionicons name="school-outline" size={17} color={colors.text} />
+                  <Text style={styles.sectionTitle}>Curriculum Links</Text>
+                </View>
+                {challenge.curriculumLinks.map((link, i) => {
+                  const code = link.split(/\s[–-]\s/)[0].trim();
+                  const searchUrl = `https://www.google.com/search?q=Australian+Curriculum+${encodeURIComponent(code)}`;
+                  return (
+                    <TouchableOpacity
+                      key={i}
+                      style={styles.curriculumChip}
+                      activeOpacity={0.7}
+                      onPress={() =>
+                        Alert.alert(
+                          "Open curriculum link?",
+                          `View ${code} on the Australian Curriculum website?`,
+                          [
+                            { text: "Cancel", style: "cancel" },
+                            {
+                              text: "Open",
+                              onPress: () => Linking.openURL(searchUrl),
+                            },
+                          ],
+                        )
+                      }
+                    >
+                      <Ionicons name="open-outline" size={13} color={colors.primary} />
+                      <Text style={styles.curriculumChipText}>{link}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             )}
           </>
         )}
-
-        {/* ── Prediction (optional, earns bonus XP) ── */}
-        <View style={styles.section}>
-          <View style={styles.predictionHeader}>
-            <View style={styles.sectionTitleRow}>
-              <Ionicons name="help-circle-outline" size={17} color="#12343B" />
-              <Text style={styles.sectionTitle}>Your Prediction</Text>
-            </View>
-            <View style={styles.optionalPill}>
-              <Text style={styles.optionalText}>optional +XP</Text>
-            </View>
-          </View>
-          <Text style={styles.predictionHint}>
-            {challenge.predictionPrompt ??
-              "What do you think will happen? Write your team's guess."}
-          </Text>
-          <TextInput
-            style={[
-              styles.predictionInput,
-              prediction.trim().length > 0 && styles.predictionInputFilled,
-            ]}
-            placeholder="e.g. We think the bigger design will fall slower…"
-            placeholderTextColor="#94A3B8"
-            value={prediction}
-            onChangeText={setPredictionText}
-            multiline
-            numberOfLines={3}
-            textAlignVertical="top"
-          />
-        </View>
 
         {/* ── Start / Resume buttons ── */}
         <View style={styles.ctaSection}>
@@ -375,7 +374,6 @@ export default function ChallengeBriefScreen() {
             onPress={handleStart}
           >
             <View style={styles.startBtnRow}>
-              <Ionicons name="flash" size={18} color="#FFFFFF" />
               <Text style={styles.startBtnText}>Start Challenge</Text>
             </View>
           </Pressable>
@@ -389,7 +387,7 @@ export default function ChallengeBriefScreen() {
               activeOpacity={0.8}
             >
               <Text style={styles.resumeBtnText}>
-                ↺ Resume previous attempt
+                Continue where you left off
               </Text>
             </TouchableOpacity>
           )}
@@ -401,391 +399,349 @@ export default function ChallengeBriefScreen() {
   );
 }
 
-// --- Styles ---
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: "#F8FAFC",
-  },
-  content: {
-    paddingTop: 8,
-    paddingBottom: 24,
-  },
+function createStyles(c: ColorTokens) {
+  return StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: c.background,
+    },
+    content: {
+      paddingTop: 24,
+      paddingBottom: 24,
+    },
 
-  // Error screen
-  errorScreen: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-    padding: 24,
-  },
-  errorText: {
-    fontSize: 18,
-    color: "#EF4444",
-    fontWeight: "700",
-  },
-  backBtn: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 999,
-    backgroundColor: "#F1F5F9",
-  },
-  backBtnText: {
-    fontSize: 15,
-    color: "#64748B",
-    fontWeight: "600",
-  },
+    errorScreen: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 12,
+      padding: 24,
+      backgroundColor: c.background,
+    },
+    errorText: {
+      fontSize: 18,
+      color: c.danger,
+      fontWeight: "700",
+    },
+    backBtn: {
+      paddingVertical: 10,
+      paddingHorizontal: 20,
+      borderRadius: 999,
+      backgroundColor: c.backgroundSecondary,
+    },
+    backBtnText: {
+      fontSize: 15,
+      color: c.textSecondary,
+      fontWeight: "600",
+    },
 
-  // Hero
-  hero: {
-    marginHorizontal: 16,
-    borderRadius: 24,
-    padding: 24,
-    alignItems: "center",
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.04)",
-  },
-  heroIconCircle: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 14,
-    borderWidth: 2,
-    borderColor: "rgba(0,0,0,0.06)",
-  },
-  categoryPill: {
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 999,
-    borderWidth: 1.5,
-    marginBottom: 10,
-  },
-  categoryText: {
-    fontSize: 11,
-    fontWeight: "800",
-    letterSpacing: 1,
-    textTransform: "uppercase",
-  },
-  heroTitle: {
-    fontSize: 26,
-    fontWeight: "800",
-    color: "#12343B",
-    textAlign: "center",
-    marginBottom: 14,
-    lineHeight: 32,
-  },
-  heroBadgeRow: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  heroBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  heroBadgeText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#64748B",
-  },
+    // Hero
+    hero: {
+      marginHorizontal: 16,
+      borderRadius: 24,
+      padding: 24,
+      alignItems: "center",
+      marginBottom: 20,
+      borderWidth: 1,
+      borderColor: c.borderFaint,
+    },
+    heroIconCircle: {
+      width: 96,
+      height: 96,
+      borderRadius: 48,
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 14,
+      borderWidth: 2,
+      borderColor: c.borderFaint,
+    },
+    categoryPill: {
+      paddingHorizontal: 12,
+      paddingVertical: 5,
+      borderRadius: 999,
+      borderWidth: 1.5,
+      marginBottom: 10,
+    },
+    categoryText: {
+      fontSize: 11,
+      fontWeight: "800",
+      letterSpacing: 1,
+      textTransform: "uppercase",
+    },
+    heroTitle: {
+      fontSize: 26,
+      fontWeight: "800",
+      color: c.text,
+      textAlign: "center",
+      marginBottom: 14,
+      lineHeight: 32,
+    },
+    heroBadgeRow: {
+      flexDirection: "row",
+      gap: 8,
+    },
+    heroBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 5,
+      backgroundColor: c.surface,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+    heroBadgeText: {
+      fontSize: 13,
+      fontWeight: "600",
+      color: c.textSecondary,
+    },
 
-  // Sections
-  section: {
-    paddingHorizontal: 16,
-    marginBottom: 20,
-    gap: 10,
-  },
-  sectionTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  sectionTitle: {
-    fontSize: 17,
-    fontWeight: "800",
-    color: "#12343B",
-  },
+    // Sections
+    section: {
+      paddingHorizontal: 16,
+      marginBottom: 20,
+      gap: 10,
+    },
+    sectionTitleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    sectionTitle: {
+      fontSize: 17,
+      fontWeight: "800",
+      color: c.text,
+    },
 
-  // Difficulty cards
-  diffRow: {
-    flexDirection: "row",
-    gap: 10,
-  },
-  diffCard: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 16,
-    alignItems: "center",
-    gap: 6,
-    borderWidth: 2,
-    borderColor: "#E2E8F0",
-    position: "relative",
-  },
-  diffCardActive: {
-    borderColor: "#2F80ED",
-    backgroundColor: "#EEF5FF",
-  },
-  diffEmoji: { marginBottom: 4 },
-  diffLabel: {
-    fontSize: 15,
-    fontWeight: "800",
-    color: "#64748B",
-    textAlign: "center",
-  },
-  diffLabelActive: { color: "#007C7A" },
-  diffSub: {
-    fontSize: 11,
-    color: "#94A3B8",
-    textAlign: "center",
-    lineHeight: 16,
-  },
-  diffCheck: {
-    position: "absolute",
-    top: 8,
-    right: 8,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: "#2F80ED",
-    alignItems: "center",
-    justifyContent: "center",
-  },
+    // Steps card
+    stepsCard: {
+      backgroundColor: c.surface,
+      borderRadius: 16,
+      padding: 16,
+      gap: 10,
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+    stepRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: 12,
+      paddingVertical: 4,
+    },
+    stepNumber: {
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      alignItems: "center",
+      justifyContent: "center",
+      flexShrink: 0,
+      marginTop: 1,
+    },
+    stepNumberText: {
+      color: "#FFFFFF",
+      fontSize: 13,
+      fontWeight: "800",
+    },
+    stepText: {
+      flex: 1,
+      fontSize: 14,
+      color: c.textSecondary,
+      lineHeight: 21,
+      paddingTop: 4,
+    },
+    showMoreBtn: {
+      paddingTop: 10,
+      alignItems: "center",
+      borderTopWidth: 1,
+      borderTopColor: c.border,
+      marginTop: 4,
+    },
+    showMoreText: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: c.info,
+    },
 
-  // Steps card
-  stepsCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 16,
-    gap: 10,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  stepRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 12,
-    paddingVertical: 4,
-  },
-  stepNumber: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-    marginTop: 1,
-  },
-  stepNumberText: {
-    color: "#FFFFFF",
-    fontSize: 13,
-    fontWeight: "800",
-  },
-  stepText: {
-    flex: 1,
-    fontSize: 14,
-    color: "#475569",
-    lineHeight: 21,
-    paddingTop: 4,
-  },
-  showMoreBtn: {
-    paddingTop: 10,
-    alignItems: "center",
-    borderTopWidth: 1,
-    borderTopColor: "#E2E8F0",
-    marginTop: 4,
-  },
-  showMoreText: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#2F80ED",
-  },
+    // Details toggle button
+    detailsToggle: {
+      marginHorizontal: 16,
+      marginBottom: 20,
+      paddingVertical: 10,
+      paddingHorizontal: 16,
+      borderRadius: 999,
+      backgroundColor: c.backgroundSecondary,
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+    detailsToggleText: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: c.textSecondary,
+    },
 
-  // Details toggle button
-  detailsToggle: {
-    marginHorizontal: 16,
-    marginBottom: 20,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 999,
-    backgroundColor: "#F1F5F9",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  detailsToggleText: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#64748B",
-  },
+    setupImage: {
+      width: "100%",
+      height: 220,
+      borderRadius: 12,
+      backgroundColor: c.surface,
+      borderWidth: 1,
+      borderColor: c.border,
+    },
 
-  // Equipment chips
-  equipRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  equipChip: {
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  equipText: {
-    fontSize: 13,
-    color: "#475569",
-    fontWeight: "500",
-  },
+    // Equipment chips
+    equipRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 8,
+    },
+    equipChip: {
+      backgroundColor: c.surface,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+    equipText: {
+      fontSize: 13,
+      color: c.textSecondary,
+      fontWeight: "500",
+    },
 
-  // Science concept cards
-  knowCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 16,
-    borderLeftWidth: 4,
-    borderTopWidth: 1,
-    borderRightWidth: 1,
-    borderBottomWidth: 1,
-    borderTopColor: "#E2E8F0",
-    borderRightColor: "#E2E8F0",
-    borderBottomColor: "#E2E8F0",
-    gap: 8,
-    marginBottom: 8,
-  },
-  knowHeading: {
-    fontSize: 14,
-    fontWeight: "800",
-  },
-  bulletRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 10,
-  },
-  bulletDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginTop: 7,
-    flexShrink: 0,
-  },
-  bulletText: {
-    flex: 1,
-    fontSize: 13,
-    color: "#475569",
-    lineHeight: 19,
-  },
+    // Science concept cards
+    knowCard: {
+      backgroundColor: c.surface,
+      borderRadius: 12,
+      padding: 16,
+      borderLeftWidth: 4,
+      borderTopWidth: 1,
+      borderRightWidth: 1,
+      borderBottomWidth: 1,
+      borderTopColor: c.border,
+      borderRightColor: c.border,
+      borderBottomColor: c.border,
+      gap: 8,
+      marginBottom: 8,
+    },
+    knowHeading: {
+      fontSize: 14,
+      fontWeight: "800",
+    },
+    bulletRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: 10,
+    },
+    bulletDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      marginTop: 7,
+      flexShrink: 0,
+    },
+    bulletText: {
+      flex: 1,
+      fontSize: 13,
+      color: c.textSecondary,
+      lineHeight: 19,
+    },
 
-  // Extension tip box
-  extensionBox: {
-    marginHorizontal: 16,
-    marginBottom: 20,
-    backgroundColor: "#FEFCE8",
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#FDE047",
-    gap: 6,
-  },
-  extensionLabelRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  extensionLabel: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: "#854D0E",
-  },
-  extensionText: {
-    fontSize: 13,
-    color: "#78350F",
-    lineHeight: 19,
-  },
+    discussionCard: {
+      backgroundColor: c.primaryLight,
+      borderRadius: 12,
+      padding: 14,
+      borderLeftWidth: 4,
+      borderLeftColor: c.primary,
+    },
+    discussionText: {
+      fontSize: 14,
+      color: c.text,
+      lineHeight: 21,
+    },
+    curriculumChip: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      backgroundColor: c.surface,
+      borderRadius: 10,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      borderWidth: 1,
+      borderColor: c.border,
+      marginBottom: 6,
+    },
+    curriculumChipText: {
+      fontSize: 13,
+      color: c.primary,
+      fontWeight: "600",
+      flex: 1,
+    },
 
-  // Prediction
-  predictionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  optionalPill: {
-    backgroundColor: "#FEF9C3",
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "#FDE047",
-  },
-  optionalText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#854D0E",
-  },
-  predictionHint: {
-    fontSize: 13,
-    color: "#94A3B8",
-    lineHeight: 19,
-  },
-  predictionInput: {
-    borderWidth: 1.5,
-    borderColor: "#E2E8F0",
-    borderRadius: 12,
-    padding: 14,
-    fontSize: 14,
-    color: "#12343B",
-    minHeight: 80,
-    backgroundColor: "#FFFFFF",
-    lineHeight: 21,
-  },
-  predictionInputFilled: {
-    borderColor: "#2F80ED",
-    backgroundColor: "#EEF5FF",
-  },
+    // CTA
+    ctaSection: {
+      paddingHorizontal: 16,
+      gap: 10,
+    },
+    startBtn: {
+      backgroundColor: c.cta,
+      paddingVertical: 18,
+      borderRadius: 16,
+      alignItems: "center",
+    },
+    startBtnRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    startBtnText: {
+      color: "#FFFFFF",
+      fontSize: 18,
+      fontWeight: "800",
+      letterSpacing: 0.3,
+    },
+    pressed: {
+      opacity: 0.88,
+    },
+    resumeBtn: {
+      alignItems: "center",
+      paddingVertical: 10,
+    },
+    resumeBtnText: {
+      fontSize: 13,
+      color: c.textMuted,
+      fontWeight: "600",
+    },
 
-  // CTA
-  ctaSection: {
-    paddingHorizontal: 16,
-    gap: 10,
-  },
-  startBtn: {
-    backgroundColor: "#2F80ED",
-    paddingVertical: 18,
-    borderRadius: 16,
-    alignItems: "center",
-  },
-  startBtnRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  startBtnText: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "800",
-    letterSpacing: 0.3,
-  },
-  pressed: {
-    opacity: 0.88,
-  },
-  resumeBtn: {
-    alignItems: "center",
-    paddingVertical: 10,
-  },
-  resumeBtnText: {
-    fontSize: 13,
-    color: "#94A3B8",
-    fontWeight: "600",
-  },
-});
+    // Difficulty badge (intentional design colors — not themed)
+    difficultyBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 5,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 999,
+      borderWidth: 1.5,
+      marginTop: 10,
+    },
+    difficultyBadgePrimary: {
+      backgroundColor: "#ECFDF5",
+      borderColor: "#6EE7B7",
+    },
+    difficultyBadgeHS: {
+      backgroundColor: "#EFF6FF",
+      borderColor: "#93C5FD",
+    },
+    difficultyBadgeText: {
+      fontSize: 12,
+      fontWeight: "700",
+    },
+    difficultyBadgeTextPrimary: {
+      color: "#0F766E",
+    },
+    difficultyBadgeTextHS: {
+      color: "#2563EB",
+    },
+  });
+}

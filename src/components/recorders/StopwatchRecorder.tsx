@@ -1,6 +1,8 @@
-import { useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useHaptic } from "../../hooks/useHaptic";
+import type { ColorTokens } from "../../theme/colors";
+import { useTheme } from "../../theme/themeContext";
 import { Measurement } from "../../types";
 
 interface Props {
@@ -9,21 +11,30 @@ interface Props {
   onChange: (value: string) => void;
 }
 
-export function StopwatchRecorder({ measurement, value, onChange }: Props) {
+export function StopwatchRecorder({ measurement: _measurement, value, onChange }: Props) {
   const [running, setRunning] = useState(false);
   const [time, setTime] = useState(parseFloat(value) || 0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const { haptic } = useHaptic();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []);
 
   const start = () => {
     haptic("medium");
     setRunning(true);
     const startTime = Date.now() - time * 1000;
+    if (intervalRef.current) clearInterval(intervalRef.current);
     intervalRef.current = setInterval(() => {
       const elapsed = (Date.now() - startTime) / 1000;
       setTime(elapsed);
       onChange(elapsed.toFixed(2));
-    }, 50);
+    }, 100);
   };
 
   const stop = () => {
@@ -44,10 +55,7 @@ export function StopwatchRecorder({ measurement, value, onChange }: Props) {
       <Text style={styles.display}>{time.toFixed(2)}s</Text>
       <View style={styles.buttons}>
         {!running ? (
-          <TouchableOpacity
-            style={[styles.button, styles.start]}
-            onPress={start}
-          >
+          <TouchableOpacity style={[styles.button, styles.start]} onPress={start}>
             <Text style={styles.buttonText}>Start</Text>
           </TouchableOpacity>
         ) : (
@@ -63,18 +71,20 @@ export function StopwatchRecorder({ measurement, value, onChange }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { alignItems: "center", gap: 12 },
-  display: {
-    fontSize: 48,
-    fontWeight: "800",
-    color: "#2F80ED",
-    fontVariant: ["tabular-nums"],
-  },
-  buttons: { flexDirection: "row", gap: 12 },
-  button: { paddingVertical: 10, paddingHorizontal: 20, borderRadius: 10 },
-  start: { backgroundColor: "#2F80ED" },
-  stop: { backgroundColor: "#EF4444" },
-  reset: { backgroundColor: "#475569" },
-  buttonText: { color: "#FFF", fontWeight: "700", fontSize: 14 },
-});
+function createStyles(c: ColorTokens) {
+  return StyleSheet.create({
+    container: { alignItems: "center", gap: 12 },
+    display: {
+      fontSize: 48,
+      fontWeight: "800",
+      color: c.info,
+      fontVariant: ["tabular-nums"],
+    },
+    buttons: { flexDirection: "row", gap: 12 },
+    button: { paddingVertical: 10, paddingHorizontal: 20, borderRadius: 10 },
+    start: { backgroundColor: c.info },
+    stop: { backgroundColor: c.danger },
+    reset: { backgroundColor: c.textSecondary },
+    buttonText: { color: "#FFF", fontWeight: "700", fontSize: 14 },
+  });
+}

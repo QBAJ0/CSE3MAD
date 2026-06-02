@@ -1,7 +1,9 @@
 // Web stub — accelerometer not available in browser.
 // Students enter their count manually.
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import type { ColorTokens } from "../../theme/colors";
+import { useTheme } from "../../theme/themeContext";
 
 interface Props {
   onCapture: (bpm: number) => void;
@@ -10,6 +12,8 @@ interface Props {
 
 export function BreathingRecorder({ onCapture, existingValue }: Props) {
   const [value, setValue] = useState(existingValue ? String(existingValue) : "");
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const save = () => {
     const n = parseInt(value, 10);
@@ -26,7 +30,7 @@ export function BreathingRecorder({ onCapture, existingValue }: Props) {
         style={styles.input}
         keyboardType="numeric"
         placeholder="e.g. 15"
-        placeholderTextColor="#64748B"
+        placeholderTextColor={colors.textSecondary}
         value={value}
         onChangeText={setValue}
       />
@@ -37,32 +41,34 @@ export function BreathingRecorder({ onCapture, existingValue }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    padding: 16,
-    gap: 10,
-  },
-  label: { color: "#12343B", fontSize: 15, fontWeight: "700" },
-  hint: { color: "#64748B", fontSize: 12 },
-  input: {
-    backgroundColor: "#F0F6FF",
-    color: "#12343B",
-    borderRadius: 10,
-    padding: 12,
-    fontSize: 20,
-    fontWeight: "700",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  btn: {
-    backgroundColor: "#2F80ED",
-    padding: 14,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  btnText: { color: "#FFF", fontWeight: "700", fontSize: 15 },
-});
+function createStyles(c: ColorTokens) {
+  return StyleSheet.create({
+    container: {
+      backgroundColor: c.surface,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: c.border,
+      padding: 16,
+      gap: 10,
+    },
+    label: { color: c.text, fontSize: 15, fontWeight: "700" },
+    hint: { color: c.textSecondary, fontSize: 12 },
+    input: {
+      backgroundColor: c.primaryLight,
+      color: c.text,
+      borderRadius: 10,
+      padding: 12,
+      fontSize: 20,
+      fontWeight: "700",
+      borderWidth: 1,
+      borderColor: c.inputBorder,
+    },
+    btn: {
+      backgroundColor: c.primary,
+      padding: 14,
+      borderRadius: 12,
+      alignItems: "center",
+    },
+    btnText: { color: "#FFF", fontWeight: "700", fontSize: 15 },
+  });
+}
