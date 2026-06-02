@@ -44,6 +44,15 @@ export function VideoRecorder({
     requestMicPermission();
   }, []);
 
+  // Fallback: if onCameraReady never fires (expo-camera bug on repeated opens),
+  // force-enable the record button after 3 s so the user is never stuck.
+  useEffect(() => {
+    if (!cameraOpen) return;
+    setIsCameraReady(false);
+    const timer = setTimeout(() => setIsCameraReady(true), 3000);
+    return () => clearTimeout(timer);
+  }, [cameraOpen]);
+
   // Sync local videoUri when the parent switches to a different test (existingUri changes).
   // useState only runs once on mount, so without this the test-1 video persists into test-2+.
   useEffect(() => {
