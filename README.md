@@ -94,7 +94,7 @@ npx expo run:android
 For EAS cloud builds, restore `extra.eas.projectId` in `app.json` (removed for local Expo Go to avoid the unverified-app login prompt):
 
 ```json
-"eas": { "projectId": "b15991a2-9b12-4d0f-b2cc-bde0dd0707a7" }
+"eas": { "projectId": "f216fb29-f47a-4ba7-9bdb-5de5249d8d4f" }
 ```
 
 For iOS, use a macOS environment:
@@ -110,7 +110,7 @@ AdMob is currently configured with Google test app IDs and test banner units onl
 Current config lives in:
 
 - `app.json`
-- `src/components/ads/AdMobBanner.native.tsx`
+- `src/components/AdMobBanner.native.tsx`
 
 ## Branding
 

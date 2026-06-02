@@ -133,7 +133,6 @@ export async function processPendingMediaUploads(options?: {
   concurrency?: number;
 }): Promise<{ attempted: number; completed: number; remaining: number }> {
   if (_isProcessing) {
-    console.log("[mediaUploadQueue] already in flight, skipping concurrent call");
     return { attempted: 0, completed: 0, remaining: 0 };
   }
   _isProcessing = true;
@@ -174,7 +173,6 @@ export async function processPendingMediaUploads(options?: {
 
     await runWithConcurrency(pending, concurrency, async (item) => {
       if (_inFlight.has(item.id)) {
-        console.log("[mediaUploadQueue] skip already in-flight item", { id: item.id });
         return;
       }
       _inFlight.add(item.id);
@@ -182,17 +180,11 @@ export async function processPendingMediaUploads(options?: {
       try {
         const ownerUid = auth?.currentUser?.uid;
         if (!ownerUid) {
-          console.log("[mediaUploadQueue] skip (no auth)", { id: item.id });
           outcomes.set(item.id, item);
           return;
         }
 
         const current = outcomes.get(item.id) ?? item;
-        console.log("[mediaUploadQueue] attempt", {
-          id: item.id,
-          attempt: current.attempts + 1,
-          max: MAX_ATTEMPTS,
-        });
 
         const storagePath = buildMediaStoragePath(
           {
@@ -208,7 +200,6 @@ export async function processPendingMediaUploads(options?: {
         const attempt = await uploadLocalMediaToStorage(item.localUri, storagePath);
 
         if (attempt.ok) {
-          console.log("[mediaUploadQueue] uploaded, patching Firestore", { id: item.id, storagePath });
           const patched = await patchActivityEvidenceAfterUpload(item.resultId, {
             prototypeIndex: item.prototypeIndex,
             measurementKey: item.measurementKey,
@@ -225,7 +216,6 @@ export async function processPendingMediaUploads(options?: {
             });
             return;
           }
-          console.log("[mediaUploadQueue] done", { id: item.id });
           outcomes.delete(item.id);
           return;
         }
@@ -249,7 +239,7 @@ export async function processPendingMediaUploads(options?: {
           return;
         }
 
-        console.log("[mediaUploadQueue] upload_failed, will retry", { id: item.id, nextAttempts });
+        console.warn("[mediaUploadQueue] upload failed, will retry", { id: item.id, nextAttempts });
         outcomes.set(item.id, {
           ...current,
           attempts: nextAttempts,

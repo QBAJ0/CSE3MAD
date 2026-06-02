@@ -142,12 +142,7 @@ export async function syncChallengeResultToCloud(
     }
   }
 
-  if (activityOk && leaderboardOk) {
-    console.log("[firestore:sync] ok", {
-      resultId: result.id,
-      teamId: result.teamId,
-    });
-  } else {
+  if (!activityOk || !leaderboardOk) {
     console.warn("[firestore:sync] partial — queued for retry", {
       resultId: result.id,
       activityOk,

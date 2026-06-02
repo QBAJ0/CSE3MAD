@@ -41,7 +41,6 @@ import {
 } from "../../../src/types";
 import {
   WereYouRightValue,
-  getPredictionCharsFromPrototypes,
   getPrototypeOutcomeText,
   formatPredictionDisplay,
   getPrototypeWereYouRight,
