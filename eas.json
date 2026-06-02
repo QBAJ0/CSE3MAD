@@ -18,6 +18,9 @@
     },
     "preview": {
       "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
       "env": {
         "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyDBMpv1pTzxaHPmsSPnPjnB7MwTz-O5OZs",
         "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "stemm-lab-765d1.firebaseapp.com",
