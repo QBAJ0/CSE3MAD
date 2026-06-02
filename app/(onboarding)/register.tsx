@@ -91,19 +91,26 @@ export default function RegisterScreen() {
       discriminator,
       members: filledMembers,
     });
-    // Save team to Firestore so teammates can find it via Join Team
-    ensureFirebaseAuth()
-      .then(() =>
-        saveTeamToCloud({
-          teamName: trimmedName,
-          discriminator,
-          members: filledMembers,
-          createdAt,
-          totalPoints: 0,
-          completedChallenges: [],
-        }),
-      )
-      .catch(() => {});
+    // Save team to Firestore so teammates on other devices can join.
+    // Must complete before navigating so the document exists when they look it up.
+    try {
+      await ensureFirebaseAuth();
+      await saveTeamToCloud({
+        teamName: trimmedName,
+        discriminator,
+        members: filledMembers,
+        createdAt,
+        totalPoints: 0,
+        completedChallenges: [],
+      });
+    } catch {
+      // Non-fatal: team is saved locally, cloud sync failed. Warn but don't block.
+      Alert.alert(
+        "Offline Warning",
+        "Your team was created but could not be saved to the cloud. Teammates on other devices won't be able to join until you're back online.",
+        [{ text: "OK" }]
+      );
+    }
     router.push("/(onboarding)/team-confirmation");
     setIsCreating(false);
   };
