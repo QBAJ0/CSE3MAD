@@ -41,7 +41,6 @@ import {
 } from "../../../src/types";
 import {
   WereYouRightValue,
-  getPredictionCharsFromPrototypes,
   getPrototypeOutcomeText,
   formatPredictionDisplay,
   getPrototypeWereYouRight,
@@ -261,9 +260,8 @@ export default function ResultsScreen() {
     try {
       const result = await finalize({
         rating: rating as 1 | 2 | 3 | 4 | 5,
-        reflection: comment.trim()
-          ? `${combinedReflection}\n\nTeam comment: ${comment.trim()}`
-          : combinedReflection,
+        reflection: combinedReflection,
+        comment: comment.trim(),
         completedInTime: !hasTimeExpired,
       });
 
@@ -449,7 +447,6 @@ export default function ResultsScreen() {
       {isHumanPerformance ? (
         <HumanPerformanceReflect
           prototypes={draft.prototypes}
-          teamPrediction={draft.prediction ?? ""}
           onUpdatePrototype={updatePrototype}
         />
       ) : null}

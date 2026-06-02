@@ -8,7 +8,6 @@ import {
 import { ensureFirebaseAuth } from "../services/authSession";
 import { syncChallengeResultToCloud } from "../services/challengeCloudSync";
 import { persistChallengeResultToSqlite } from "../services/challengeResultLocal";
-import { enqueueMediaUploadsForResult } from "../services/mediaUploadQueue";
 import { deriveHandFan, deriveParachute } from "../services/physics";
 import {
   ActivityResult,
@@ -16,6 +15,7 @@ import {
   Measurement,
   Prototype,
 } from "../types";
+import { getTeamYearLevelLabel } from "../utils/difficulty";
 import { storage } from "../utils/storage";
 import { HUMAN_PERFORMANCE_TRIALS } from "../data/humanPerformanceTrials";
 import {
@@ -36,7 +36,6 @@ type ActivityContextValue = {
     teamName: string;
     difficulty: DifficultyMode;
   }) => void;
-  setPrediction: (prediction: string) => void;
   updatePrototype: (
     index: number,
     patch: Partial<Omit<Prototype, "index">>,
@@ -51,6 +50,7 @@ type ActivityContextValue = {
   finalize: (args: {
     rating: 1 | 2 | 3 | 4 | 5;
     reflection: string;
+    comment?: string;
     completedInTime?: boolean;
   }) => Promise<ActivityResult | null>;
   clearDraft: () => void;
@@ -223,9 +223,6 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const setPrediction = (prediction: string) =>
-    setDraft((prev) => ({ ...prev, prediction }));
-
   const updatePrototype: ActivityContextValue["updatePrototype"] = (
     index,
     patch,
@@ -293,6 +290,7 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
   const finalize: ActivityContextValue["finalize"] = async ({
     rating,
     reflection,
+    comment = "",
     completedInTime = true,
   }) => {
     if (
@@ -316,19 +314,30 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
         ...(draft.derivedByPrototype ?? {}),
       };
 
+      const savedTeam = await storage.getTeam();
+      const challenge = getChallengeById(draft.challengeId);
+      const now = new Date().toISOString();
+
       const baseResult = {
         id: draft.id,
         challengeId: draft.challengeId,
         teamId: draft.teamId,
         teamName: draft.teamName,
+        discriminator: draft.teamId,
+        activityTitle: challenge?.title,
+        yearLevel: savedTeam
+          ? getTeamYearLevelLabel(savedTeam.members)
+          : "Unknown",
         difficulty: draft.difficulty,
         prediction: draft.prediction ?? "",
         prototypes: draft.prototypes,
         derivedByPrototype,
         rating,
         reflection,
+        comment: comment.trim(),
         location: submittedLocation,
-        createdAt: draft.createdAt ?? new Date().toISOString(),
+        createdAt: draft.createdAt ?? now,
+        updatedAt: now,
       };
 
       const points = scoreActivityResult(baseResult, completedInTime);
@@ -359,7 +368,6 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
           });
           await ensureFirebaseAuth();
           await syncChallengeResultToCloud(result);
-          void enqueueMediaUploadsForResult(result);
           console.log("[claim] cloud sync completed", { resultId: result.id });
         } catch (e) {
           console.warn("[ActivityContext] cloud sync after claim:", e);
@@ -380,7 +388,6 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
       value={{
         draft,
         startDraft,
-        setPrediction,
         updatePrototype,
         addPrototype,
         setCurrentPrototypeIndex,

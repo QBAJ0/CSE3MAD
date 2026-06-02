@@ -195,3 +195,15 @@ jest.mock("@/src/services/mediaUploadQueue", () => ({
     .mockResolvedValue({ attempted: 0, completed: 0, remaining: 0 }),
   enqueueMediaUploadsForResult: jest.fn().mockResolvedValue(0),
 }));
+
+// Default: healthy battery so all background-sync tests run normally.
+// Override per-test with jest.mocked(Battery).getBatteryLevelAsync.mockResolvedValue(...)
+jest.mock("expo-battery", () => ({
+  getBatteryLevelAsync: jest.fn().mockResolvedValue(0.75),
+  isLowPowerModeEnabledAsync: jest.fn().mockResolvedValue(false),
+  getBatteryStateAsync: jest.fn().mockResolvedValue(1),
+  addBatteryLevelListener: jest.fn().mockReturnValue({ remove: jest.fn() }),
+  addBatteryStateListener: jest.fn().mockReturnValue({ remove: jest.fn() }),
+  addLowPowerModeListener: jest.fn().mockReturnValue({ remove: jest.fn() }),
+  BatteryState: { UNKNOWN: 0, UNPLUGGED: 1, CHARGING: 2, FULL: 3 },
+}));

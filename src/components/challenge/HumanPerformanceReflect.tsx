@@ -16,7 +16,6 @@ import {
 
 type Props = {
   prototypes: Prototype[];
-  teamPrediction: string;
   onUpdatePrototype: (
     index: number,
     patch: Partial<Omit<Prototype, "index">>,
@@ -25,7 +24,6 @@ type Props = {
 
 export function HumanPerformanceReflect({
   prototypes,
-  teamPrediction,
   onUpdatePrototype,
 }: Props) {
   const [wereYouRight, setWereYouRight] = useState<Record<number, string>>(
@@ -46,16 +44,6 @@ export function HumanPerformanceReflect({
 
   return (
     <>
-      <View style={styles.card}>
-        <View style={styles.cardTitleRow}>
-          <Ionicons name="help-circle-outline" size={16} color="#0F172A" />
-          <Text style={styles.cardTitle}>Team prediction</Text>
-        </View>
-        <Text style={styles.predictionText}>
-          {teamPrediction.trim() || "Not recorded"}
-        </Text>
-      </View>
-
       {prototypes.map((p, idx) => {
         const hp = parseHumanPerformancePrototype(p);
         const smoothnessDisplay = Number.isFinite(hp.smoothnessScore)
@@ -229,7 +217,6 @@ const styles = StyleSheet.create({
   },
   cardTitleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   cardTitle: { fontSize: 16, fontWeight: "700", color: "#0F172A" },
-  predictionText: { fontSize: 15, color: "#334155", marginTop: 10, lineHeight: 22 },
   designTitle: {
     fontSize: 17,
     fontWeight: "800",

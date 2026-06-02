@@ -62,6 +62,7 @@ export default function RootLayout() {
                 <Stack.Screen name="(onboarding)" />
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="challenge" options={{ headerShown: false }} />
+                <Stack.Screen name="results/[resultId]" options={{ headerShown: false }} />
               </Stack>
             </ActivityProvider>
           </TeamProvider>

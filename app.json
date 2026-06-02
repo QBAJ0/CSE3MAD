@@ -10,6 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.StaceyJepkemoi.Stemmlab",
       "infoPlist": {
         "UIBackgroundModes": [
           "fetch"
@@ -55,7 +56,38 @@
       ],
       "expo-web-browser",
       "expo-asset",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-notifications",
+        {
+          "color": "#0F766E"
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "STEMM Lab uses your camera to record experiment evidence such as slow-motion videos and photos.",
+          "microphonePermission": "STEMM Lab uses the microphone with the camera to capture video with sound."
+        }
+      ],
+      [
+        "expo-av",
+        {
+          "microphonePermission": "STEMM Lab uses your microphone to measure sound levels in the Sound Pollution Hunter activity."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "STEMM Lab tags your experiment location on a map and attaches GPS coordinates to your results."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "STEMM Lab accesses your photo library to attach images as experiment evidence."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

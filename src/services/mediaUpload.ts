@@ -1,5 +1,5 @@
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 import { isFirebaseStorageReady, storage } from "@/src/firebase";
 
 export type MediaUploadAttempt = {
@@ -33,9 +33,10 @@ export async function uploadLocalMediaToStorage(
     const storageRef = ref(storage, storagePath);
     await uploadBytes(storageRef, blob);
     const downloadUrl = await getDownloadURL(storageRef);
+    console.log("[storage:upload] ok", { storagePath });
     return { ok: true, downloadUrl };
   } catch (e) {
-    console.warn("[mediaUpload] upload failed:", e);
+    console.warn("[storage:upload] fail", storagePath, e instanceof Error ? e.message : e);
     return { ok: false, reason: "upload_failed" };
   }
 }

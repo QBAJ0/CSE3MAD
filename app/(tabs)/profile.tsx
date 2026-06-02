@@ -1,7 +1,7 @@
 // app/(tabs)/profile.tsx
 
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { router, useFocusEffect } from "expo-router";
+import { router, useFocusEffect, type Href } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -300,7 +300,9 @@ export default function ProfileScreen() {
               <Pressable
                 key={activity.id}
                 style={({ pressed }) => [styles.historyCard, pressed && styles.pressed]}
-                onPress={() => router.push(`/results/${activity.id}`)}
+                onPress={() =>
+                  router.push(`/results/${activity.id}` as Href)
+                }
               >
                 <View style={styles.historyTopRow}>
                   <View style={[styles.historyIcon, { backgroundColor: accent.tint }]}>

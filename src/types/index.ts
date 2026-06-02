@@ -95,16 +95,24 @@ export type ActivityResult = {
   challengeId: number;
   teamId: string;
   teamName: string;
+  /** Same as teamId — team discriminator shown to students (e.g. #1234). */
+  discriminator?: string;
+  activityTitle?: string;
+  yearLevel?: string;
   difficulty: DifficultyMode;
   prediction: string;
   prototypes: Prototype[];
   derivedByPrototype?: Record<number, Record<string, number>>;
   rating: number;
+  /** Observation answers (without the optional team comment line). */
   reflection: string;
+  /** Short team comment from the Reflect screen, if provided. */
+  comment?: string;
   location?: { lat: number; lng: number };
   points?: number;
   completedInTime?: boolean;
   createdAt: string;
+  updatedAt?: string;
 };
 
 export type CompletedActivity = ActivityResult;

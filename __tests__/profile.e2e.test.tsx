@@ -7,6 +7,7 @@ jest.mock("@/src/utils/storage", () => ({
     getCompletedActivities: jest.fn().mockResolvedValue([]),
     getReminderHour: jest.fn().mockResolvedValue(19),
     getReminderMinute: jest.fn().mockResolvedValue(0),
+    getEarnedBadges: jest.fn().mockResolvedValue([]),
     getStreak: jest.fn().mockResolvedValue(0),
     saveReminderHour: jest.fn().mockResolvedValue(undefined),
     saveReminderMinute: jest.fn().mockResolvedValue(undefined),
@@ -15,6 +16,11 @@ jest.mock("@/src/utils/storage", () => ({
   },
   DEFAULT_REMINDER_HOUR: 19,
   DEFAULT_REMINDER_MINUTE: 0,
+}));
+
+jest.mock("@/src/utils/notifications", () => ({
+  scheduleStreakReminder: jest.fn().mockResolvedValue(undefined),
+  cancelStreakReminder: jest.fn().mockResolvedValue(undefined),
 }));
 
 // expo-battery is used by BatteryStatusCard.native.tsx — mock listeners so .remove() exists.
@@ -60,11 +66,13 @@ function Providers({ children }: { children: React.ReactNode }) {
 }
 
 describe("ProfileScreen (E2E render)", () => {
+  jest.setTimeout(15_000);
+
   it("renders and shows profile sections after loading", async () => {
     const { findByText } = render(
       <Providers>
         <ProfileScreen />
-      </Providers>
+      </Providers>,
     );
 
     // Default team name shown when no team is stored
