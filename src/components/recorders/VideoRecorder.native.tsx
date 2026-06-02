@@ -247,7 +247,7 @@ export function VideoRecorder({
           >
             <Text style={styles.captureButtonText}>Record Video</Text>
             <Text style={styles.captureHint}>
-              Show your experiment in action!
+              For slow-motion analysis, use your phone's native camera in slow-mo mode, then tap Upload from Gallery below
             </Text>
           </TouchableOpacity>
 

@@ -175,7 +175,7 @@ const createStyles = (c: ColorTokens) =>
     metaDot: { fontSize: 12, color: c.textSecondary },
     ratingRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 },
     ratingLabel: { fontSize: 13, color: c.textSecondary, marginLeft: 4 },
-    card: { backgroundColor: c.card, borderRadius: 12, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: c.border },
+    card: { backgroundColor: c.backgroundSecondary, borderRadius: 12, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: c.border },
     cardTitleRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 10 },
     cardTitle: { fontSize: 14, fontWeight: "700", color: c.text },
     measureRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 4, borderBottomWidth: 1, borderBottomColor: c.border },
