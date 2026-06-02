@@ -448,7 +448,6 @@ export default function ResultsScreen() {
       {isHumanPerformance ? (
         <HumanPerformanceReflect
           prototypes={draft.prototypes}
-          teamPrediction={draft.prediction ?? ""}
           onUpdatePrototype={updatePrototype}
         />
       ) : null}

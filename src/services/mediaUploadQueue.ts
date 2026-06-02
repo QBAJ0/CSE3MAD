@@ -10,6 +10,7 @@ import {
 } from "./mediaEvidence";
 import { patchActivityEvidenceAfterUpload } from "./activityFirestorePatch";
 import { uploadLocalMediaToStorage } from "./mediaUpload";
+import { checkBatteryGuard } from "../utils/batteryGuard";
 
 export type PendingMediaUpload = {
   id: string;
@@ -142,6 +143,20 @@ export async function processPendingMediaUploads(options?: {
     const pending = queue.filter((item) => !item.downloadUrl);
     if (pending.length === 0) {
       return { attempted: 0, completed: 0, remaining: 0 };
+    }
+
+    const batteryCheck = await checkBatteryGuard();
+    if (batteryCheck.defer) {
+      const pct =
+        batteryCheck.batteryLevel !== null
+          ? `${Math.round(batteryCheck.batteryLevel * 100)}%`
+          : "unknown";
+      console.log("[mediaUploadQueue] deferred — battery constraint", {
+        reason: batteryCheck.reason,
+        batteryLevel: pct,
+        queued: pending.length,
+      });
+      return { attempted: 0, completed: 0, remaining: pending.length };
     }
 
     try {

@@ -12,6 +12,7 @@ import {
   pushActivityToCloud,
   pushResultToCloud,
 } from "./leaderboard";
+import { checkBatteryGuard } from "../utils/batteryGuard";
 
 export type PendingChallengeCloudSync = {
   resultId: string;
@@ -167,6 +168,20 @@ export async function processPendingChallengeCloudSync(): Promise<{
 
   const queue = await readQueue();
   if (queue.length === 0) {
+    return { attempted: 0, cleared: 0 };
+  }
+
+  const batteryCheck = await checkBatteryGuard();
+  if (batteryCheck.defer) {
+    const pct =
+      batteryCheck.batteryLevel !== null
+        ? `${Math.round(batteryCheck.batteryLevel * 100)}%`
+        : "unknown";
+    console.log("[challengeCloudSync] deferred — battery constraint", {
+      reason: batteryCheck.reason,
+      batteryLevel: pct,
+      queued: queue.length,
+    });
     return { attempted: 0, cleared: 0 };
   }
 

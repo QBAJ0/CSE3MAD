@@ -42,8 +42,6 @@ export default function SplashScreen() {
       router.replace("/(onboarding)/welcome");
     }
 
-    // TODO: When Firebase is added, also check if the team exists in the database
-    // and sync any remote data before navigating.
   }, [splashFinished, isLoadingTeam, team]);
 
   // --- UI: Show the splash screen while waiting ---

@@ -36,7 +36,6 @@ type ActivityContextValue = {
     teamName: string;
     difficulty: DifficultyMode;
   }) => void;
-  setPrediction: (prediction: string) => void;
   updatePrototype: (
     index: number,
     patch: Partial<Omit<Prototype, "index">>,
@@ -224,9 +223,6 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const setPrediction = (prediction: string) =>
-    setDraft((prev) => ({ ...prev, prediction }));
-
   const updatePrototype: ActivityContextValue["updatePrototype"] = (
     index,
     patch,
@@ -392,7 +388,6 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
       value={{
         draft,
         startDraft,
-        setPrediction,
         updatePrototype,
         addPrototype,
         setCurrentPrototypeIndex,
