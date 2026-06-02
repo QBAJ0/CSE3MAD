@@ -1,6 +1,9 @@
 // @author Stacey
 
-import { getDifficultyFromYearLevels } from "@/src/utils/difficulty";
+import {
+  getDifficultyFromYearLevels,
+  getTeamYearLevelLabel,
+} from "@/src/utils/difficulty";
 import { TeamMember } from "@/src/types";
 
 function member(grade: string): TeamMember {
@@ -26,5 +29,17 @@ describe("getDifficultyFromYearLevels", () => {
 
   it("returns primary when grade is unknown", () => {
     expect(getDifficultyFromYearLevels([member("Unknown Grade")])).toBe("primary");
+  });
+});
+
+describe("getTeamYearLevelLabel", () => {
+  it("returns highest year when team has multiple grades", () => {
+    expect(getTeamYearLevelLabel([member("Year 6"), member("Year 9")])).toContain(
+      "Year 9",
+    );
+  });
+
+  it("returns Unknown when no grades", () => {
+    expect(getTeamYearLevelLabel([{ name: "Sam" }])).toBe("Unknown");
   });
 });

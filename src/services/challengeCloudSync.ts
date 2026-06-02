@@ -5,6 +5,10 @@ import { ensureFirebaseAuth } from "./authSession";
 import { STORAGE_KEYS } from "@/src/utils/storage";
 import { ActivityResult } from "../types";
 import {
+  enqueueMediaUploadsForResult,
+  processPendingMediaUploads,
+} from "./mediaUploadQueue";
+import {
   pushActivityToCloud,
   pushResultToCloud,
 } from "./leaderboard";
@@ -87,38 +91,70 @@ async function enqueueOrUpdate(
   );
 }
 
+export type CloudSyncResult = {
+  activityOk: boolean;
+  leaderboardOk: boolean;
+  queued: boolean;
+};
+
 export async function syncChallengeResultToCloud(
   result: ActivityResult,
-): Promise<void> {
+): Promise<CloudSyncResult> {
   if (!isFirebaseConfigured || !db) {
-    console.warn("[challengeCloudSync] firebase unavailable; skip cloud write", {
+    console.warn("[firestore:sync] skipped — Firebase not configured", {
       resultId: result.id,
-      teamId: result.teamId,
     });
-    return;
+    return { activityOk: false, leaderboardOk: false, queued: false };
   }
 
   try {
     await ensureFirebaseAuth();
   } catch {
-    console.warn("[challengeCloudSync] auth unavailable; queueing result", {
+    console.warn("[firestore:sync] auth fail — queued for retry", {
       resultId: result.id,
-      teamId: result.teamId,
     });
     await enqueueOrUpdate(result, false, false);
-    return;
+    return { activityOk: false, leaderboardOk: false, queued: true };
   }
 
-  let leaderboardOk = await pushResultToCloud(result);
+  const leaderboardOk = await pushResultToCloud(result);
   let activityOk = await pushActivityToCloud(result);
 
   if (!activityOk && (await activitySubmissionExists(result.id))) {
     activityOk = true;
   }
 
-  if (!leaderboardOk || !activityOk) {
+  const queued = !leaderboardOk || !activityOk;
+  if (queued) {
     await enqueueOrUpdate(result, leaderboardOk, activityOk);
   }
+
+  if (activityOk) {
+    const enqueued = await enqueueMediaUploadsForResult(result);
+    if (enqueued > 0) {
+      void processPendingMediaUploads().catch((e) => {
+        console.warn("[firestore:sync] media upload pass failed", {
+          resultId: result.id,
+          error: e,
+        });
+      });
+    }
+  }
+
+  if (activityOk && leaderboardOk) {
+    console.log("[firestore:sync] ok", {
+      resultId: result.id,
+      teamId: result.teamId,
+    });
+  } else {
+    console.warn("[firestore:sync] partial — queued for retry", {
+      resultId: result.id,
+      activityOk,
+      leaderboardOk,
+    });
+  }
+
+  return { activityOk, leaderboardOk, queued };
 }
 
 export async function processPendingChallengeCloudSync(): Promise<{

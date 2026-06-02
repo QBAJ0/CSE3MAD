@@ -30,14 +30,14 @@ export function collectMediaEvidenceFromResult(
 ): MediaEvidenceRef[] {
   const refs: MediaEvidenceRef[] = [];
 
-  result.prototypes.forEach((prototype, prototypeIndex) => {
+  result.prototypes.forEach((prototype) => {
     for (const [measurementKey, raw] of Object.entries(prototype.measurements)) {
       if (!isLocalMediaUri(raw)) continue;
       refs.push({
         resultId: result.id,
         challengeId: result.challengeId,
         teamId: result.teamId,
-        prototypeIndex,
+        prototypeIndex: prototype.index,
         measurementKey,
         localUri: raw.trim(),
       });
@@ -54,6 +54,19 @@ export function buildMediaStoragePath(
 ): string {
   const ext = extensionFromUri(ref.localUri);
   return `activity-evidence/${ownerUid}/${ref.resultId}/prototype-${ref.prototypeIndex}-${ref.measurementKey}${ext}`;
+}
+
+export function inferMediaType(
+  measurementKey: string,
+  uri: string,
+): "video" | "photo" | "unknown" {
+  const key = measurementKey.toLowerCase();
+  if (key.includes("video")) return "video";
+  if (key.includes("photo")) return "photo";
+  const lower = uri.toLowerCase();
+  if (/\.(mp4|mov|m4v)(\?|$)/.test(lower)) return "video";
+  if (/\.(jpg|jpeg|png|webp|heic)(\?|$)/.test(lower)) return "photo";
+  return "unknown";
 }
 
 function extensionFromUri(uri: string): string {

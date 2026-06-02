@@ -67,7 +67,7 @@ export default function LeaderboardScreen() {
         </View>
         <Text style={styles.title}>Top Scientists</Text>
         <Text style={styles.subtitle}>
-          Who's winning the lab? Finish challenges to move up!
+          {"Who's winning the lab? Finish challenges to move up!"}
         </Text>
       </View>
 
