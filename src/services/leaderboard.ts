@@ -224,29 +224,24 @@ export async function lookupTeamFromCloud(
   teamName: string,
   discriminator: string,
 ): Promise<TeamData | null> {
-  if (!db) return null;
-  try {
-    const snap = await getDoc(doc(db, TEAMS_COLLECTION, discriminator));
-    if (!snap.exists()) return null;
-    const data = snap.data() as {
-      teamName: string;
-      discriminator: string;
-      members: TeamData["members"];
-      createdAt: string;
-    };
-    if (data.teamName.trim().toLowerCase() !== teamName.trim().toLowerCase()) return null;
-    return {
-      teamName: data.teamName,
-      discriminator: data.discriminator,
-      members: data.members ?? [],
-      createdAt: data.createdAt,
-      totalPoints: 0,
-      completedChallenges: [],
-    };
-  } catch (e) {
-    console.warn("[firestore:team] lookup fail", e);
-    return null;
-  }
+  if (!db) throw new Error("Firebase not configured");
+  const snap = await getDoc(doc(db, TEAMS_COLLECTION, discriminator));
+  if (!snap.exists()) throw new Error("Team not found");
+  const data = snap.data() as {
+    teamName: string;
+    discriminator: string;
+    members: TeamData["members"];
+    createdAt: string;
+  };
+  if (data.teamName.trim().toLowerCase() !== teamName.trim().toLowerCase()) return null;
+  return {
+    teamName: data.teamName,
+    discriminator: data.discriminator,
+    members: data.members ?? [],
+    createdAt: data.createdAt,
+    totalPoints: 0,
+    completedChallenges: [],
+  };
 }
 
 export async function pushActivityToCloud(result: ActivityResult): Promise<boolean> {

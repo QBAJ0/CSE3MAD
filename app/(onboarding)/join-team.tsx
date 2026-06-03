@@ -68,7 +68,7 @@ export default function JoinTeamScreen() {
         router.push("/(onboarding)/team-confirmation");
         return;
       }
-      // Team ID exists in Firestore but name didn't match
+      // Team ID exists but name didn't match
       setIsJoining(false);
       Alert.alert(
         "Team Name Mismatch",
@@ -79,16 +79,22 @@ export default function JoinTeamScreen() {
     } catch (e: unknown) {
       setIsJoining(false);
       const msg = e instanceof Error ? e.message : String(e);
-      if (msg.includes("permission")) {
+      if (msg === "Team not found") {
         Alert.alert(
-          "Firebase Unavailable",
-          "Cannot reach the team database right now. Make sure you're connected and try again.",
+          "Team Not Found",
+          "We couldn't find a team with that ID. Double-check the ID your team leader shared.",
+          [{ text: "Try Again", style: "cancel" }],
+        );
+      } else if (msg === "Firebase not configured" || msg.includes("permission") || msg.includes("unavailable")) {
+        Alert.alert(
+          "Cannot Reach Database",
+          "Make sure you're connected to the internet and try again.",
           [{ text: "OK", style: "cancel" }],
         );
       } else {
         Alert.alert(
-          "Team Not Found",
-          "We couldn't find that team. Double-check the name and ID, or create a new team.",
+          "Something Went Wrong",
+          "Couldn't look up the team. Check your connection and try again.",
           [{ text: "Try Again", style: "cancel" }],
         );
       }
@@ -215,6 +221,7 @@ export default function JoinTeamScreen() {
             <Text style={styles.backLinkText}>Back to Welcome</Text>
           </TouchableOpacity>
         </View>
+
       </ScrollView>
     </KeyboardAvoidingView>
   );

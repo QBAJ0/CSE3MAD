@@ -10,6 +10,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -19,9 +20,13 @@ import { CHALLENGES, getChallengeById } from "../../src/data/challenges";
 import type { ColorTokens } from "../../src/theme/colors";
 import { getChallengeAccent } from "../../src/utils/challengeAccent";
 import { AppearanceSetting, useTheme } from "../../src/theme/themeContext";
-import { ActivityResult } from "../../src/types";
+import { ActivityResult, TeamMember } from "../../src/types";
 import { scheduleStreakReminder, cancelStreakReminder } from "../../src/utils/notifications";
 import { DEFAULT_REMINDER_HOUR, DEFAULT_REMINDER_MINUTE, storage } from "../../src/utils/storage";
+import { ensureFirebaseAuth } from "../../src/services/authSession";
+import { saveTeamToCloud } from "../../src/services/leaderboard";
+
+const YEAR_OPTIONS = ["Year 5", "Year 6", "Year 7", "Year 8", "Year 9", "Year 10"];
 
 const AVATAR_COLORS = [
   "#0F766E", "#2563EB", "#FED7AA", "#F97316", "#0F766E", "#2563EB",
@@ -34,7 +39,7 @@ const APPEARANCE_OPTIONS: { value: AppearanceSetting; label: string; icon: strin
 ];
 
 export default function ProfileScreen() {
-  const { team, clearTeamData } = useTeam();
+  const { team, clearTeamData, updateTeamMembers } = useTeam();
   const { colors, appearance, setAppearance } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
@@ -42,6 +47,10 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [reminderHour, setReminderHour] = useState(DEFAULT_REMINDER_HOUR);
   const [reminderMinute, setReminderMinute] = useState(DEFAULT_REMINDER_MINUTE);
+
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newMemberName, setNewMemberName] = useState("");
+  const [newMemberGrade, setNewMemberGrade] = useState("Year 7");
 
   const isFirstLoad = useRef(true);
 
@@ -84,6 +93,45 @@ export default function ProfileScreen() {
     } else {
       cancelStreakReminder().catch(console.error);
     }
+  };
+
+  const syncMembersToCloud = (members: TeamMember[]) => {
+    if (!team) return;
+    ensureFirebaseAuth()
+      .then(() => saveTeamToCloud({ ...team, members }))
+      .catch(console.warn);
+  };
+
+  const handleAddMember = async () => {
+    const name = newMemberName.trim();
+    if (!name) return;
+    if ((team?.members.length ?? 0) >= 6) {
+      Alert.alert("Max Members", "Teams can have up to 6 members.");
+      return;
+    }
+    const updated = [...(team?.members ?? []), { name, grade: newMemberGrade }];
+    await updateTeamMembers(updated);
+    syncMembersToCloud(updated);
+    setNewMemberName("");
+    setNewMemberGrade("Year 7");
+    setShowAddForm(false);
+  };
+
+  const handleRemoveMember = (index: number) => {
+    const member = team?.members[index];
+    if (!member) return;
+    Alert.alert("Remove Member", `Remove ${member.name} from the team?`, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Remove",
+        style: "destructive",
+        onPress: async () => {
+          const updated = (team?.members ?? []).filter((_, i) => i !== index);
+          await updateTeamMembers(updated);
+          syncMembersToCloud(updated);
+        },
+      },
+    ]);
   };
 
   const handleReset = () => {
@@ -238,9 +286,12 @@ export default function ProfileScreen() {
 
       {/* ── Team members ── */}
       <View style={styles.card}>
-        <View style={styles.cardTitleRow}>
-          <Ionicons name="people-outline" size={16} color={colors.primary} />
-          <Text style={styles.cardTitle}>Team Members</Text>
+        <View style={styles.cardHeader}>
+          <View style={styles.cardTitleRow}>
+            <Ionicons name="people-outline" size={16} color={colors.primary} />
+            <Text style={styles.cardTitle}>Team Members</Text>
+          </View>
+          <Text style={styles.cardSubtitle}>{team?.members.length ?? 0}/6</Text>
         </View>
 
         {team?.members.map((member, index) => (
@@ -257,12 +308,71 @@ export default function ProfileScreen() {
             </View>
             <View style={styles.memberInfo}>
               <Text style={styles.memberName}>{member.name}</Text>
-              <Text style={styles.memberGrade}>
-                {member.grade || "Student"}
-              </Text>
+              <Text style={styles.memberGrade}>{member.grade || "Student"}</Text>
             </View>
+            {(team?.members.length ?? 0) > 1 && (
+              <TouchableOpacity
+                onPress={() => handleRemoveMember(index)}
+                style={styles.removeMemberBtn}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons name="close-circle" size={20} color={colors.danger} />
+              </TouchableOpacity>
+            )}
           </View>
         ))}
+
+        {showAddForm ? (
+          <View style={styles.addMemberForm}>
+            <TextInput
+              style={styles.addMemberInput}
+              placeholder="First name"
+              placeholderTextColor={colors.textMuted}
+              value={newMemberName}
+              onChangeText={setNewMemberName}
+              autoFocus
+              maxLength={30}
+            />
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.gradeChipRow}
+            >
+              {YEAR_OPTIONS.map((grade) => (
+                <TouchableOpacity
+                  key={grade}
+                  style={[styles.gradeChip, newMemberGrade === grade && styles.gradeChipActive]}
+                  onPress={() => setNewMemberGrade(grade)}
+                  activeOpacity={0.75}
+                >
+                  <Text style={[styles.gradeChipText, newMemberGrade === grade && styles.gradeChipTextActive]}>
+                    {grade}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            <View style={styles.addMemberActions}>
+              <TouchableOpacity
+                style={styles.addMemberCancel}
+                onPress={() => { setShowAddForm(false); setNewMemberName(""); }}
+              >
+                <Text style={styles.addMemberCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.addMemberConfirm, !newMemberName.trim() && styles.addMemberConfirmDisabled]}
+                onPress={handleAddMember}
+                disabled={!newMemberName.trim()}
+              >
+                <Text style={styles.addMemberConfirmText}>Add</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : (team?.members.length ?? 0) < 6 ? (
+          <TouchableOpacity style={styles.addMemberBtn} onPress={() => setShowAddForm(true)}>
+            <Ionicons name="person-add-outline" size={16} color={colors.primary} />
+            <Text style={styles.addMemberBtnText}>Add Member</Text>
+          </TouchableOpacity>
+        ) : null}
       </View>
 
       {/* ── Results history ── */}
@@ -654,6 +764,75 @@ function createStyles(c: ColorTokens) {
     memberInfo: { flex: 1 },
     memberName: { fontSize: 15, fontWeight: "700", color: c.primary },
     memberGrade: { fontSize: 12, color: c.textMuted, marginTop: 1 },
+    removeMemberBtn: { padding: 4 },
+
+    addMemberBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      marginTop: 12,
+      paddingVertical: 12,
+      borderRadius: 12,
+      borderWidth: 1.5,
+      borderStyle: "dashed",
+      borderColor: c.primary,
+    },
+    addMemberBtnText: { fontSize: 14, fontWeight: "700", color: c.primary },
+
+    addMemberForm: {
+      marginTop: 12,
+      gap: 10,
+    },
+    addMemberInput: {
+      borderWidth: 1.5,
+      borderColor: c.inputBorder,
+      borderRadius: 12,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      fontSize: 15,
+      color: c.text,
+      backgroundColor: c.input,
+    },
+    gradeChipRow: {
+      flexDirection: "row",
+      gap: 8,
+      paddingVertical: 2,
+    },
+    gradeChip: {
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: 10,
+      backgroundColor: c.backgroundSecondary,
+      borderWidth: 1.5,
+      borderColor: c.borderFaint,
+    },
+    gradeChipActive: { backgroundColor: c.cta, borderColor: c.cta },
+    gradeChipText: { fontSize: 13, fontWeight: "600", color: c.primary },
+    gradeChipTextActive: { color: "#FFFFFF", fontWeight: "700" },
+
+    addMemberActions: {
+      flexDirection: "row",
+      gap: 10,
+    },
+    addMemberCancel: {
+      flex: 1,
+      paddingVertical: 11,
+      borderRadius: 12,
+      borderWidth: 1.5,
+      borderColor: c.border,
+      alignItems: "center",
+    },
+    addMemberCancelText: { fontSize: 14, fontWeight: "700", color: c.textSecondary },
+    addMemberConfirm: {
+      flex: 1,
+      paddingVertical: 11,
+      borderRadius: 12,
+      backgroundColor: c.cta,
+      alignItems: "center",
+    },
+    addMemberConfirmDisabled: { backgroundColor: c.border },
+    addMemberConfirmText: { fontSize: 14, fontWeight: "700", color: "#FFFFFF" },
 
     historyCard: {
       backgroundColor: c.backgroundSecondary,

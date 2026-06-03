@@ -10,6 +10,7 @@ type TeamContextType = {
   computedDifficulty: DifficultyMode;
   setTeamData: (data: NewTeamInput) => Promise<void>;
   updateTeamPoints: (points: number) => Promise<void>;
+  updateTeamMembers: (members: TeamData["members"]) => Promise<void>;
   clearTeamData: () => Promise<void>;
   loading: boolean;
 };
@@ -46,6 +47,13 @@ export function TeamProvider({ children }: { children: React.ReactNode }) {
     await storage.saveTeam(updated);
   };
 
+  const updateTeamMembers = async (members: TeamData["members"]) => {
+    if (!team) return;
+    const updated = { ...team, members };
+    setTeam(updated);
+    await storage.saveTeam(updated);
+  };
+
   const clearTeamData = async () => {
     setTeam(null);
     await storage.clearTeam();
@@ -57,7 +65,7 @@ export function TeamProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <TeamContext.Provider
-      value={{ team, computedDifficulty, setTeamData, updateTeamPoints, clearTeamData, loading }}
+      value={{ team, computedDifficulty, setTeamData, updateTeamPoints, updateTeamMembers, clearTeamData, loading }}
     >
       {children}
     </TeamContext.Provider>
